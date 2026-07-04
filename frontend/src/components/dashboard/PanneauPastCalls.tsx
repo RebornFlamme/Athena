@@ -40,7 +40,10 @@ export function PanneauPastCalls({ onFermer }: { onFermer?: () => void }) {
     return 'termine'
   }
 
-  const tries = [...appels].sort((x, y) => x.ts_debut_ms - y.ts_debut_ms)
+  // Pas d'appels « à venir » ici : seulement ceux en cours ou passés.
+  const visibles = [...appels]
+    .filter((a) => statutDe(a) !== 'a_venir')
+    .sort((x, y) => x.ts_debut_ms - y.ts_debut_ms)
 
   return (
     <aside className="flex h-full flex-col bg-card">
@@ -50,17 +53,17 @@ export function PanneauPastCalls({ onFermer }: { onFermer?: () => void }) {
         onFermer={onFermer}
         right={
           <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-            {appels.length}
+            {visibles.length}
           </Badge>
         }
       />
-      {appels.length === 0 ? (
+      {visibles.length === 0 ? (
         <p className="p-4 text-sm italic leading-relaxed text-muted-foreground">
-          Aucun appel. Ajoutez des enregistrements dans l'onglet Simulation.
+          Aucun appel en cours ou passé. Lancez la démonstration.
         </p>
       ) : (
         <ScrollArea className="min-h-0 flex-1">
-          {tries.map((a) => {
+          {visibles.map((a) => {
             const s = statutDe(a)
             return (
               <div key={a.id} className="flex items-center gap-3 border-b px-4 py-2.5 text-sm">
