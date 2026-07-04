@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Radio, Volume2, VolumeX } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { Volume2, VolumeX } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { isSupabaseConfigured } from '../../lib/supabase'
 import { listAppels } from '../../data/appelsApi'
 import { formaterMs } from '../../sim/audioMeta'
 import { useSimulationPlayback } from '../../store/useSimulationPlayback'
 import type { Appel } from '../../typesSimulation'
-import { EnTetePanneau } from '../dashboard/EnTetePanneau'
 import { FeuilleTranscription } from '../dashboard/FeuilleTranscription'
 import { VisualiseurVoix } from './VisualiseurVoix'
 
@@ -17,7 +15,7 @@ import { VisualiseurVoix } from './VisualiseurVoix'
  * quand il est terminé. Chacun est une bande pleine largeur avec son
  * histogramme de voix ; un clic bascule l'écoute (muet par défaut).
  */
-export function PanneauFluxAudio({ onFermer }: { onFermer?: () => void }) {
+export function PanneauFluxAudio() {
   const [appels, setAppels] = useState<Appel[]>([])
   const [selection, setSelection] = useState<Appel | null>(null)
   const statut = useSimulationPlayback((s) => s.statut)
@@ -38,24 +36,6 @@ export function PanneauFluxAudio({ onFermer }: { onFermer?: () => void }) {
   return (
     <>
     <aside className="flex h-full flex-col bg-card">
-      <EnTetePanneau
-        icon={Radio}
-        titre="Live feed"
-        onFermer={onFermer}
-        right={
-          <>
-            <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-              {fluxLive.length}
-            </Badge>
-            {statut === 'lecture' && (
-              <span className="flex items-center gap-1.5 text-[10px] font-normal text-emerald-600 dark:text-emerald-400">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" /> en direct
-              </span>
-            )}
-          </>
-        }
-      />
-
       {fluxLive.length === 0 ? (
         <p className="p-4 text-sm italic leading-relaxed text-muted-foreground">
           {statut === 'lecture'
