@@ -27,3 +27,5 @@ Thumbs.db
 # Supabase (artefacts locaux du CLI)
 supabase/.temp/
 supabase/.branches/
+athena-501414-fb4c2a529391.json
+google.json

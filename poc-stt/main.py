@@ -202,23 +202,47 @@ async def transcribe(payload: dict | None = None):
 
     Body optionnel : {"appel_ids": [...]}. Sans body → tous les appels.
     """
-    sb = get_supabase()
+    logger.info("[TRANSCRIBE] ===== REQUÊTE REÇUE =====")
+    logger.info("[TRANSCRIBE] Payload : %s", payload)
+
+    try:
+        sb = get_supabase()
+        logger.info("[TRANSCRIBE] Connexion Supabase OK")
+    except Exception as exc:
+        logger.error("[TRANSCRIBE] ❌ Connexion Supabase KO : %s", exc, exc_info=True)
+        return {"status": "error", "message": f"Connexion Supabase échouée : {exc}"}
 
     ids = (payload or {}).get("appel_ids")
-    query = sb.table("appels").select("*")
-    if ids:
-        query = query.in_("id", ids)
-    appels = query.execute().data or []
+    logger.info("[TRANSCRIBE] Filtre appel_ids : %s", ids or "tous")
+
+    try:
+        query = sb.table("appels").select("*")
+        if ids:
+            query = query.in_("id", ids)
+        appels = query.execute().data or []
+        logger.info("[TRANSCRIBE] %d appel(s) trouvé(s) dans la DB", len(appels))
+    except Exception as exc:
+        logger.error("[TRANSCRIBE] ❌ SELECT appels KO : %s", exc, exc_info=True)
+        return {"status": "error", "message": f"SELECT appels échoué : {exc}"}
+
+    if not appels:
+        logger.warning("[TRANSCRIBE] ⚠ Aucun appel à transcrire")
+        return {"status": "ok", "count": 0, "message": "Aucun appel trouvé"}
 
     appel_ids = [a["id"] for a in appels]
-    if appel_ids:
+    try:
         # Recalcul : on repart d'une ardoise vierge pour ces appels.
         sb.table("transcriptions").delete().in_("appel_id", appel_ids).execute()
+        logger.info("[TRANSCRIBE] Anciennes transcriptions supprimées pour %d appel(s)", len(appel_ids))
+    except Exception as exc:
+        logger.error("[TRANSCRIBE] ❌ DELETE transcriptions KO : %s", exc, exc_info=True)
+        # Non bloquant : on continue même si le delete échoue
 
     for appel in appels:
+        logger.info("[TRANSCRIBE] Soumission job → appel %s (%s)", appel["id"], appel.get("titre", "?"))
         _transcribe_pool.submit(transcribe_appel, appel)
 
-    logger.info("Transcription lancée pour %d appel(s)", len(appels))
+    logger.info("[TRANSCRIBE] ✅ %d job(s) soumis au pool", len(appels))
     return {"status": "started", "count": len(appels)}
 
 

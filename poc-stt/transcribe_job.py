@@ -38,12 +38,20 @@ def transcribe_appel(appel: dict) -> None:
     appel_id = appel["id"]
     url = appel["audio_url"]
     sb = get_supabase()
-    logger.info("Transcription appel %s (%s)", appel_id, appel.get("titre"))
+    titre = appel.get("titre", "?")
+    logger.info("[JOB %s] ========== DÉBUT TRANSCRIPTION ==========", appel_id)
+    logger.info("[JOB %s] Titre : %s", appel_id, titre)
+    logger.info("[JOB %s] URL audio : %s", appel_id, url)
 
     try:
-        pcm = decode_to_pcm16k_mono(_download(url))
+        logger.info("[JOB %s] Téléchargement du MP3...", appel_id)
+        raw = _download(url)
+        logger.info("[JOB %s] MP3 téléchargé : %d octets", appel_id, len(raw))
+        logger.info("[JOB %s] Décodage PCM 16 kHz mono...", appel_id)
+        pcm = decode_to_pcm16k_mono(raw)
+        logger.info("[JOB %s] PCM décodé : %d octets (%.1f s)", appel_id, len(pcm), len(pcm) / (16000 * 2))
     except Exception as exc:  # noqa: BLE001
-        logger.error("Téléchargement/décodage KO pour %s : %s", appel_id, exc)
+        logger.error("[JOB %s] ❌ Téléchargement/décodage KO : %s", appel_id, exc, exc_info=True)
         return
 
     audio_q: queue.Queue = queue.Queue()
@@ -51,10 +59,18 @@ def transcribe_appel(appel: dict) -> None:
 
     def feeder() -> None:
         """Pousse le PCM en chunks 80 ms au rythme réel, puis None (fin)."""
-        for off in range(0, len(pcm), CHUNK_BYTES):
-            audio_q.put(pcm[off:off + CHUNK_BYTES])
-            time.sleep(CHUNK_MS / 1000)  # cadence temps réel → transcription live
-        audio_q.put(None)
+        try:
+            nb_chunks = 0
+            for off in range(0, len(pcm), CHUNK_BYTES):
+                audio_q.put(pcm[off:off + CHUNK_BYTES])
+                nb_chunks += 1
+                time.sleep(CHUNK_MS / 1000)  # cadence temps réel → transcription live
+            logger.info("[JOB %s] Feeder terminé : %d chunks envoyés", appel_id, nb_chunks)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("[JOB %s] ❌ Feeder crash : %s", appel_id, exc, exc_info=True)
+        finally:
+            # GARANTI : toujours signaler la fin, même en cas de crash
+            audio_q.put(None)
 
     threading.Thread(target=feeder, daemon=True).start()
     threading.Thread(target=run_stt_stream, args=(audio_q, result_q), daemon=True).start()
@@ -63,30 +79,38 @@ def transcribe_appel(appel: dict) -> None:
     while True:
         item = result_q.get()
         if item is None:
+            logger.info("[JOB %s] Fin du flux de résultats", appel_id)
             break
         if item.get("type") == "error":
-            logger.error("STT error appel %s : %s", appel_id, item.get("message"))
+            logger.error("[JOB %s] ❌ STT error : %s", appel_id, item.get("message"))
             continue
-        if item.get("type") == "transcript" and item.get("is_final"):
+        if item.get("type") == "transcript":
+            is_final = item.get("is_final", False)
             texte = (item.get("text") or "").strip()
-            if not texte:
-                continue
-            try:
-                sb.table("transcriptions").insert({
-                    "appel_id": appel_id,
-                    "ordinal": ordinal,
-                    "texte": texte,
-                    "langue": item.get("language_code"),
-                }).execute()
-                ordinal += 1
-            except Exception as exc:  # noqa: BLE001
-                logger.error("Insert transcription KO (appel %s) : %s", appel_id, exc)
+            langue = item.get("language_code", "?")
+            logger.debug("[JOB %s] Segment %s | %s | « %.80s »", appel_id,
+                         "FINAL" if is_final else "interim", langue, texte)
+            if is_final and texte:
+                try:
+                    sb.table("transcriptions").insert({
+                        "appel_id": appel_id,
+                        "ordinal": ordinal,
+                        "texte": texte,
+                        "langue": item.get("language_code"),
+                    }).execute()
+                    logger.info("[JOB %s] ✅ segment #%d inséré : « %.80s »", appel_id, ordinal, texte)
+                    ordinal += 1
+                except Exception as exc:  # noqa: BLE001
+                    logger.error("[JOB %s] ❌ Insert transcription KO : %s", appel_id, exc, exc_info=True)
 
-    logger.info("Appel %s transcrit : %d segments", appel_id, ordinal)
+    logger.info("[JOB %s] ✅ Transcription terminée : %d segments", appel_id, ordinal)
 
     # Extraction LLM : transcript → entités/événements liés dans Supabase
     # (→ carte via Realtime). Non bloquant pour la transcription en cas d'échec.
+    logger.info("[JOB %s] Démarrage extraction LLM...", appel_id)
     try:
         extraire_appel(appel, sb)
+        logger.info("[JOB %s] ✅ Extraction LLM OK", appel_id)
     except Exception as exc:  # noqa: BLE001
-        logger.error("Extraction KO pour l'appel %s : %s", appel_id, exc)
+        logger.error("[JOB %s] ❌ Extraction KO : %s", appel_id, exc, exc_info=True)
+    logger.info("[JOB %s] ========== FIN ==========", appel_id)

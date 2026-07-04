@@ -270,40 +270,70 @@ def extraire_appel(appel: dict, sb) -> None:
     (« à chaque lancement », cohérent avec la transcription).
     """
     appel_id = appel["id"]
+    logger.info("[EXTRACT %s] ===== DÉBUT EXTRACTION =====", appel_id)
+
+    logger.info("[EXTRACT %s] Lecture du transcript...", appel_id)
     transcript = _transcript_appel(sb, appel_id)
+    logger.info("[EXTRACT %s] Transcript : %d caractères", appel_id, len(transcript))
+
     if len(transcript) < 20:
-        logger.info("Extraction appel %s : transcript trop court, ignoré", appel_id)
+        logger.info("[EXTRACT %s] ⚠ Transcript trop court (< 20 chars), ignoré", appel_id)
         return
 
+    logger.info("[EXTRACT %s] Transcript : « %.200s »", appel_id, transcript)
+
     intervention_id = _intervention_simulation(sb)
+    logger.info("[EXTRACT %s] Intervention simulation : %s", appel_id, intervention_id)
+
     # Ardoise vierge pour cet appel (service_role bypass RLS — reset de démo).
-    sb.table("evenements").delete().eq("appel_id", appel_id).execute()
-    sb.table("entites").delete().eq("appel_id", appel_id).execute()
+    try:
+        sb.table("evenements").delete().eq("appel_id", appel_id).execute()
+        sb.table("entites").delete().eq("appel_id", appel_id).execute()
+        logger.info("[EXTRACT %s] Anciennes entités/événements supprimés", appel_id)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("[EXTRACT %s] ❌ Delete entités/événements KO : %s", appel_id, exc, exc_info=True)
+        # Non bloquant : continue
 
     outils = _Outils(sb, intervention_id, appel_id)
     messages = [{"role": "user", "content": f"Transcription de l'appel :\n\n{transcript}"}]
 
-    for _ in range(MAX_TOURS):
-        reponse = _client.messages.create(
-            model=EXTRACTION_MODEL,
-            max_tokens=2048,
-            system=SYSTEME,
-            tools=OUTILS,
-            messages=messages,
-        )
+    for tour in range(MAX_TOURS):
+        logger.info("[EXTRACT %s] --- Tour %d/%d ---", appel_id, tour + 1, MAX_TOURS)
+        try:
+            reponse = _client.messages.create(
+                model=EXTRACTION_MODEL,
+                max_tokens=2048,
+                system=SYSTEME,
+                tools=OUTILS,
+                messages=messages,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.error("[EXTRACT %s] ❌ Appel Claude KO au tour %d : %s", appel_id, tour + 1, exc, exc_info=True)
+            break
+
+        logger.info("[EXTRACT %s] Stop reason : %s", appel_id, reponse.stop_reason)
+
         if reponse.stop_reason != "tool_use":
+            logger.info("[EXTRACT %s] Claude a terminé (stop_reason=%s)", appel_id, reponse.stop_reason)
             break
 
         messages.append({"role": "assistant", "content": reponse.content})
         resultats = []
         for bloc in reponse.content:
+            if bloc.type == "text":
+                logger.info("[EXTRACT %s] Claude (texte) : « %.200s »", appel_id, bloc.text)
+                continue
             if bloc.type != "tool_use":
                 continue
+            logger.info("[EXTRACT %s] 🔧 Outil appelé : %s(%s)", appel_id, bloc.name,
+                        json.dumps(bloc.input, ensure_ascii=False, default=str))
             fn = getattr(outils, bloc.name, None)
             try:
                 sortie = fn(**bloc.input) if fn else {"erreur": f"outil inconnu {bloc.name}"}
+                logger.info("[EXTRACT %s] ✅ Résultat %s : %s", appel_id, bloc.name,
+                            json.dumps(sortie, ensure_ascii=False, default=str)[:200])
             except Exception as exc:  # noqa: BLE001
-                logger.exception("Outil %s en échec (appel %s)", bloc.name, appel_id)
+                logger.exception("[EXTRACT %s] ❌ Outil %s en échec : %s", appel_id, bloc.name, exc)
                 sortie = {"erreur": str(exc)}
             resultats.append({
                 "type": "tool_result",
@@ -312,5 +342,8 @@ def extraire_appel(appel: dict, sb) -> None:
             })
         messages.append({"role": "user", "content": resultats})
 
+    if tour + 1 >= MAX_TOURS:
+        logger.warning("[EXTRACT %s] ⚠ MAX_TOURS (%d) atteint — boucle interrompue", appel_id, MAX_TOURS)
+
     n = len(outils.lister_entites())
-    logger.info("Extraction appel %s terminée : %d entité(s)", appel_id, n)
+    logger.info("[EXTRACT %s] ✅ Extraction terminée : %d entité(s) créée(s)", appel_id, n)

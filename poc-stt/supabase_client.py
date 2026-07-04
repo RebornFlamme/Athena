@@ -7,9 +7,12 @@
     SUPABASE_SERVICE_ROLE_KEY=eyJ...   (Project Settings → API → service_role, SECRÈTE)
 """
 
+import logging
 import os
 
 from supabase import Client, create_client
+
+logger = logging.getLogger("poc-stt.supabase")
 
 _client: Client | None = None
 
@@ -25,12 +28,19 @@ def get_supabase() -> Client:
         return _client
 
     url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    if not url or not key:
+    key_prefix = (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "")[:20]
+    if not url:
         raise ValueError(
-            "SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY doivent être définis "
-            "(Render → Environment) pour le job de transcription."
+            "SUPABASE_URL n'est pas définie. "
+            "Définissez-la dans l'environnement (Render → Environment)."
+        )
+    if not os.getenv("SUPABASE_SERVICE_ROLE_KEY"):
+        raise ValueError(
+            "SUPABASE_SERVICE_ROLE_KEY n'est pas définie. "
+            "Définissez-la dans l'environnement (Render → Environment)."
         )
 
-    _client = create_client(url, key)
+    logger.info("Connexion Supabase : %s (clé service_role : %s...)", url, key_prefix)
+    _client = create_client(url, os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
+    logger.info("Connexion Supabase OK")
     return _client

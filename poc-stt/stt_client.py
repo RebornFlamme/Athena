@@ -167,14 +167,19 @@ def run_stt_stream(
         # sont pas configurés (SpeechClient introuvable, GOOGLE_CLOUD_PROJECT
         # absent), l'erreur est renvoyée au client via result_queue au lieu de
         # tuer la WebSocket silencieusement (sinon : socket fermée, aucun JSON).
+        logger.info("Initialisation du client Google Speech...")
         client = get_client()
         config_request = build_stt_config()
+        logger.info("Client Google Speech OK — démarrage du stream chirp_3...")
 
-        logger.info("Démarrage du stream Google STT (chirp_3)...")
         responses = client.streaming_recognize(requests=request_generator(config_request))
+        logger.info("Stream Google STT ouvert — en attente de réponses...")
 
+        nb_responses = 0
         for response in responses:
+            nb_responses += 1
             if not response.results:
+                logger.debug("Réponse Google #%d : pas de résultats", nb_responses)
                 continue
 
             for result in response.results:
@@ -197,23 +202,24 @@ def run_stt_stream(
                     "language_code": language_code,
                 }
 
-                logger.debug(
-                    "Résultat STT : is_final=%s lang=%s text=%.60s",
-                    result.is_final,
+                logger.info(
+                    "📝 STT %s | %s | « %.80s »",
+                    "FINAL" if result.is_final else "INTERIM",
                     language_code,
                     alternative.transcript,
                 )
                 result_queue.put(payload)
 
-        logger.info("Stream Google STT terminé normalement")
+        logger.info("Stream Google STT terminé normalement (%d réponses)", nb_responses)
 
     except Exception as exc:
-        logger.error("Erreur dans le stream Google STT : %s", exc, exc_info=True)
+        logger.error("❌ Erreur dans le stream Google STT : %s", exc, exc_info=True)
         result_queue.put({
             "type": "error",
             "message": f"Google STT error: {exc}",
         })
 
     finally:
+        logger.info("Envoi signal None → fin du flux de résultats")
         # Signale la fin au sender async
         result_queue.put(None)
