@@ -34,21 +34,21 @@ Le TechDesign proposait Next.js. **Le code réel utilise Vite + React** (l'édit
 - `CLAUDE.md` — conventions spécifiques de l'éditeur EAV existant
 
 ## État courant
-**Dernière mise à jour :** 2026-07-04
-**En cours :** Phase F0 (socle dashboard) — rien de commencé.
-**Récemment terminé :** éditeur visuel de schémas EAV (`frontend/`, migration `0001`) ; docs stratégiques (recherche, PRD, TechDesign, architecture) ; ce workspace agents.
-**Bloqué par :** rien.
+**Dernière mise à jour :** 2026-07-04 (soir)
+**En cours :** Phase F0 — code terminé et vérifié navigateur ; reste à appliquer la migration `0002` dans Supabase et à rejouer le test de référence temps réel.
+**Récemment terminé :** tout le code F0 — migration `0002_athena_core.sql` (3 tables, journal append-only via RLS), route `/interventions` (liste + création) et `/intervention/:id` (carte MapLibre + fonds IGN vérifié à l'écran, main courante, badges), store + hook realtime filtré par intervention. `npm run build` OK ; éditeur EAV non régressé.
+**Bloqué par :** clés Supabase (URL + anon key) pour créer `frontend/.env.local` + application de la migration — action utilisateur.
 
 ## Roadmap
 
 ### Phase 0 : Outil de conception — ✅ FAIT
 - [x] Éditeur EAV React Flow (entities/attributes, realtime, Supabase)
 
-### Phase F0 : Socle dashboard (en cours)
-- [ ] Migration `0002_athena_core.sql` : tables `interventions`, `evenements` (journal append-only), `entites` (projection) + index + RLS + realtime (SQL prêt dans TechDesign §4). Pas de table `appels` (décision produit) : l'appel est traité en direct, la phrase source d'un fait vit dans `payload.extrait_source`.
-- [ ] Route `/intervention/:id` : carte MapLibre plein écran + fonds IGN (data.geopf.fr)
-- [ ] Abonnement Realtime : INSERT dans `evenements`/`entites` → marqueur carte + ligne main courante < 2 s
-- [ ] Test : insérer un événement à la main dans Supabase → il apparaît sans recharger
+### Phase F0 : Socle dashboard (en cours — code fait, test final en attente)
+- [x] Migration `0002_athena_core.sql` **écrite** : `interventions`, `evenements` (append-only : policies RLS select+insert uniquement), `entites` (projection, lon/lat + geom PostGIS générée) + index + realtime. Pas de table `appels` (décision produit) : la phrase source d'un fait vit dans `payload.extrait_source`. → **À appliquer dans Supabase (SQL Editor ou `supabase db push`).**
+- [x] Route `/intervention/:id` : carte MapLibre plein écran + fonds IGN (style PLAN.IGN vérifié à l'écran) + route `/interventions` (liste + création rapide)
+- [x] Abonnement Realtime (code) : INSERT `evenements`/`entites` filtré par intervention → store → marqueur + ligne main courante
+- [ ] Test de référence : insérer un événement à la main dans Supabase → il apparaît sans recharger (**nécessite `.env.local` + migration appliquée**)
 
 ### Phase F1 : Extraction des appels (le cœur)
 - [ ] Banc d'essai STT : page d'upload audio → transcriptions comparées (Gladia vs alternatives)
