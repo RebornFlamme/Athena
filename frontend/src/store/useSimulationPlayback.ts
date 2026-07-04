@@ -1,58 +1,111 @@
 import { create } from 'zustand'
 import { listAppels } from '../data/appelsApi'
+import type { Appel } from '../typesSimulation'
 
-// Moteur de lecture de la simulation active : planifie la lecture de chaque
-// appel (MP3) à son instant de déclenchement et pilote le curseur temporel.
-// Les handles (audios, timers, RAF) vivent hors du state réactif.
+// Moteur de lecture de la simulation active (Web Audio API).
+// Chaque appel : <audio> → MediaElementSource → AnalyserNode.
+// - L'analyser alimente l'histogramme « voix live » (getAnalyseur).
+// - MUET par défaut : l'analyser n'est PAS relié à la sortie. On voit la voix
+//   bouger sans l'entendre. `basculerEcoute` relie/coupe l'analyser à la sortie.
+// Handles hors du state réactif (non sérialisables).
 
-let audios: HTMLAudioElement[] = []
+interface Noeud {
+  audio: HTMLAudioElement
+  source: MediaElementAudioSourceNode
+  analyser: AnalyserNode
+  ecoute: boolean
+}
+
+let ctx: AudioContext | null = null
+const noeuds = new Map<string, Noeud>()
 let timers: ReturnType<typeof setTimeout>[] = []
 let raf = 0
 let t0 = 0
 let dureeTotaleMs = 0
+let simAppels: Appel[] = []
+let dernierActifs: string[] = []
+
+/** Analyser FFT d'un appel (pour l'histogramme). Null si pas en lecture. */
+export function getAnalyseur(id: string): AnalyserNode | null {
+  return noeuds.get(id)?.analyser ?? null
+}
+
+function memeContenu(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((x, i) => x === b[i])
+}
 
 function nettoyer() {
   if (raf) cancelAnimationFrame(raf)
   raf = 0
   timers.forEach((t) => clearTimeout(t))
   timers = []
-  audios.forEach((a) => {
-    a.pause()
-    a.src = ''
+  noeuds.forEach((n) => {
+    n.audio.pause()
+    n.audio.src = ''
+    try {
+      n.source.disconnect()
+      n.analyser.disconnect()
+    } catch {
+      /* déjà déconnecté */
+    }
   })
-  audios = []
+  noeuds.clear()
+  if (ctx) {
+    void ctx.close().catch(() => {})
+    ctx = null
+  }
+  simAppels = []
+  dernierActifs = []
 }
 
 interface PlaybackState {
   statut: 'arret' | 'lecture'
   positionMs: number
-  /** Lance la simulation active depuis le début. */
+  /** Appels en cours de diffusion (fenêtre temporelle) — histogramme animé. */
+  actifs: string[]
+  /** Appels dont l'écoute est activée (audibles). */
+  ecoutes: string[]
   lancer: () => Promise<void>
-  /** Coupe puis relance depuis t0. */
   revenirDebut: () => Promise<void>
-  /** Coupe totalement (audio + curseur). */
   couper: () => void
+  /** Active/coupe l'écoute d'un flux (le relie/déconnecte de la sortie). */
+  basculerEcoute: (id: string) => void
 }
 
 export const useSimulationPlayback = create<PlaybackState>((set, get) => ({
   statut: 'arret',
   positionMs: 0,
+  actifs: [],
+  ecoutes: [],
 
   lancer: async () => {
     nettoyer()
+    // AudioContext créé/repris dans le geste utilisateur (avant le réseau) —
+    // sinon la politique autoplay peut bloquer le son.
+    ctx = new AudioContext()
+    await ctx.resume().catch(() => {})
     const appels = await listAppels().catch(() => [])
     if (appels.length === 0) {
-      set({ statut: 'arret', positionMs: 0 })
+      nettoyer()
+      set({ statut: 'arret', positionMs: 0, actifs: [], ecoutes: [] })
       return
     }
+    simAppels = appels
     dureeTotaleMs = appels.reduce((m, a) => Math.max(m, a.ts_debut_ms + a.duree_ms), 0)
     t0 = performance.now()
-    set({ statut: 'lecture', positionMs: 0 })
+    set({ statut: 'lecture', positionMs: 0, actifs: [], ecoutes: [] })
 
     for (const a of appels) {
-      const audio = new Audio(a.audio_url)
+      const audio = new Audio()
+      audio.crossOrigin = 'anonymous'
       audio.preload = 'auto'
-      audios.push(audio)
+      audio.src = a.audio_url
+      const source = ctx.createMediaElementSource(audio)
+      const analyser = ctx.createAnalyser()
+      analyser.fftSize = 64
+      analyser.smoothingTimeConstant = 0.7
+      source.connect(analyser) // pas de connexion à la sortie → muet
+      noeuds.set(a.id, { audio, source, analyser, ecoute: false })
       const jouer = () => void audio.play().catch(() => {})
       if (a.ts_debut_ms <= 0) jouer()
       else timers.push(setTimeout(jouer, a.ts_debut_ms))
@@ -61,7 +114,15 @@ export const useSimulationPlayback = create<PlaybackState>((set, get) => ({
     const tick = () => {
       if (get().statut !== 'lecture') return
       const pos = performance.now() - t0
-      set({ positionMs: pos })
+      const actifs = simAppels
+        .filter((a) => pos >= a.ts_debut_ms && pos < a.ts_debut_ms + Math.max(a.duree_ms, 800))
+        .map((a) => a.id)
+      if (memeContenu(actifs, dernierActifs)) {
+        set({ positionMs: pos })
+      } else {
+        dernierActifs = actifs
+        set({ positionMs: pos, actifs })
+      }
       if (pos <= dureeTotaleMs + 500) raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
@@ -73,6 +134,22 @@ export const useSimulationPlayback = create<PlaybackState>((set, get) => ({
 
   couper: () => {
     nettoyer()
-    set({ statut: 'arret', positionMs: 0 })
+    set({ statut: 'arret', positionMs: 0, actifs: [], ecoutes: [] })
+  },
+
+  basculerEcoute: (id) => {
+    const n = noeuds.get(id)
+    const ecoutes = get().ecoutes
+    const active = !ecoutes.includes(id)
+    if (n && ctx) {
+      try {
+        if (active) n.analyser.connect(ctx.destination)
+        else n.analyser.disconnect(ctx.destination)
+        n.ecoute = active
+      } catch {
+        /* connexion/déconnexion déjà dans l'état voulu */
+      }
+    }
+    set({ ecoutes: active ? [...ecoutes, id] : ecoutes.filter((x) => x !== id) })
   },
 }))

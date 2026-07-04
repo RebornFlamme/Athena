@@ -8,8 +8,9 @@ import { SidebarTrigger } from '@/components/ui/sidebar'
 import { isSupabaseConfigured } from '../../lib/supabase'
 import { useInterventionStore } from '../../store/useInterventionStore'
 import { useRealtimeIntervention } from '../../hooks/useRealtimeIntervention'
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { CarteIntervention } from './CarteIntervention'
-import { MainCourante } from './MainCourante'
+import { PanneauFluxAudio } from '../simulation/PanneauFluxAudio'
 
 /** Message d'aide ciblé si la migration 0002 n'est pas encore appliquée. */
 function messageErreur(error: string): string {
@@ -93,15 +94,20 @@ export function InterventionPage() {
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1">
-        <div className="relative min-w-0 flex-1">
-          <CarteIntervention
-            entites={entites}
-            centre={intervention ? { lon: intervention.lon, lat: intervention.lat } : null}
-          />
-        </div>
-        <MainCourante />
-      </div>
+      <ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
+        <ResizablePanel defaultSize={68} minSize={40}>
+          <div className="relative h-full">
+            <CarteIntervention
+              entites={entites}
+              centre={intervention ? { lon: intervention.lon, lat: intervention.lat } : null}
+            />
+          </div>
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel defaultSize={32} minSize={22}>
+          <PanneauFluxAudio />
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   )
 }
