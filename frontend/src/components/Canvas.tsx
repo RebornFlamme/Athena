@@ -12,6 +12,7 @@ import {
   type OnNodeDrag,
 } from '@xyflow/react'
 import { useSchemaStore } from '../store/useSchemaStore'
+import { RELATION_TYPES } from '../types'
 import { EntityNode } from './nodes/EntityNode'
 import { RelationEdge } from './edges/RelationEdge'
 
@@ -22,7 +23,7 @@ const edgeTypes = { relation: RelationEdge }
 export function Canvas() {
   const entities = useSchemaStore((s) => s.entities)
   const attributes = useSchemaStore((s) => s.attributes)
-  const addAttribute = useSchemaStore((s) => s.addAttribute)
+  const editAttribute = useSchemaStore((s) => s.editAttribute)
   const setEntityPositionLocal = useSchemaStore((s) => s.setEntityPositionLocal)
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
@@ -40,31 +41,21 @@ export function Canvas() {
     )
   }, [entities, setNodes])
 
-  // Dérive les arêtes des champs-relations et répartit uniformément les racines
-  // qui partagent le même côté (même node source, resp. même node cible).
+  // Dérive une arête par champ-relation relié. L'ancrage source est le handle
+  // du champ (`f-<attrId>`) → React Flow calcule seul la bonne origine.
   useEffect(() => {
-    const rels = attributes
-      .filter((a) => a.target_entity_id)
-      .sort((a, b) => (a.id < b.id ? -1 : 1)) // ordre stable
-
-    const bySource: Record<string, string[]> = {}
-    const byTarget: Record<string, string[]> = {}
-    for (const a of rels) {
-      ;(bySource[a.entity_id] ??= []).push(a.id)
-      ;(byTarget[a.target_entity_id as string] ??= []).push(a.id)
-    }
-
+    const rels = attributes.filter(
+      (a) => a.target_entity_id && RELATION_TYPES.includes(a.data_type),
+    )
     setEdges(
       rels.map((a) => {
-        const sList = bySource[a.entity_id]
-        const tList = byTarget[a.target_entity_id as string]
         const color = entities.find((e) => e.id === a.entity_id)?.color ?? '#a1a1aa'
         return {
           id: `attr-${a.id}`,
           type: 'relation',
           source: a.entity_id,
           target: a.target_entity_id as string,
-          sourceHandle: 's',
+          sourceHandle: `f-${a.id}`,
           targetHandle: 't',
           label: a.name,
           markerEnd: { type: MarkerType.ArrowClosed, color },
@@ -73,29 +64,20 @@ export function Canvas() {
             strokeWidth: 1.5,
             strokeDasharray: a.data_type === 'object' ? '5 4' : undefined,
           },
-          data: {
-            sourceIndex: sList.indexOf(a.id),
-            sourceCount: sList.length,
-            targetIndex: tList.indexOf(a.id),
-            targetCount: tList.length,
-          },
         }
       }),
     )
   }, [attributes, entities, setEdges])
 
-  // Tirer un lien d'une carte à une autre → crée une relation (référence).
+  // Tirer le handle d'un champ-relation vers une carte → pose la cible SUR ce
+  // champ (on modifie l'attribut, on n'en crée pas). Auto-référence permise.
   const onConnect: OnConnect = useCallback(
     (c) => {
-      if (!c.source || !c.target || c.source === c.target) return
-      const target = useSchemaStore.getState().entities.find((e) => e.id === c.target)
-      addAttribute(c.source, {
-        name: target?.name ?? 'relation',
-        data_type: 'reference',
-        target_entity_id: c.target,
-      })
+      if (!c.source || !c.target || !c.sourceHandle?.startsWith('f-')) return
+      const attrId = c.sourceHandle.slice(2)
+      editAttribute(attrId, { target_entity_id: c.target })
     },
-    [addAttribute],
+    [editAttribute],
   )
 
   const onNodeDragStop: OnNodeDrag<Node> = (_, node) => {

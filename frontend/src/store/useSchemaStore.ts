@@ -32,6 +32,7 @@ interface SchemaState {
 
   load: () => Promise<void>
   saveAll: () => Promise<void>
+  resetSchema: () => Promise<void>
   select: (id: string | null) => void
 
   addEntity: (opts?: { name?: string; is_subobject?: boolean; x?: number; y?: number }) => Entity
@@ -83,7 +84,30 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
     set({ saving: true, error: null })
     try {
       await api.saveSchema({ entities, attributes, removedEntityIds, removedAttributeIds })
-      set({ saving: false, dirty: false, removedEntityIds: [], removedAttributeIds: [] })
+      // Recharge l'état canonique depuis Supabase (created_at, ordre, ids) au
+      // lieu de garder le local — la base est la source de vérité après un push.
+      await get().load()
+      set({ saving: false })
+    } catch (err) {
+      set({ saving: false, error: messageOf(err) })
+    }
+  },
+
+  // Vide TOUT le schéma dans Supabase (objets + champs) puis remet à zéro le
+  // local. Destructif et irréversible (bouton « Réinitialiser », confirmé par dialog).
+  resetSchema: async () => {
+    set({ saving: true, error: null })
+    try {
+      await api.deleteAllSchema()
+      set({
+        entities: [],
+        attributes: [],
+        selectedEntityId: null,
+        dirty: false,
+        saving: false,
+        removedEntityIds: [],
+        removedAttributeIds: [],
+      })
     } catch (err) {
       set({ saving: false, error: messageOf(err) })
     }
@@ -126,6 +150,9 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
   addAttribute: (entityId, input) => {
     const siblings = get().attributes.filter((a) => a.entity_id === entityId)
     const isRelation = RELATION_TYPES.includes(input.data_type)
+    // ordinal = max des voisins + 1 (et non `siblings.length`) : après une
+    // suppression au milieu, la longueur peut réutiliser un ordinal existant.
+    const nextOrdinal = siblings.reduce((m, a) => Math.max(m, a.ordinal), -1) + 1
     const attr: Attribute = {
       id: uuid(),
       entity_id: entityId,
@@ -136,7 +163,7 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
       target_entity_id: isRelation ? input.target_entity_id ?? null : null,
       required: input.required ?? false,
       description: input.description ?? null,
-      ordinal: siblings.length,
+      ordinal: nextOrdinal,
     }
     set((s) => ({ attributes: [...s.attributes, attr], dirty: true }))
     return attr

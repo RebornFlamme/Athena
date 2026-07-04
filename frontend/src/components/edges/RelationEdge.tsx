@@ -5,14 +5,10 @@ import {
   type EdgeProps,
 } from '@xyflow/react'
 
-// Espacement vertical entre deux racines de liens partant du même côté d'un node.
-const SPACING = 16
-
 /**
- * Arête de relation entre deux objets. Quand plusieurs liens partent (ou
- * arrivent) du même côté d'une carte, leurs points d'ancrage sont répartis
- * uniformément le long de ce côté (offset calculé depuis data.sourceIndex /
- * sourceCount et data.targetIndex / targetCount, fournis par le Canvas).
+ * Arête de relation entre deux objets. L'ancrage source est le handle du champ
+ * (un handle par champ-relation, posé pile en face de la ligne) : React Flow
+ * fournit donc directement le bon `sourceX/sourceY`, sans calcul d'offset.
  */
 export function RelationEdge({
   id,
@@ -24,23 +20,14 @@ export function RelationEdge({
   targetPosition,
   markerEnd,
   style,
-  data,
   label,
 }: EdgeProps) {
-  const sIndex = Number(data?.sourceIndex ?? 0)
-  const sCount = Number(data?.sourceCount ?? 1)
-  const tIndex = Number(data?.targetIndex ?? 0)
-  const tCount = Number(data?.targetCount ?? 1)
-
-  const sourceOffset = (sIndex - (sCount - 1) / 2) * SPACING
-  const targetOffset = (tIndex - (tCount - 1) / 2) * SPACING
-
   const [path, labelX, labelY] = getBezierPath({
     sourceX,
-    sourceY: sourceY + sourceOffset,
+    sourceY,
     sourcePosition,
     targetX,
-    targetY: targetY + targetOffset,
+    targetY,
     targetPosition,
   })
 

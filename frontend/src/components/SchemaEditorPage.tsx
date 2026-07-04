@@ -9,7 +9,10 @@ export function SchemaEditorPage() {
   const load = useSchemaStore((s) => s.load)
   const error = useSchemaStore((s) => s.error)
   const dirty = useSchemaStore((s) => s.dirty)
+  const status = useSchemaStore((s) => s.status)
 
+  // À chaque ouverture de l'onglet (la page est remontée par le routeur), on
+  // resynchronise le canvas avec le schéma courant dans Supabase.
   useEffect(() => {
     if (isSupabaseConfigured) void load()
   }, [load])
@@ -39,6 +42,11 @@ export function SchemaEditorPage() {
         {isSupabaseConfigured && error && (
           <div className="border-b bg-destructive/15 px-4 py-2 text-xs text-destructive-foreground">
             Erreur Supabase : {error}
+          </div>
+        )}
+        {isSupabaseConfigured && !error && status === 'loading' && (
+          <div className="border-b bg-muted/40 px-4 py-2 text-xs text-muted-foreground">
+            Synchronisation avec Supabase…
           </div>
         )}
 

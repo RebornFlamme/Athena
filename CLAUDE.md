@@ -65,27 +65,39 @@ Realtime activé sur les deux tables.
   en mémoire et marquent `dirty` ; **rien n'est envoyé à Supabase avant `saveAll()`** (bouton
   « Enregistrer » de la `Toolbar`). Les nouveaux ids sont générés côté client (`crypto.randomUUID`)
   pour que les relations pointent vers des cibles avant sauvegarde ; les suppressions sont
-  bufferisées (`removedEntityIds`/`removedAttributeIds`) puis envoyées au save.
+  bufferisées (`removedEntityIds`/`removedAttributeIds`) puis envoyées au save. `addAttribute`
+  calcule `ordinal = max(voisins)+1` (pas `siblings.length` : évite la collision d'ordinal après
+  suppression au milieu). `saveAll()` **relance `load()`** après le push → l'état canonique
+  (created_at, ordre, ids) revient de Supabase. `resetSchema()` **vide tout** le schéma en base
+  (bouton « Réinitialiser », dialog de confirmation) puis remet le local à zéro.
 - `src/data/schemaApi.ts` — CRUD + `saveSchema()` (suppressions puis upserts en lot, entités
-  avant attributs pour la FK `target_entity_id`).
+  avant attributs pour la FK `target_entity_id`) + `deleteAllSchema()` (delete all attributs puis
+  entités ; filtre `neq('id', <uuid impossible>)` car Supabase exige un filtre sur un delete).
 - **Pas de synchronisation temps réel** (choix produit : édition locale + save explicite).
-  Un garde-fou `beforeunload` avertit si `dirty` à la fermeture de l'onglet.
+  Un garde-fou `beforeunload` avertit si `dirty` à la fermeture de l'onglet. **Resynchro à
+  l'ouverture** : la remonte de `SchemaEditorPage` par le routeur relance `load()` → le canvas
+  reflète le schéma Supabase courant à chaque clic sur l'onglet (bannière « Synchronisation… »
+  tant que `status==='loading'`).
 - **Shell webapp** : `main.tsx` définit un `createBrowserRouter` avec une route layout
   `AppLayout` (shadcn `SidebarProvider` + `AppSidebar` + `SidebarInset` + `<Outlet/>`) et des
   pages enfants : `/` → `SchemaEditorPage`, plus des `PlaceholderPage` (`/tableau-de-bord`,
   `/ressources`, `/parametres`). `AppSidebar` = nav (composant `Sidebar` shadcn, collapsible
   icon). Le `SidebarTrigger` vit dans l'en-tête de chaque page.
 - `src/components/` — `SchemaEditorPage` (`ReactFlowProvider` + header + canvas, `h-svh`),
-  `Toolbar` (header : trigger sidebar, statut save, boutons Objet/Enregistrer),
+  `Toolbar` (header : trigger sidebar, statut save, boutons Objet / **Réinitialiser** / Enregistrer),
   `Canvas` (React Flow, nodes/edges dérivés du store ; **pas de MiniMap**), `nodes/EntityNode`
-  (carte shadcn éditable + `FieldRow`/`RelationRow` ; suppression via `AlertDialog`),
+  (carte shadcn éditable, un seul composant `FieldRow` ; suppression via `AlertDialog`),
   `edges/RelationEdge` (edge custom), `ui/*` (primitives shadcn, dont `sidebar`).
 
 **Toute l'édition se fait sur le node** (pas de panneau latéral : `InspectorPanel` et
 `FieldEditor` ont été supprimés). Ajout de champ via bouton dans la carte, type via `Select`
-shadcn. Les **relations se créent en tirant un lien** entre deux cartes (`onConnect` du Canvas
-→ crée un attribut `reference` ciblant l'entité). Leur genre (`reference`/`object`) se change
-via le `Select` de la ligne de relation.
+shadcn qui liste **TOUS les types** (dont `reference` « Référence → objet » et `object`
+« Sous-objet »). **Plus de section « Relations » séparée** : une relation est un champ dont le
+type cible un autre objet. Quand un champ est de type relation, un **Handle apparaît pile en face
+de sa ligne** (`id="f-<attrId>"`) ; on le tire vers une autre carte → `onConnect` pose
+`target_entity_id` **sur ce champ précis** (il *modifie* l'attribut, il n'en crée pas → plus de
+doublons possibles ; auto-référence autorisée, ex. Personnel→Personnel). Aucun menu de sélection
+de cible. `reference` = arête pleine, `object` = arête pointillée.
 
 ### Conventions & pièges React Flow
 
@@ -93,14 +105,16 @@ via le `Select` de la ligne de relation.
   warning/re-render).
 - Éléments interactifs dans un node (inputs, selects, boutons) : classe **`nodrag`** obligatoire,
   sinon cliquer/glisser dessus déplace le node.
-- **Handles** : `source` à droite (`id="s"`), `target` à gauche (`id="t"`).
-- **Espacement des racines de liens** : quand plusieurs arêtes partent (ou arrivent) du même
-  node, le Canvas groupe par `source` et par `target`, calcule `sourceIndex/sourceCount` +
-  `targetIndex/targetCount` et les passe dans `edge.data` ; `RelationEdge` décale alors le point
-  d'ancrage le long du côté (`SPACING`) pour répartir uniformément (`getBezierPath` sur un
-  `sourceY`/`targetY` offset).
+- **Handles** : **une source par champ-relation** à droite (`id="f-<attrId>"`, rendue *dans* la
+  `FieldRow`, positionnée absolue `right:-13`), **une seule cible** par carte à gauche (`id="t"`).
+  La `Card` n'a **pas** `overflow-hidden` (sinon les handles au bord sont rognés). Comme les
+  handles vivent dans les lignes, `EntityNode` appelle **`useUpdateNodeInternals(id)`** dès que la
+  mise en page change (signature = `id:data_type` de chaque champ) pour que React Flow re-mesure
+  leur position — sinon les arêtes s'ancrent au mauvais Y. Du coup `RelationEdge` est un simple
+  bézier (l'ancrage source est déjà le bon, plus de calcul d'offset `SPACING`).
 - **Édition inline sans bug** : jamais d'écriture par frappe. Nom d'objet / de champ persistés
-  au **blur / Enter** (état local dans le composant, resynchronisé sur changement de prop) ;
+  au **blur / Enter** (état local dans le composant, resynchronisé sur changement de prop) ; un
+  nom **vidé** au blur **restaure** la valeur courante (pas de nom vide en base) ;
   type / liste persistés au **change**. Évite les conflits avec l'écho Realtime.
 - Les **positions** sont gérées par React Flow pendant le drag (`useNodesState`) et persistées
   seulement `onNodeDragStop` (type `OnNodeDrag<Node>`, **pas** `NodeMouseHandler`).

@@ -82,6 +82,20 @@ export async function deleteAttribute(id: string): Promise<void> {
   if (error) throw error
 }
 
+/**
+ * Vide entièrement le méta-schéma : supprime tous les attributs puis toutes les
+ * entités (les attributs d'abord pour la FK, même si `on delete cascade`
+ * l'assurerait). Supabase exige un filtre sur un delete → on exclut un id
+ * impossible pour cibler toutes les lignes.
+ */
+export async function deleteAllSchema(): Promise<void> {
+  const ALL = '00000000-0000-0000-0000-000000000000'
+  const attrs = await supabase.from('attributes').delete().neq('id', ALL)
+  if (attrs.error) throw attrs.error
+  const ents = await supabase.from('entities').delete().neq('id', ALL)
+  if (ents.error) throw ents.error
+}
+
 export interface SavePayload {
   entities: Entity[]
   attributes: Attribute[]

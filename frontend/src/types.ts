@@ -23,17 +23,12 @@ export const DATA_TYPES: { value: DataType; label: string }[] = [
   { value: 'object', label: 'Sous-objet' },
 ]
 
-/** Types dont la valeur cible une autre entité (⇒ génèrent une arête). */
+/**
+ * Types dont la valeur cible une autre entité (⇒ génèrent une arête).
+ * Un champ de ce type expose un handle sur sa ligne : on le tire vers une autre
+ * carte pour poser `target_entity_id` sur CE champ (pas de menu de cible).
+ */
 export const RELATION_TYPES: DataType[] = ['reference', 'object']
-
-/** Types scalaires proposés dans le sélecteur inline d'un champ. */
-export const SCALAR_TYPES = DATA_TYPES.filter((t) => !RELATION_TYPES.includes(t.value))
-
-/** Genres de relation proposés sur une arête (créée par glisser-déposer). */
-export const RELATION_KINDS: { value: DataType; label: string }[] = [
-  { value: 'reference', label: 'Référence' },
-  { value: 'object', label: 'Sous-objet' },
-]
 
 export interface Entity {
   id: string

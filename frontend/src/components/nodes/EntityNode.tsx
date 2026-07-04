@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflow/react'
 import { Plus, Trash2, X } from 'lucide-react'
 import { useSchemaStore } from '../../store/useSchemaStore'
-import { RELATION_TYPES, RELATION_KINDS, SCALAR_TYPES, type Attribute, type DataType } from '../../types'
+import { DATA_TYPES, RELATION_TYPES, type Attribute, type DataType } from '../../types'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -27,11 +27,14 @@ import {
 } from '@/components/ui/alert-dialog'
 
 // ---------------------------------------------------------------------------
-// Ligne d'un champ scalaire : nom + sélecteur de type + toggle liste + suppr.
+// Ligne d'un champ : nom + sélecteur de type (TOUS les types, dont « objet ») +
+// toggle liste + suppr. Quand le type cible un autre objet (reference/object),
+// un Handle apparaît PILE en face de la ligne : on le tire vers une autre carte
+// pour poser la cible sur CE champ (aucun menu de sélection de cible).
 // Édition inline persistée sur événement discret (blur / change), jamais à
 // chaque frappe → pas de conflit avec l'écho Realtime.
 // ---------------------------------------------------------------------------
-function FieldRow({ attr }: { attr: Attribute }) {
+function FieldRow({ attr, targetName }: { attr: Attribute; targetName?: string }) {
   const editAttribute = useSchemaStore((s) => s.editAttribute)
   const removeAttribute = useSchemaStore((s) => s.removeAttribute)
 
@@ -40,31 +43,41 @@ function FieldRow({ attr }: { attr: Attribute }) {
   const [enumText, setEnumText] = useState((attr.enum_values ?? []).join(', '))
   useEffect(() => setEnumText((attr.enum_values ?? []).join(', ')), [attr.enum_values])
 
+  const isRelation = RELATION_TYPES.includes(attr.data_type)
+
   return (
     <div className="space-y-1">
-      <div className="flex items-center gap-1">
+      <div className="relative flex items-center gap-1">
         <Input
           className="nodrag h-7 flex-1 text-xs"
           value={name}
           placeholder="nom"
           onChange={(e) => setName(e.target.value)}
-          onBlur={() => name.trim() && name !== attr.name && editAttribute(attr.id, { name: name.trim() })}
+          onBlur={() => {
+            const v = name.trim()
+            if (!v) return setName(attr.name) // vidé → on restaure la valeur courante
+            if (v !== attr.name) editAttribute(attr.id, { name: v })
+          }}
           onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
         />
         <Select
           value={attr.data_type}
-          onValueChange={(v) =>
+          onValueChange={(v) => {
+            const dt = v as DataType
+            const rel = RELATION_TYPES.includes(dt)
             editAttribute(attr.id, {
-              data_type: v as DataType,
-              enum_values: v === 'enum' ? attr.enum_values ?? [] : null,
+              data_type: dt,
+              enum_values: dt === 'enum' ? attr.enum_values ?? [] : null,
+              // sort d'un type-relation → on oublie la cible.
+              target_entity_id: rel ? attr.target_entity_id : null,
             })
-          }
+          }}
         >
-          <SelectTrigger className="nodrag h-7 w-[112px] text-xs">
+          <SelectTrigger className="nodrag h-7 w-[124px] text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {SCALAR_TYPES.map((t) => (
+            {DATA_TYPES.map((t) => (
               <SelectItem key={t.value} value={t.value} className="text-xs">
                 {t.label}
               </SelectItem>
@@ -91,6 +104,15 @@ function FieldRow({ attr }: { attr: Attribute }) {
         >
           <X className="h-3.5 w-3.5" />
         </Button>
+        {isRelation && (
+          <Handle
+            type="source"
+            position={Position.Right}
+            id={`f-${attr.id}`}
+            className="!h-3 !w-3 !border-2 !border-background !bg-primary"
+            style={{ right: -13, top: '50%', transform: 'translateY(-50%)' }}
+          />
+        )}
       </div>
       {attr.data_type === 'enum' && (
         <Input
@@ -105,52 +127,11 @@ function FieldRow({ attr }: { attr: Attribute }) {
           }
         />
       )}
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Ligne d'une relation (créée en tirant un lien) : cible + genre + suppr.
-// ---------------------------------------------------------------------------
-function RelationRow({ attr, targetName }: { attr: Attribute; targetName: string }) {
-  const editAttribute = useSchemaStore((s) => s.editAttribute)
-  const removeAttribute = useSchemaStore((s) => s.removeAttribute)
-
-  return (
-    <div className="flex items-center gap-1">
-      <span className="flex-1 truncate text-xs text-muted-foreground">→ {targetName}</span>
-      <Select value={attr.data_type} onValueChange={(v) => editAttribute(attr.id, { data_type: v as DataType })}>
-        <SelectTrigger className="nodrag h-7 w-[112px] text-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {RELATION_KINDS.map((t) => (
-            <SelectItem key={t.value} value={t.value} className="text-xs">
-              {t.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Button
-        type="button"
-        variant={attr.is_list ? 'secondary' : 'ghost'}
-        size="icon"
-        title="Liste"
-        className="nodrag h-7 w-7 shrink-0 font-mono text-[11px]"
-        onClick={() => editAttribute(attr.id, { is_list: !attr.is_list })}
-      >
-        []
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        title="Supprimer la relation"
-        className="nodrag h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
-        onClick={() => removeAttribute(attr.id)}
-      >
-        <X className="h-3.5 w-3.5" />
-      </Button>
+      {isRelation && (
+        <div className="px-1 text-[10px] text-muted-foreground truncate">
+          {attr.target_entity_id ? `→ ${targetName ?? '?'}` : 'tirer le point → vers un objet'}
+        </div>
+      )}
     </div>
   )
 }
@@ -168,17 +149,25 @@ export function EntityNode({ id }: NodeProps) {
   const removeEntity = useSchemaStore((s) => s.removeEntity)
   const addAttribute = useSchemaStore((s) => s.addAttribute)
 
+  // React Flow doit re-mesurer les handles quand les lignes changent (ajout /
+  // suppression / passage en objet ou enum → hauteur des cartes et donc Y des
+  // handles de champ). Signature volontairement limitée à ce qui bouge la mise
+  // en page (le nom, lui, ne change pas la hauteur).
+  const updateNodeInternals = useUpdateNodeInternals()
+  const layoutSig = attributes.map((a) => `${a.id}:${a.data_type}`).join('|')
+  useEffect(() => {
+    updateNodeInternals(id)
+  }, [id, layoutSig, updateNodeInternals])
+
   const [name, setName] = useState('')
   useEffect(() => setName(entity?.name ?? ''), [entity?.id, entity?.name])
 
   if (!entity) return null
 
   const nameOf = (eid: string) => entities.find((e) => e.id === eid)?.name ?? '?'
-  const scalars = attributes.filter((a) => !RELATION_TYPES.includes(a.data_type))
-  const relations = attributes.filter((a) => RELATION_TYPES.includes(a.data_type))
 
   return (
-    <Card className="w-72 gap-0 overflow-hidden py-0 shadow-lg">
+    <Card className="w-72 gap-0 py-0 shadow-lg">
       <Handle
         type="target"
         position={Position.Left}
@@ -192,7 +181,11 @@ export function EntityNode({ id }: NodeProps) {
           value={name}
           placeholder="Nom de l'objet"
           onChange={(e) => setName(e.target.value)}
-          onBlur={() => name.trim() && name !== entity.name && saveEntity(entity.id, { name: name.trim() })}
+          onBlur={() => {
+            const v = name.trim()
+            if (!v) return setName(entity.name) // vidé → on restaure
+            if (v !== entity.name) saveEntity(entity.id, { name: v })
+          }}
           onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
         />
         {entity.is_subobject && (
@@ -234,8 +227,12 @@ export function EntityNode({ id }: NodeProps) {
       </CardHeader>
 
       <CardContent className="space-y-1.5 border-t p-2">
-        {scalars.map((a) => (
-          <FieldRow key={a.id} attr={a} />
+        {attributes.map((a) => (
+          <FieldRow
+            key={a.id}
+            attr={a}
+            targetName={a.target_entity_id ? nameOf(a.target_entity_id) : undefined}
+          />
         ))}
 
         <Button
@@ -247,29 +244,7 @@ export function EntityNode({ id }: NodeProps) {
         >
           <Plus className="h-3.5 w-3.5" /> Ajouter un champ
         </Button>
-
-        {relations.length > 0 && (
-          <div className="space-y-1 pt-1">
-            <div className="px-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-              Relations
-            </div>
-            {relations.map((a) => (
-              <RelationRow
-                key={a.id}
-                attr={a}
-                targetName={a.target_entity_id ? nameOf(a.target_entity_id) : '?'}
-              />
-            ))}
-          </div>
-        )}
       </CardContent>
-
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="s"
-        className="!h-3 !w-3 !border-2 !border-background !bg-primary"
-      />
     </Card>
   )
 }

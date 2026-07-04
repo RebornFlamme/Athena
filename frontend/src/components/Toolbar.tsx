@@ -1,13 +1,25 @@
 import { useReactFlow } from '@xyflow/react'
-import { Plus, Save } from 'lucide-react'
+import { Plus, RotateCcw, Save } from 'lucide-react'
 import { useSchemaStore } from '../store/useSchemaStore'
 import { Button } from '@/components/ui/button'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 
 export function Toolbar() {
   const addEntity = useSchemaStore((s) => s.addEntity)
   const saveAll = useSchemaStore((s) => s.saveAll)
+  const resetSchema = useSchemaStore((s) => s.resetSchema)
   const dirty = useSchemaStore((s) => s.dirty)
   const saving = useSchemaStore((s) => s.saving)
   const error = useSchemaStore((s) => s.error)
@@ -53,6 +65,37 @@ export function Toolbar() {
       <Button size="sm" variant="outline" className="gap-1" onClick={handleAdd}>
         <Plus className="h-4 w-4" /> Nouvel objet
       </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1 text-muted-foreground hover:text-destructive"
+            disabled={saving}
+            title="Vider tout le schéma dans Supabase"
+          >
+            <RotateCcw className="h-4 w-4" /> Réinitialiser
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Réinitialiser tout le schéma ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tous les objets et leurs champs seront <strong>définitivement supprimés</strong> de
+              Supabase, ainsi que du canvas. Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => void resetSchema()}
+            >
+              Tout réinitialiser
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <Button size="sm" className="gap-1" disabled={!dirty || saving} onClick={() => void saveAll()}>
         <Save className="h-4 w-4" /> Enregistrer
       </Button>
