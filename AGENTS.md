@@ -44,6 +44,15 @@ Le TechDesign proposait Next.js. **Le code réel utilise Vite + React** (l'édit
 - **Déploiement Vercel de référence : `athena-khaki.vercel.app`**, sur le compte du collègue, **root directory = `frontend/`**. Ne PAS créer d'autre projet Vercel. Déployer = pousser sur GitHub (l'autosync s'en charge).
 - **Base Supabase partagée** (`ahipiveicrtvpxalbfot`) — prudence sur les migrations : purement additives, coordonnées.
 
+## Cible produit — les onglets de la webapp (instructions Oscar, 4 juil. 2026)
+- **Onglet Flux** : liste de tous les appels passés ; **upload de fichiers audio** (composant `Attachment`) pour ajouter des appels ; bouton « lancer la simulation » qui joue les audios préenregistrés de `frontend/public/audio_demo/` — les appels **popent** sur le dashboard (`Sonner`), le **transcript défile en temps réel** (`Message` + `Message Scroller`), les **entités se construisent** et apparaissent progressivement sur la carte. **Chaque appel a une heure de début.**
+- **Onglet Carte** : carte plein écran + en bas une **timeline façon logiciel de montage (Premiere Pro)** : on peut y drag les appels, les faire s'overlapper ; le **replay de l'intervention** se fait ici — les objets ayant une position apparaissent sur la carte au fil du curseur.
+- ⚠️ Décision produit **révisée** : la table `appels` (retirée le 4 juil.) **revient** en migration additive `0003` — la liste d'appels, l'upload, les heures de début et le drag timeline exigent de les persister (`id`, `intervention_id`, `titre`, `audio_url`, `ts_debut`, `duree`, `transcript`).
+- ⚠️ Instruction expresse : **ne PAS coder la timeline/simulation tant que la transcription (F1) n'existe pas.**
+
+## Règle UI absolue (instruction Oscar)
+**Aucun élément visuel codé à la main : uniquement des composants shadcn emboîtés les uns dans les autres.** Pas de div stylée custom, pas de CSS maison. Doc d'un composant : `https://ui.shadcn.com/docs/components/base/<nom>.md`. Liste complète et correspondances utiles : voir `agent_docs/code_patterns.md`. Les marqueurs MapLibre actuels (div custom) sont à mettre en conformité (composant `Marker`) lors de F1.
+
 ## Roadmap
 
 ### Phase 0 : Outil de conception — ✅ FAIT
@@ -67,15 +76,19 @@ Le TechDesign proposait Next.js. **Le code réel utilise Vite + React** (l'édit
 - [ ] Banc d'essai STT : page interne d'upload audio → transcriptions comparées sur NOS enregistrements
 - [ ] Test de référence F1 : enregistrement joué → victime placée au bon endroit, zéro clavier
 
-### Phase F2 : Main courante automatique
-- [ ] Rendu chronologique du journal (heure, source, fiabilité Admiralty, statut)
-- [ ] Correction = nouvel événement `CORRECTION` lié (jamais de suppression)
+### Phase F2 : Onglet Flux (les appels)
+- [ ] Migration `0003_appels.sql` (additive) : table `appels` (`id`, `intervention_id`, `titre`, `audio_url`, `ts_debut`, `duree`, `transcript`, timestamps)
+- [ ] Page Flux : liste des appels passés (`Item`/`Card` + `Empty`), upload d'audio (`Attachment`) vers `frontend/public/audio_demo/` (démo) ou Supabase Storage
+- [ ] Moteur de simulation : joue les audios de `audio_demo/` selon leurs heures de début — appels qui popent (`Sonner`), transcript live (`Message`+`Message Scroller`), entités progressives sur la carte
+- [ ] Sidebar : entrées « Flux » et « Carte » (remplacent/complètent « Tableau de bord »)
 
-### Phase F3 : Rejeu RETEX
-- [ ] Curseur temporel : état reconstruit depuis les événements ≤ T (même logique que la projection)
+### Phase F3 : Onglet Carte — timeline de montage + replay
+⚠️ À coder seulement quand la transcription (F1) fonctionne — instruction Oscar.
+- [ ] Zone timeline sous la carte, façon Premiere Pro : pistes, clips d'appels draggables/overlappables, curseur — assemblage 100 % shadcn (`Scroll Area` + `Slider` + `Item` + `Context Menu` + `Tooltip`), mécanique de drag en logique pure
+- [ ] Replay : le curseur qui défile fait apparaître sur la carte les objets ayant une position (état reconstruit depuis les événements ≤ T — remplace l'ancien « rejeu RETEX »)
 
-### Phase F4 : Polish démo
-- [ ] 3-5 enregistrements scénarisés (fictifs, joués par des proches) dans `frontend/public/audio-demo/`
+### Phase F4 : Polish démo vidéo
+- [ ] 3-5 enregistrements scénarisés (fictifs, joués par des proches) dans `frontend/public/audio_demo/`
 - [ ] Gestion d'erreurs (audio inaudible, STT en panne → saisie manuelle), test tablette, répétition du « money shot »
 
 ## À NE PAS faire
