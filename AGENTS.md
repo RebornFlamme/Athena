@@ -55,12 +55,17 @@ Le TechDesign proposait Next.js. **Le code réel utilise Vite + React** (l'édit
 - [x] Abonnement Realtime (code) : INSERT `evenements`/`entites` filtré par intervention → store → marqueur + ligne main courante
 - [ ] Test de référence : insérer un événement à la main dans Supabase → il apparaît sans recharger (**nécessite `.env.local` + migration appliquée**)
 
-### Phase F1 : Extraction des appels (le cœur)
-- [ ] Banc d'essai STT : page d'upload audio → transcriptions comparées (Gladia vs alternatives)
-- [ ] Streaming transcription (Gladia websocket, token via Edge Function `stt-token`)
-- [ ] Edge Function `extraction` : texte → JSON structuré (champs optionnels : adresse?, nature?, nb_victimes?, etage?, moyens?, danger?)
-- [ ] Géocodage IGN + seuil 0,8 → badge « présumé » ou file de validation humaine
-- [ ] Test : enregistrement joué → victime placée au bon endroit, zéro clavier
+### Phase F1 : Extraction des appels (le cœur) — découpée pour être démontrable à chaque étape
+**F1.a — Chaîne complète sans clé API** (aucun prérequis utilisateur) :
+- [ ] Simulateur d'appel : transcript scénarisé qui défile comme une transcription live (panneau appel)
+- [ ] Géocodage IGN réel (`data.geopf.fr/geocodage`, gratuit sans clé) + seuil 0,8 → badge « présumé » ou bandeau « adresse à confirmer » + validation humaine
+- [ ] Écriture au journal (`payload.extrait_source`) → entité sur la carte
+**F1.b — Extraction LLM réelle** (prérequis : clé Anthropic + `supabase login` + `supabase link`) :
+- [ ] Edge Function `extraction` : texte → JSON structuré (champs optionnels : adresse?, nature?, nb_victimes?, etage?, moyens?, danger?) — secrets via `supabase secrets set`
+**F1.c — Transcription réelle + banc d'essai** (prérequis : compte Gladia + 2-3 enregistrements test) :
+- [ ] Edge Function `stt-token` (token éphémère) + streaming websocket dans le panneau appel
+- [ ] Banc d'essai STT : page interne d'upload audio → transcriptions comparées sur NOS enregistrements
+- [ ] Test de référence F1 : enregistrement joué → victime placée au bon endroit, zéro clavier
 
 ### Phase F2 : Main courante automatique
 - [ ] Rendu chronologique du journal (heure, source, fiabilité Admiralty, statut)
