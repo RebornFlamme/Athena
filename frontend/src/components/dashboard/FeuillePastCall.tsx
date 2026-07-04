@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator'
 import { formaterMs } from '../../sim/audioMeta'
 import { useTranscriptionDB } from '../../hooks/useTranscriptionDB'
 import type { Appel } from '../../typesSimulation'
-import { DetailsLieu, EnteteOperateur, SectionRaisonnement } from './AppelDetails'
+import { EnteteAppel, SectionRaisonnement } from './AppelDetails'
 
 // Objets créés — placeholder illustratif tant que la pipeline d'extraction
 // (transcription → LLM → entités) n'est pas branchée.
@@ -50,7 +50,7 @@ export function FeuillePastCall({ appel, onClose }: { appel: Appel | null; onClo
 
             <ScrollArea className="min-h-0 flex-1">
               <div className="space-y-6 p-6">
-                <EnteteOperateur appel={appel} />
+                <EnteteAppel appel={appel} />
                 <Separator />
 
                 <section>
@@ -71,8 +71,6 @@ export function FeuillePastCall({ appel, onClose }: { appel: Appel | null; onClo
                 </section>
 
                 <SectionRaisonnement />
-
-                <DetailsLieu appel={appel} />
 
                 <section>
                   <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">

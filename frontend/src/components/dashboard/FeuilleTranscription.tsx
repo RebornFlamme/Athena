@@ -14,7 +14,7 @@ import { useTranscriptionDB } from '../../hooks/useTranscriptionDB'
 import { useSimulationPlayback } from '../../store/useSimulationPlayback'
 import type { Appel } from '../../typesSimulation'
 import { VisualiseurVoix } from '../simulation/VisualiseurVoix'
-import { DetailsLieu, EnteteOperateur, SectionRaisonnement } from './AppelDetails'
+import { EnteteAppel, SectionRaisonnement } from './AppelDetails'
 
 /**
  * Volet (Sheet à droite) ouvert au clic sur un appel. **Pur lecteur** de la base :
@@ -85,9 +85,9 @@ export function FeuilleTranscription({
               </div>
             </div>
 
-            {/* Opérateur au téléphone */}
+            {/* Opérateur + localisation / caserne */}
             <div className="border-b px-4 py-3">
-              <EnteteOperateur appel={appel} />
+              <EnteteAppel appel={appel} />
             </div>
 
             {/* Bandeau : état live + langue détectée */}
@@ -131,10 +131,9 @@ export function FeuilleTranscription({
               </div>
             </ScrollArea>
 
-            {/* Raisonnement LLM (réservé) + localisation / caserne */}
-            <div className="shrink-0 space-y-4 border-t p-4">
+            {/* Raisonnement LLM (réservé) */}
+            <div className="shrink-0 border-t p-4">
               <SectionRaisonnement />
-              <DetailsLieu appel={appel} />
             </div>
           </>
         )}

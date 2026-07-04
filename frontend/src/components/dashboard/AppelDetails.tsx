@@ -52,6 +52,18 @@ export function SectionRaisonnement() {
   )
 }
 
+/** En-tête complet : opérateur à gauche, localisation + caserne à droite. */
+export function EnteteAppel({ appel }: { appel: Appel }) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+      <EnteteOperateur appel={appel} />
+      <div className="min-w-[200px] flex-1">
+        <DetailsLieu appel={appel} />
+      </div>
+    </div>
+  )
+}
+
 /** Localisation de l'appel + caserne qui reçoit. */
 export function DetailsLieu({ appel }: { appel: Appel }) {
   return (
