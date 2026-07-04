@@ -7,7 +7,7 @@ import { formaterMs } from '../../sim/audioMeta'
 import { useSimulationPlayback } from '../../store/useSimulationPlayback'
 import type { Appel } from '../../typesSimulation'
 import { FeuilleTranscription } from '../dashboard/FeuilleTranscription'
-import { VisualiseurVoix } from './VisualiseurVoix'
+import { VisualiseurAudioLive } from './VisualiseurAudioLive'
 
 /**
  * « Live feed » : uniquement les appels EN COURS de diffusion. Un appel
@@ -84,7 +84,7 @@ export function PanneauFluxAudio() {
                     </span>
                   </div>
                   <div className="mt-1.5">
-                    <VisualiseurVoix appelId={appel.id} actif />
+                    <VisualiseurAudioLive appelId={appel.id} />
                   </div>
                 </div>
               </div>

@@ -14,6 +14,9 @@ interface Noeud {
   audio: HTMLAudioElement
   source: MediaElementAudioSourceNode
   analyser: AnalyserNode
+  /** Sortie captée en MediaStream (muette) → alimente un MediaRecorder pour le
+   *  visualiseur live du feed. Séparée de ctx.destination (reste inaudible). */
+  dest: MediaStreamAudioDestinationNode
   ecoute: boolean
 }
 
@@ -31,6 +34,12 @@ export function getAnalyseur(id: string): AnalyserNode | null {
   return noeuds.get(id)?.analyser ?? null
 }
 
+/** MediaStream (muet) d'un appel → source d'un MediaRecorder pour le visualiseur
+ *  live. Null si l'appel n'est pas en lecture. */
+export function getStream(id: string): MediaStream | null {
+  return noeuds.get(id)?.dest.stream ?? null
+}
+
 function memeContenu(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((x, i) => x === b[i])
 }
@@ -46,6 +55,7 @@ function nettoyer() {
     try {
       n.source.disconnect()
       n.analyser.disconnect()
+      n.dest.disconnect()
     } catch {
       /* déjà déconnecté */
     }
@@ -111,7 +121,10 @@ export const useSimulationPlayback = create<PlaybackState>((set, get) => ({
       analyser.fftSize = 64
       analyser.smoothingTimeConstant = 0.7
       source.connect(analyser) // pas de connexion à la sortie → muet
-      noeuds.set(a.id, { audio, source, analyser, ecoute: false })
+      // Capture muette en MediaStream (pour le MediaRecorder du visualiseur live).
+      const dest = ctx.createMediaStreamDestination()
+      source.connect(dest)
+      noeuds.set(a.id, { audio, source, analyser, dest, ecoute: false })
       const jouer = () => void audio.play().catch(() => {})
       if (a.ts_debut_ms <= 0) jouer()
       else timers.push(setTimeout(jouer, a.ts_debut_ms))
