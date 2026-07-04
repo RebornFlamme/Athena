@@ -1,0 +1,28 @@
+# Configuration Supabase CLI — voir https://supabase.com/docs/guides/cli/config
+# `project_id` est le nom local du projet (dossier). Après `supabase login`,
+# lie ce dossier à ton projet distant avec :
+#   supabase link --project-ref <ref-du-projet>
+project_id = "athena-eav-editor"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[realtime]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
