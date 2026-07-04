@@ -30,3 +30,15 @@ services:
         value: /etc/secrets/key.json
       - key: GOOGLE_CLOUD_PROJECT
         sync: false
+      # Supabase — écriture serveur (transcriptions + entités/événements) via la
+      # clé service_role. Requis par le job de transcription ET l'extraction LLM.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # Extraction LLM (job serveur post-transcription) — clé Anthropic, saisie à
+      # la création du service (Environment → renseigner). Modèle surchargeable.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: EXTRACTION_MODEL
+        value: claude-haiku-4-5

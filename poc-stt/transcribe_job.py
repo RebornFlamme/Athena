@@ -14,6 +14,7 @@ import time
 import urllib.request
 
 from audio_decode import decode_to_pcm16k_mono
+from extraction import extraire_appel
 from stt_client import run_stt_stream
 from supabase_client import get_supabase
 
@@ -82,3 +83,10 @@ def transcribe_appel(appel: dict) -> None:
                 logger.error("Insert transcription KO (appel %s) : %s", appel_id, exc)
 
     logger.info("Appel %s transcrit : %d segments", appel_id, ordinal)
+
+    # Extraction LLM : transcript → entités/événements liés dans Supabase
+    # (→ carte via Realtime). Non bloquant pour la transcription en cas d'échec.
+    try:
+        extraire_appel(appel, sb)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Extraction KO pour l'appel %s : %s", appel_id, exc)
