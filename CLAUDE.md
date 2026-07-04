@@ -9,6 +9,14 @@
 
 Le reste de ce fichier décrit les conventions de l'existant (éditeur EAV) — elles restent valables.
 
+## Dashboard Athena — onglet Flux (F1.a, juil. 2026)
+- **Contrainte UI (non négociable, cf. `plan_base_webapp.md`) : UI = composants shadcn emboîtés uniquement**, aucun visuel codé à la main.
+- Deux domaines séparés du EAV : `typesAthena.ts` (socle F0 : `interventions`/`evenements` append-only/`entites`) et `typesFlux.ts` (scénarios de simulation).
+- **Onglet Flux** (`/flux`) : `components/flux/FluxPage.tsx` liste les scénarios (`data/scenariosApi.ts` → `public/audio_demo/scenarios.json`) + upload audio local. « Lancer » crée une intervention démo puis rend `SimulationView`.
+- **Moteur de simulation** `sim/useSimulation.ts` : `setTimeout` sur les `t_ms` du scénario → révèle le transcript (`PanneauTranscript.tsx`) et, aux pas d'extraction, géocode (`data/geocodageIgn.ts`, IGN sans clé, `SEUIL_FIABLE=0.8`) puis écrit `evenement` + `entite` dans Supabase. **La carte/main courante se mettent à jour via le Realtime F0** (on n'écrit PAS directement le store — on passe par la base, comme un vrai flux).
+- `data/interventionApi.ts` : ajouts `majCentreIntervention` (recentrage carte) et `upsertEntite` (id client `crypto.randomUUID`). Journal `evenements` toujours **append-only** (insert seul).
+- Prérequis runtime : migration `0002` appliquée + `.env.local`. Sans table → message pédagogique (détecte « Could not find the table »).
+
 ## Objet du dépôt
 
 Athena est (à terme) un dashboard temps réel de gestion de crise pour pompiers. Le contenu

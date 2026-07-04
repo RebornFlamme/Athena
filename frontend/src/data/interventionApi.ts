@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import type { Entite, Evenement, Intervention } from '../typesAthena'
+import type { Entite, Evenement, Intervention, StatutInfo, TypeEntite } from '../typesAthena'
 
 // Couche d'accès Supabase du dashboard de crise.
 // Règle projet : le journal `evenements` est append-only — cette couche
@@ -51,6 +51,40 @@ export async function loadIntervention(id: string): Promise<{
     evenements: (evenementsRes.data ?? []) as Evenement[],
     entites: (entitesRes.data ?? []) as Entite[],
   }
+}
+
+/** Recentre l'intervention (adresse géocodée) — la carte se cale dessus. */
+export async function majCentreIntervention(
+  id: string,
+  lon: number,
+  lat: number,
+  adresse?: string,
+): Promise<void> {
+  const patch: Record<string, unknown> = { lon, lat }
+  if (adresse) patch.adresse = adresse
+  const { error } = await supabase.from('interventions').update(patch).eq('id', id)
+  if (error) throw error
+}
+
+/**
+ * Insère/positionne une entité de la projection (id fourni côté client pour
+ * pouvoir la lier à un événement dans le même flux).
+ */
+export async function upsertEntite(entite: {
+  id: string
+  intervention_id: string
+  type: TypeEntite
+  sous_type?: string | null
+  libelle: string
+  etat?: Record<string, unknown>
+  lon?: number | null
+  lat?: number | null
+  fiabilite?: string
+  statut?: StatutInfo
+}): Promise<Entite> {
+  const { data, error } = await supabase.from('entites').upsert(entite).select().single()
+  if (error) throw error
+  return data as Entite
 }
 
 /** INSERT uniquement — le journal ne se modifie jamais (corrections par ajout). */
