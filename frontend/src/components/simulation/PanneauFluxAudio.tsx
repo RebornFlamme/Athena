@@ -7,6 +7,7 @@ import { listAppels } from '../../data/appelsApi'
 import { formaterMs } from '../../sim/audioMeta'
 import { useSimulationPlayback } from '../../store/useSimulationPlayback'
 import type { Appel } from '../../typesSimulation'
+import { EnTetePanneau } from '../dashboard/EnTetePanneau'
 import { VisualiseurVoix } from './VisualiseurVoix'
 
 /**
@@ -15,7 +16,7 @@ import { VisualiseurVoix } from './VisualiseurVoix'
  * quand il est terminé. Chacun est une bande pleine largeur avec son
  * histogramme de voix ; un clic bascule l'écoute (muet par défaut).
  */
-export function PanneauFluxAudio() {
+export function PanneauFluxAudio({ onFermer }: { onFermer?: () => void }) {
   const [appels, setAppels] = useState<Appel[]>([])
   const statut = useSimulationPlayback((s) => s.statut)
   const actifs = useSimulationPlayback((s) => s.actifs)
@@ -34,17 +35,23 @@ export function PanneauFluxAudio() {
 
   return (
     <aside className="flex h-full flex-col bg-card">
-      <div className="flex h-10 shrink-0 items-center gap-2 border-b px-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        <Radio className="h-3.5 w-3.5" /> Live feed
-        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-          {fluxLive.length}
-        </Badge>
-        {statut === 'lecture' && (
-          <span className="ml-auto flex items-center gap-1.5 text-[10px] font-normal normal-case text-emerald-600 dark:text-emerald-400">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" /> en direct
-          </span>
-        )}
-      </div>
+      <EnTetePanneau
+        icon={Radio}
+        titre="Live feed"
+        onFermer={onFermer}
+        right={
+          <>
+            <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+              {fluxLive.length}
+            </Badge>
+            {statut === 'lecture' && (
+              <span className="flex items-center gap-1.5 text-[10px] font-normal text-emerald-600 dark:text-emerald-400">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" /> en direct
+              </span>
+            )}
+          </>
+        }
+      />
 
       {fluxLive.length === 0 ? (
         <p className="p-4 text-sm italic leading-relaxed text-muted-foreground">

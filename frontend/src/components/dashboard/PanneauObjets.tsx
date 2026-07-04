@@ -1,24 +1,37 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Boxes } from 'lucide-react'
+import { Boxes, ChevronDown, ListFilter, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { isSupabaseConfigured } from '../../lib/supabase'
+import { listAppels } from '../../data/appelsApi'
 import { loadSchema } from '../../data/schemaApi'
 import { DATA_TYPES, type Attribute, type Entity } from '../../types'
+import { EnTetePanneau } from './EnTetePanneau'
+import { FeuilleObjet } from './FeuilleObjet'
 
 const LABEL_TYPE = new Map(DATA_TYPES.map((t) => [t.value, t.label]))
 
 /**
- * Panneau bas de la colonne carte : parcourir les objets de la couche
- * sémantique (entités EAV) sous forme de cards avec leurs champs. Un filtre
- * shadcn (ToggleGroup) en haut sélectionne les objets à afficher.
+ * Panneau bas de la colonne carte : les objets de la couche sémantique (entités
+ * EAV). Filtre par menu déroulant à cocher → badges des objets affichés. Cards
+ * alignées sur une ligne scrollable horizontalement ; clic → volet de détail.
  */
-export function PanneauObjets() {
+export function PanneauObjets({ onFermer }: { onFermer?: () => void }) {
   const [entities, setEntities] = useState<Entity[]>([])
   const [attributes, setAttributes] = useState<Attribute[]>([])
+  const [enregistrements, setEnregistrements] = useState<string[]>([])
   const [selection, setSelection] = useState<string[]>([])
+  const [objetOuvert, setObjetOuvert] = useState<Entity | null>(null)
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
@@ -28,6 +41,9 @@ export function PanneauObjets() {
         setAttributes(attributes)
         setSelection(entities.map((e) => e.id))
       })
+      .catch(() => {})
+    listAppels()
+      .then((appels) => setEnregistrements(appels.map((a) => a.titre)))
       .catch(() => {})
   }, [])
 
@@ -54,16 +70,24 @@ export function PanneauObjets() {
     return a.is_list ? `${base} []` : base
   }
 
+  function basculer(id: string, coche: boolean) {
+    setSelection((prev) => (coche ? [...new Set([...prev, id])] : prev.filter((x) => x !== id)))
+  }
+
   const objetsVisibles = entities.filter((e) => selection.includes(e.id))
 
   return (
     <aside className="flex h-full flex-col bg-card">
-      <div className="flex h-10 shrink-0 items-center gap-2 border-b px-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        <Boxes className="h-3.5 w-3.5" /> Objets
-        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-          {objetsVisibles.length}/{entities.length}
-        </Badge>
-      </div>
+      <EnTetePanneau
+        icon={Boxes}
+        titre="Objets"
+        onFermer={onFermer}
+        right={
+          <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+            {objetsVisibles.length}/{entities.length}
+          </Badge>
+        }
+      />
 
       {entities.length === 0 ? (
         <p className="p-4 text-sm italic leading-relaxed text-muted-foreground">
@@ -71,35 +95,62 @@ export function PanneauObjets() {
         </p>
       ) : (
         <>
-          <div className="shrink-0 border-b p-2">
-            <ToggleGroup
-              type="multiple"
-              variant="outline"
-              size="sm"
-              value={selection}
-              onValueChange={setSelection}
-              className="flex-wrap justify-start gap-1"
-            >
-              {entities.map((e) => (
-                <ToggleGroupItem key={e.id} value={e.id} className="h-7 gap-1.5 px-2 text-xs">
-                  {e.color && (
-                    <span
-                      className="h-2 w-2 rounded-full"
-                      style={{ background: e.color }}
-                    />
-                  )}
-                  {e.name}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
+          <div className="flex flex-wrap items-center gap-1.5 border-b p-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs">
+                  <ListFilter className="h-3.5 w-3.5" /> Afficher
+                  <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="max-h-72 w-56 overflow-y-auto">
+                <DropdownMenuLabel>Objets à afficher</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {entities.map((e) => (
+                  <DropdownMenuCheckboxItem
+                    key={e.id}
+                    checked={selection.includes(e.id)}
+                    onCheckedChange={(c) => basculer(e.id, c)}
+                    onSelect={(ev) => ev.preventDefault()}
+                  >
+                    <span className="flex items-center gap-2">
+                      {e.color && (
+                        <span className="h-2 w-2 rounded-full" style={{ background: e.color }} />
+                      )}
+                      {e.name}
+                    </span>
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {objetsVisibles.map((e) => (
+              <Badge key={e.id} variant="secondary" className="gap-1 pr-1 font-normal">
+                {e.color && (
+                  <span className="h-2 w-2 rounded-full" style={{ background: e.color }} />
+                )}
+                {e.name}
+                <button
+                  onClick={() => basculer(e.id, false)}
+                  className="ml-0.5 rounded-sm p-0.5 hover:bg-background/60"
+                  title="Masquer"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
           </div>
 
           <ScrollArea className="min-h-0 flex-1">
-            <div className="grid gap-2 p-3 [grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]">
+            <div className="flex items-start gap-2 p-3">
               {objetsVisibles.map((e) => {
                 const champs = attrsParEntite.get(e.id) ?? []
                 return (
-                  <Card key={e.id}>
+                  <Card
+                    key={e.id}
+                    onClick={() => setObjetOuvert(e)}
+                    className="w-56 shrink-0 cursor-pointer transition-colors hover:border-primary/50"
+                  >
                     <CardHeader className="p-3 pb-2">
                       <CardTitle className="flex items-center gap-2 text-sm">
                         {e.color && (
@@ -136,9 +187,18 @@ export function PanneauObjets() {
                 )
               })}
             </div>
+            <ScrollBar orientation="horizontal" />
           </ScrollArea>
         </>
       )}
+
+      <FeuilleObjet
+        objet={objetOuvert}
+        champs={objetOuvert ? (attrsParEntite.get(objetOuvert.id) ?? []) : []}
+        nomParEntite={nomParEntite}
+        enregistrements={enregistrements}
+        onClose={() => setObjetOuvert(null)}
+      />
     </aside>
   )
 }
