@@ -15,7 +15,7 @@ import {
 
 const items = [
   { title: 'Éditeur de schéma', url: '/', icon: Network },
-  { title: 'Flux', url: '/flux', icon: Radio },
+  { title: 'Simulation', url: '/flux', icon: Radio },
   { title: 'Tableau de bord', url: '/tableau-de-bord', icon: LayoutDashboard },
   { title: 'Ressources', url: '/ressources', icon: Database },
   { title: 'Paramètres', url: '/parametres', icon: Settings },

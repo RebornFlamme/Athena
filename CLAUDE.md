@@ -9,13 +9,15 @@
 
 Le reste de ce fichier décrit les conventions de l'existant (éditeur EAV) — elles restent valables.
 
-## Dashboard Athena — onglet Flux (F1.a, juil. 2026)
-- **Contrainte UI (non négociable, cf. `plan_base_webapp.md`) : UI = composants shadcn emboîtés uniquement**, aucun visuel codé à la main.
-- Deux domaines séparés du EAV : `typesAthena.ts` (socle F0 : `interventions`/`evenements` append-only/`entites`) et `typesFlux.ts` (scénarios de simulation).
-- **Onglet Flux** (`/flux`) : `components/flux/FluxPage.tsx` liste les scénarios (`data/scenariosApi.ts` → `public/audio_demo/scenarios.json`) + upload audio local. « Lancer » crée une intervention démo puis rend `SimulationView`.
-- **Moteur de simulation** `sim/useSimulation.ts` : `setTimeout` sur les `t_ms` du scénario → révèle le transcript (`PanneauTranscript.tsx`) et, aux pas d'extraction, géocode (`data/geocodageIgn.ts`, IGN sans clé, `SEUIL_FIABLE=0.8`) puis écrit `evenement` + `entite` dans Supabase. **La carte/main courante se mettent à jour via le Realtime F0** (on n'écrit PAS directement le store — on passe par la base, comme un vrai flux).
-- `data/interventionApi.ts` : ajouts `majCentreIntervention` (recentrage carte) et `upsertEntite` (id client `crypto.randomUUID`). Journal `evenements` toujours **append-only** (insert seul).
-- Prérequis runtime : migration `0002` appliquée + `.env.local`. Sans table → message pédagogique (détecte « Could not find the table »).
+## Dashboard Athena — Créateur de simulation (F2, juil. 2026)
+- **Contrainte UI (non négociable, cf. `plan_base_webapp.md`) : UI = composants shadcn emboîtés uniquement**, aucun visuel codé à la main. NB : une **timeline** implique du positionnement absolu inévitable (clips en px) — assemblé avec `Button`/`Card` faute des composants dédiés (CLI shadcn KO ici, voir plus bas).
+- Domaines séparés du EAV : `typesAthena.ts` (socle F0) et `typesSimulation.ts` (`Appel` : `audio_url`, `ts_debut_ms`, `duree_ms`, `piste`).
+- **Créateur `/flux`** (`components/simulation/SimulationPage.tsx`) : glisser des MP3 (1 MP3 = 1 appel) → `sim/audioMeta.ts` lit la durée → `data/storageAudio.ts` upload dans **Supabase Storage** (bucket `appels-audio`, public) → `data/appelsApi.ts` insère une ligne `appels`.
+- **Timeline** `TimelineMontage.tsx` : clips draggables (pointer events, logique pure), position X = `ts_debut_ms`, Y = `piste` (overlap) ; échelle `PX_PER_SEC`. Persiste via `updateAppel` au relâchement.
+- **Contrôle flottant** `ControleSimulation.tsx` (bas-droite, monté dans `AppLayout`) piloté par le store `store/useSimulationPlayback.ts` : Lancer/Revenir/Couper. Le store planifie la lecture des `<Audio>` par `setTimeout` sur `ts_debut_ms` et anime le curseur via `requestAnimationFrame` (handles hors state réactif). **Aucun panneau** (exigence utilisateur).
+- La **pipeline de traitement** (STT → extraction LLM → `evenements`/`entites`) reste à brancher (F3) ; helpers prêts : `data/geocodageIgn.ts` (IGN sans clé, `SEUIL_FIABLE=0.8`) et `data/interventionApi.ts` (`upsertEntite`, `majCentreIntervention`, journal append-only).
+- Prérequis runtime : migrations `0002` **et** `0003` appliquées + `.env.local`. `0003` crée la table `appels` **et** le bucket Storage.
+- ⚠ **CLI shadcn inutilisable ici** : `npx shadcn add` ne reconnaît pas ce repo Vite (pas de `components.json` d'origine) et scaffolde un `next-app/` parasite (supprimé). Pour ajouter un composant shadcn : **copier son source à la main** dans `src/components/ui/`.
 
 ## Objet du dépôt
 

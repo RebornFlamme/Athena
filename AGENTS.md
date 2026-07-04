@@ -45,9 +45,10 @@ Le TechDesign proposait Next.js. **Le code réel utilise Vite + React** (l'édit
 
 ## État courant
 **Dernière mise à jour :** 2026-07-04
-**En cours :** Phase **F1.a — Onglet Flux + simulation d'appel**. Code complet, `npm run build` vert. Reste le test runtime, lui-même bloqué par la migration `0002`.
-**Récemment terminé :** F1.a codé — onglet `/flux` (liste de scénarios depuis `public/audio_demo/scenarios.json` + upload audio), géocodage IGN sans clé (seuil 0,8), moteur de simulation (`sim/useSimulation.ts`) qui rejoue un transcript en direct et écrit journal + entités géolocalisées dans Supabase → carte/main courante via le Realtime F0. Tout en composants shadcn. Éditeur EAV et dashboard F0 non régressés.
-**Bloqué par :** application de la migration `0002` dans le SQL Editor Supabase — action utilisateur (2 min). Débloque à la fois le test de référence F0 **et** F1.a.
+**En cours :** **Créateur de simulation** (refonte de l'onglet `/flux`). Code complet, `npm run build` vert. Test runtime bloqué par les migrations `0002` + `0003`.
+**Récemment terminé :** l'onglet `/flux` (« Simulation ») est devenu un **créateur** : on glisse des MP3 (1 MP3 = 1 appel), ils sont téléversés dans **Supabase Storage** (`data/storageAudio.ts`, bucket `appels-audio`), listés en table `appels`, et posés sur une **timeline de montage** draggable (`TimelineMontage.tsx` : instant de déclenchement + pistes/overlap). Un **contrôle flottant discret** en bas-droite (`ControleSimulation.tsx` dans `AppLayout`, store `useSimulationPlayback.ts`) fait **Lancer / Revenir au début / Couper** — planifie la lecture des audios aux bons instants + curseur temporel. Aucun panneau. → L'ancien simulateur scénarisé (scenarios.json, transcript, `useSimulation`) a été **supprimé**. Migration `0003_simulation_appels.sql` écrite (table `appels` + bucket + policies).
+**Prochaine étape (demandée) :** la **pipeline de traitement des appels** (transcription STT → extraction LLM → entités sur la carte pendant la lecture).
+**Bloqué par :** appliquer `0002` **et** `0003` dans le SQL Editor Supabase — action utilisateur. `0003` crée aussi le bucket Storage.
 
 ## Contexte d'équipe & déploiement
 - **Un collègue** travaille sur le même repo (refonte shadcn/sidebar, éditeur local-first). Coordonner avant toute modification de ses fichiers (`AppLayout`, `AppSidebar`, `SchemaEditorPage`, `Toolbar`, `Canvas`, `nodes/`, `edges/`, `ui/`).
@@ -75,13 +76,7 @@ Le TechDesign proposait Next.js. **Le code réel utilise Vite + React** (l'édit
 - [ ] Test de référence : insérer un événement à la main dans Supabase → il apparaît sans recharger (**nécessite `.env.local` + migration appliquée**)
 
 ### Phase F1 : Extraction des appels (le cœur) — découpée pour être démontrable à chaque étape
-**F1.a — Onglet Flux + chaîne complète sans clé API** (code fait, build vert ; test runtime en attente de la migration `0002`) :
-- [x] **Onglet Flux** (`/flux` + entrée sidebar) : liste des appels (Cards shadcn) issus du manifeste `frontend/public/audio_demo/scenarios.json` (titre, heure de début) + zone d'upload audio (`Input type=file`) → appel ajouté localement. Fichiers : `components/flux/FluxPage.tsx`, `data/scenariosApi.ts`, `typesFlux.ts`.
-- [x] **Simulation de démo** : bouton « Lancer » crée une intervention démo puis rejoue le scénario — transcript qui défile en direct (`components/flux/PanneauTranscript.tsx`), entités qui apparaissent progressivement sur la carte. Moteur : `sim/useSimulation.ts` ; vue : `components/flux/SimulationView.tsx` (réutilise `CarteIntervention` + `MainCourante` + Realtime F0).
-- [x] Géocodage IGN réel (`data/geocodageIgn.ts`, `data.geopf.fr/geocodage`, sans clé) + seuil 0,8 (`SEUIL_FIABLE`) → statut `presume`/`confirme` selon le score. NB : `12 rue des Lilas, Lyon` score ~0,76 → « présumé » (démo réaliste de la validation).
-- [x] Écriture au journal : chaque pas d'extraction → `insererEvenement` (`payload.extrait_source` = la phrase) + `upsertEntite` géolocalisée (`data/interventionApi.ts`). Journal toujours append-only.
-- [ ] **Test de référence F1.a** (⏳ bloqué par migration `0002`) : `/flux` → « Lancer la simulation » → victime placée sur la carte + main courante remplie, zéro clavier.
-> ⚠ **v1** : bâtie sur des primitives shadcn de base (`Card`/`Input`/`Badge`/`Skeleton`) + quelques `div` custom (bulles du transcript, marqueurs MapLibre). La **persistance des appels** (table `appels`) et la **conformité aux composants dédiés** (`Attachment`, `Message`, `Message Scroller`, `Sonner`, `Marker`) sont regroupées en **Phase F2** ci-dessous.
+**F1.a — (remplacée)** L'onglet `/flux` scénarisé (scenarios.json, transcript, `useSimulation`) a été **supprimé** au profit du **Créateur de simulation** (Phase F2, fait) : les appels ne sont plus des scripts figés mais de vrais MP3 uploadés. Restent réutilisables pour la pipeline : le **géocodage IGN** (`data/geocodageIgn.ts`, seuil 0,8) et l'**écriture au journal** append-only + `upsertEntite` (`data/interventionApi.ts`).
 **F1.b — Extraction LLM réelle** (prérequis : clé Anthropic + `supabase login` + `supabase link`) :
 - [ ] Edge Function `extraction` : texte → JSON structuré (champs optionnels : adresse?, nature?, nb_victimes?, etage?, moyens?, danger?) — secrets via `supabase secrets set`
 **F1.c — Transcription réelle + banc d'essai** (prérequis : compte Gladia + 2-3 enregistrements test) :
@@ -89,17 +84,19 @@ Le TechDesign proposait Next.js. **Le code réel utilise Vite + React** (l'édit
 - [ ] Banc d'essai STT : page interne d'upload audio → transcriptions comparées sur NOS enregistrements
 - [ ] Test de référence F1 : enregistrement joué → victime placée au bon endroit, zéro clavier
 
-### Phase F2 : Flux — persistance & conformité shadcn (finir la v1 F1.a)
-> L'onglet Flux + la simulation existent déjà (F1.a). Cette phase les rend persistants et 100 % conformes à la règle UI.
-- [ ] Migration `0003_appels.sql` (additive) : table `appels` (`id`, `intervention_id`, `titre`, `audio_url`, `ts_debut`, `duree`, `transcript`, timestamps) → la liste, les uploads et les heures de début deviennent persistants (aujourd'hui : manifeste statique + uploads en mémoire)
-- [ ] Upload d'audio via `Attachment` vers Supabase Storage (au lieu de l'`Input type=file` + object URL local) ; liste en `Item`/`Card` + `Empty`
-- [ ] Conformité composants dédiés : transcript en `Message` + `Message Scroller` (remplace les bulles `div`), notifications « appel entrant » en `Sonner`, marqueurs carte en `Marker` (remplace les `div` custom MapLibre)
-- [ ] Sidebar : ajouter l'entrée « Carte » à côté de « Flux » (déjà présente)
+### Phase F2 : Créateur de simulation — ✅ FAIT (code ; test runtime en attente migration `0003`)
+Un MP3 = un appel ; l'agencement des appels sur la timeline = la simulation active.
+- [x] Migration `0003_simulation_appels.sql` : table `appels` (`audio_url`, `audio_path`, `ts_debut_ms`, `duree_ms`, `piste`) + bucket Storage `appels-audio` + policies + realtime.
+- [x] Créateur `/flux` (« Simulation ») : glisser des MP3 → durée lue côté client → upload **Supabase Storage** → ligne `appels`. `SimulationPage.tsx`, `data/storageAudio.ts`, `data/appelsApi.ts`, `typesSimulation.ts`.
+- [x] **Timeline de montage** `TimelineMontage.tsx` : clips draggables (instant de déclenchement) + pistes (overlap) + curseur. Mécanique de drag en logique pure.
+- [x] **Contrôle flottant** `ControleSimulation.tsx` (bas-droite, dans `AppLayout`) : Lancer / Revenir au début / Couper via le store `useSimulationPlayback.ts` (planifie la lecture des MP3 aux bons instants + curseur). Aucun panneau.
+- [ ] Test runtime (⏳ migration `0003`) : glisser 2 MP3, les placer, Play → ils se déclenchent aux bons instants, le curseur défile.
+- [ ] Conformité composants dédiés (`Attachment`, `Scroll Area`, `Context Menu`, `Sonner`) **reportée** : la CLI shadcn ne s'initialise pas proprement sur ce repo Vite (elle scaffolde un `next-app/` parasite) → prévoir une **copie manuelle** du source des composants.
 
-### Phase F3 : Onglet Carte — timeline de montage + replay
-⚠️ À coder seulement quand la transcription (F1) fonctionne — instruction Oscar.
-- [ ] Zone timeline sous la carte, façon Premiere Pro : pistes, clips d'appels draggables/overlappables, curseur — assemblage 100 % shadcn (`Scroll Area` + `Slider` + `Item` + `Context Menu` + `Tooltip`), mécanique de drag en logique pure
-- [ ] Replay : le curseur qui défile fait apparaître sur la carte les objets ayant une position (état reconstruit depuis les événements ≤ T — remplace l'ancien « rejeu RETEX »)
+### Phase F3 : Replay sur la carte — pipeline de traitement des appels (prochaine étape demandée)
+⚠️ À coder quand la transcription (F1.c) fonctionne — instruction Oscar. La timeline de montage existe déjà (F2) ; ici on branche le **traitement** :
+- [ ] Pipeline : à la lecture (ou en amont), chaque appel MP3 → transcription (STT) → extraction (LLM) → `evenements` + `entites` géolocalisées.
+- [ ] Replay : le curseur qui défile fait apparaître sur la carte les objets ayant une position (état reconstruit depuis les événements ≤ T — remplace l'ancien « rejeu RETEX »).
 
 ### Phase F4 : Polish démo vidéo
 - [ ] 3-5 enregistrements scénarisés (fictifs, joués par des proches) dans `frontend/public/audio_demo/`
