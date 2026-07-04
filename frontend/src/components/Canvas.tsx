@@ -1,28 +1,29 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import {
   Background,
   Controls,
-  MiniMap,
+  MarkerType,
   ReactFlow,
   useEdgesState,
   useNodesState,
   type Edge,
   type Node,
-  type NodeMouseHandler,
+  type OnConnect,
   type OnNodeDrag,
 } from '@xyflow/react'
 import { useSchemaStore } from '../store/useSchemaStore'
 import { EntityNode } from './nodes/EntityNode'
+import { RelationEdge } from './edges/RelationEdge'
 
-// nodeTypes défini hors composant (référence stable exigée par React Flow).
+// Références stables (exigées par React Flow, sinon warning / re-render).
 const nodeTypes = { entity: EntityNode }
+const edgeTypes = { relation: RelationEdge }
 
 export function Canvas() {
   const entities = useSchemaStore((s) => s.entities)
   const attributes = useSchemaStore((s) => s.attributes)
-  const select = useSchemaStore((s) => s.select)
+  const addAttribute = useSchemaStore((s) => s.addAttribute)
   const setEntityPositionLocal = useSchemaStore((s) => s.setEntityPositionLocal)
-  const persistEntityPosition = useSchemaStore((s) => s.persistEntityPosition)
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
@@ -39,31 +40,66 @@ export function Canvas() {
     )
   }, [entities, setNodes])
 
-  // Dérive les arêtes des champs de type relation (reference / object).
+  // Dérive les arêtes des champs-relations et répartit uniformément les racines
+  // qui partagent le même côté (même node source, resp. même node cible).
   useEffect(() => {
-    const relEdges: Edge[] = attributes
+    const rels = attributes
       .filter((a) => a.target_entity_id)
-      .map((a) => ({
-        id: `attr-${a.id}`,
-        source: a.entity_id,
-        target: a.target_entity_id as string,
-        sourceHandle: 'out',
-        targetHandle: 'in',
-        label: a.name,
-        animated: a.data_type === 'object',
-        style:
-          a.data_type === 'object'
-            ? { strokeDasharray: '5 4', stroke: '#8b8ff0' }
-            : { stroke: '#6366f1' },
-      }))
-    setEdges(relEdges)
-  }, [attributes, setEdges])
+      .sort((a, b) => (a.id < b.id ? -1 : 1)) // ordre stable
 
-  const handleNodeClick: NodeMouseHandler = (_, node) => select(node.id)
+    const bySource: Record<string, string[]> = {}
+    const byTarget: Record<string, string[]> = {}
+    for (const a of rels) {
+      ;(bySource[a.entity_id] ??= []).push(a.id)
+      ;(byTarget[a.target_entity_id as string] ??= []).push(a.id)
+    }
 
-  const handleDragStop: OnNodeDrag<Node> = (_, node) => {
+    setEdges(
+      rels.map((a) => {
+        const sList = bySource[a.entity_id]
+        const tList = byTarget[a.target_entity_id as string]
+        const color = entities.find((e) => e.id === a.entity_id)?.color ?? '#a1a1aa'
+        return {
+          id: `attr-${a.id}`,
+          type: 'relation',
+          source: a.entity_id,
+          target: a.target_entity_id as string,
+          sourceHandle: 's',
+          targetHandle: 't',
+          label: a.name,
+          markerEnd: { type: MarkerType.ArrowClosed, color },
+          style: {
+            stroke: color,
+            strokeWidth: 1.5,
+            strokeDasharray: a.data_type === 'object' ? '5 4' : undefined,
+          },
+          data: {
+            sourceIndex: sList.indexOf(a.id),
+            sourceCount: sList.length,
+            targetIndex: tList.indexOf(a.id),
+            targetCount: tList.length,
+          },
+        }
+      }),
+    )
+  }, [attributes, entities, setEdges])
+
+  // Tirer un lien d'une carte à une autre → crée une relation (référence).
+  const onConnect: OnConnect = useCallback(
+    (c) => {
+      if (!c.source || !c.target || c.source === c.target) return
+      const target = useSchemaStore.getState().entities.find((e) => e.id === c.target)
+      addAttribute(c.source, {
+        name: target?.name ?? 'relation',
+        data_type: 'reference',
+        target_entity_id: c.target,
+      })
+    },
+    [addAttribute],
+  )
+
+  const onNodeDragStop: OnNodeDrag<Node> = (_, node) => {
     setEntityPositionLocal(node.id, node.position.x, node.position.y)
-    void persistEntityPosition(node.id)
   }
 
   return (
@@ -71,24 +107,17 @@ export function Canvas() {
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
-      onNodeClick={handleNodeClick}
-      onNodeDragStop={handleDragStop}
-      onPaneClick={() => select(null)}
-      nodesConnectable={false}
+      onConnect={onConnect}
+      onNodeDragStop={onNodeDragStop}
       fitView
+      minZoom={0.2}
       proOptions={{ hideAttribution: true }}
     >
-      <Background gap={18} color="#232838" />
+      <Background gap={18} />
       <Controls />
-      <MiniMap
-        pannable
-        zoomable
-        nodeColor={() => '#2a2f3d'}
-        maskColor="#0f111799"
-        style={{ background: '#171a23' }}
-      />
     </ReactFlow>
   )
 }

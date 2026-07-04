@@ -13,8 +13,10 @@ Le modèle métier Athena (`Ressources/modele-donnees.md`, `backend/db/schema.sq
 ## Stack
 
 - **Frontend** (`frontend/`) : Vite + React 18 + TypeScript, `react-router-dom`,
-  `@xyflow/react` (React Flow v12), `zustand` (state), `@supabase/supabase-js`. CSS simple
-  (aucun framework UI), thème sombre dans `src/index.css`.
+  `@xyflow/react` (React Flow v12), `zustand` (state), `@supabase/supabase-js`.
+  **UI : Tailwind CSS v3 + shadcn/ui** (`src/components/ui/`), icônes `lucide-react`.
+  Thème sombre (classe `.dark` sur `<html>`, variables shadcn zinc dans `src/index.css`).
+  Alias d'import `@` → `src` (configuré dans `vite.config.ts` + `tsconfig.app.json`).
 - **DB** (`supabase/`) : PostgreSQL/Supabase. Migrations dans `supabase/migrations/`,
   versionnées dans git. Config CLI dans `supabase/config.toml`.
 
@@ -36,21 +38,49 @@ Realtime activé sur les deux tables.
 - `src/types.ts` — types miroir des tables + `DATA_TYPES`, `RELATION_TYPES`.
 - `src/lib/supabase.ts` — client + `isSupabaseConfigured` (l'app démarre sans env, bannière).
 - `src/data/schemaApi.ts` — CRUD Supabase (couche d'accès pure).
-- `src/store/useSchemaStore.ts` — store zustand : `entities`, `attributes`, sélection, actions
-  (mise à jour locale optimiste puis appel API ; réconciliation Realtime idempotente par id).
-- `src/hooks/useRealtimeSchema.ts` — abonnement `postgres_changes` → store.
-- `src/components/` — `SchemaEditorPage` (provider + layout), `Toolbar`, `Canvas`
-  (React Flow, nodes/edges dérivés du store), `nodes/EntityNode`, `InspectorPanel`,
-  `FieldEditor`.
+- `src/store/useSchemaStore.ts` — store zustand **local-first** : toutes les mutations restent
+  en mémoire et marquent `dirty` ; **rien n'est envoyé à Supabase avant `saveAll()`** (bouton
+  « Enregistrer » de la `Toolbar`). Les nouveaux ids sont générés côté client (`crypto.randomUUID`)
+  pour que les relations pointent vers des cibles avant sauvegarde ; les suppressions sont
+  bufferisées (`removedEntityIds`/`removedAttributeIds`) puis envoyées au save.
+- `src/data/schemaApi.ts` — CRUD + `saveSchema()` (suppressions puis upserts en lot, entités
+  avant attributs pour la FK `target_entity_id`).
+- **Pas de synchronisation temps réel** (choix produit : édition locale + save explicite).
+  Un garde-fou `beforeunload` avertit si `dirty` à la fermeture de l'onglet.
+- **Shell webapp** : `main.tsx` définit un `createBrowserRouter` avec une route layout
+  `AppLayout` (shadcn `SidebarProvider` + `AppSidebar` + `SidebarInset` + `<Outlet/>`) et des
+  pages enfants : `/` → `SchemaEditorPage`, plus des `PlaceholderPage` (`/tableau-de-bord`,
+  `/ressources`, `/parametres`). `AppSidebar` = nav (composant `Sidebar` shadcn, collapsible
+  icon). Le `SidebarTrigger` vit dans l'en-tête de chaque page.
+- `src/components/` — `SchemaEditorPage` (`ReactFlowProvider` + header + canvas, `h-svh`),
+  `Toolbar` (header : trigger sidebar, statut save, boutons Objet/Enregistrer),
+  `Canvas` (React Flow, nodes/edges dérivés du store ; **pas de MiniMap**), `nodes/EntityNode`
+  (carte shadcn éditable + `FieldRow`/`RelationRow` ; suppression via `AlertDialog`),
+  `edges/RelationEdge` (edge custom), `ui/*` (primitives shadcn, dont `sidebar`).
+
+**Toute l'édition se fait sur le node** (pas de panneau latéral : `InspectorPanel` et
+`FieldEditor` ont été supprimés). Ajout de champ via bouton dans la carte, type via `Select`
+shadcn. Les **relations se créent en tirant un lien** entre deux cartes (`onConnect` du Canvas
+→ crée un attribut `reference` ciblant l'entité). Leur genre (`reference`/`object`) se change
+via le `Select` de la ligne de relation.
 
 ### Conventions & pièges React Flow
 
-- `nodeTypes` est défini **hors composant** (référence stable, sinon warning/re-render).
-- La **sélection** est pilotée par le store (`selectedEntityId`), pas par la sélection interne
-  de React Flow ; `EntityNode` lit `selected` depuis le store.
+- `nodeTypes` / `edgeTypes` sont définis **hors composant** (référence stable, sinon
+  warning/re-render).
+- Éléments interactifs dans un node (inputs, selects, boutons) : classe **`nodrag`** obligatoire,
+  sinon cliquer/glisser dessus déplace le node.
+- **Handles** : `source` à droite (`id="s"`), `target` à gauche (`id="t"`).
+- **Espacement des racines de liens** : quand plusieurs arêtes partent (ou arrivent) du même
+  node, le Canvas groupe par `source` et par `target`, calcule `sourceIndex/sourceCount` +
+  `targetIndex/targetCount` et les passe dans `edge.data` ; `RelationEdge` décale alors le point
+  d'ancrage le long du côté (`SPACING`) pour répartir uniformément (`getBezierPath` sur un
+  `sourceY`/`targetY` offset).
+- **Édition inline sans bug** : jamais d'écriture par frappe. Nom d'objet / de champ persistés
+  au **blur / Enter** (état local dans le composant, resynchronisé sur changement de prop) ;
+  type / liste persistés au **change**. Évite les conflits avec l'écho Realtime.
 - Les **positions** sont gérées par React Flow pendant le drag (`useNodesState`) et persistées
-  seulement `onNodeDragStop` (évite un flood d'écritures + les sauts de position).
-- `onNodeDragStop` attend le type `OnNodeDrag<Node>`, **pas** `NodeMouseHandler`.
+  seulement `onNodeDragStop` (type `OnNodeDrag<Node>`, **pas** `NodeMouseHandler`).
 - Import du CSS React Flow requis : `@xyflow/react/dist/style.css` (dans `main.tsx`).
 
 ## Commandes
@@ -63,4 +93,4 @@ Realtime activé sur les deux tables.
 
 - Pas d'authentification (accès ouvert assumé) — à durcir avant prod.
 - Pas d'export SQL/JSON (décision produit : hors scope v1).
-- Bundle > 500 kB (React Flow) — warning bénin, code-splitting possible plus tard.
+- Bundle > 500 kB (React Flow + Radix/shadcn) — warning bénin, code-splitting possible plus tard.

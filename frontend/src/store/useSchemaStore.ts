@@ -15,42 +15,39 @@ interface NewAttributeInput {
   description?: string | null
 }
 
+// Modèle LOCAL-FIRST : toutes les mutations restent en mémoire et marquent le
+// schéma « dirty ». Rien n'est envoyé à Supabase tant que `saveAll()` n'est pas
+// appelé (bouton « Enregistrer »). Pas de synchronisation temps réel.
 interface SchemaState {
   entities: Entity[]
   attributes: Attribute[]
   selectedEntityId: string | null
   status: Status
   error: string | null
+  dirty: boolean
+  saving: boolean
+  // ids présents en base à supprimer au prochain save.
+  removedEntityIds: string[]
+  removedAttributeIds: string[]
 
   load: () => Promise<void>
+  saveAll: () => Promise<void>
   select: (id: string | null) => void
 
-  addEntity: (opts?: { name?: string; is_subobject?: boolean; x?: number; y?: number }) => Promise<Entity | null>
-  renameEntity: (id: string, name: string) => Promise<void>
-  setEntityColor: (id: string, color: string) => Promise<void>
-  /** Persiste plusieurs propriétés d'un objet en un seul écrit (bouton Enregistrer). */
-  saveEntity: (id: string, patch: { name?: string; color?: string | null }) => Promise<void>
-  removeEntity: (id: string) => Promise<void>
-
-  // Position : mise à jour locale pendant le drag, persistée au drag stop.
+  addEntity: (opts?: { name?: string; is_subobject?: boolean; x?: number; y?: number }) => Entity
+  renameEntity: (id: string, name: string) => void
+  saveEntity: (id: string, patch: { name?: string; color?: string | null }) => void
+  setEntityColor: (id: string, color: string) => void
+  removeEntity: (id: string) => void
   setEntityPositionLocal: (id: string, x: number, y: number) => void
-  persistEntityPosition: (id: string) => Promise<void>
 
-  addAttribute: (entityId: string, input: NewAttributeInput) => Promise<Attribute | null>
-  editAttribute: (id: string, patch: Partial<Attribute>) => Promise<void>
-  removeAttribute: (id: string) => Promise<void>
-
-  // Réconciliation Realtime (idempotente, par id).
-  applyEntityChange: (eventType: 'INSERT' | 'UPDATE' | 'DELETE', row: Entity) => void
-  applyAttributeChange: (eventType: 'INSERT' | 'UPDATE' | 'DELETE', row: Attribute) => void
+  addAttribute: (entityId: string, input: NewAttributeInput) => Attribute
+  editAttribute: (id: string, patch: Partial<Attribute>) => void
+  removeAttribute: (id: string) => void
 }
 
-function upsertById<T extends { id: string }>(list: T[], row: T): T[] {
-  const idx = list.findIndex((x) => x.id === row.id)
-  if (idx === -1) return [...list, row]
-  const next = list.slice()
-  next[idx] = row
-  return next
+function uuid(): string {
+  return crypto.randomUUID()
 }
 
 export const useSchemaStore = create<SchemaState>((set, get) => ({
@@ -59,155 +56,107 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
   selectedEntityId: null,
   status: 'idle',
   error: null,
+  dirty: false,
+  saving: false,
+  removedEntityIds: [],
+  removedAttributeIds: [],
 
   load: async () => {
     set({ status: 'loading', error: null })
     try {
       const { entities, attributes } = await api.loadSchema()
-      set({ entities, attributes, status: 'ready' })
+      set({
+        entities,
+        attributes,
+        status: 'ready',
+        dirty: false,
+        removedEntityIds: [],
+        removedAttributeIds: [],
+      })
     } catch (err) {
       set({ status: 'error', error: messageOf(err) })
     }
   },
 
+  saveAll: async () => {
+    const { entities, attributes, removedEntityIds, removedAttributeIds } = get()
+    set({ saving: true, error: null })
+    try {
+      await api.saveSchema({ entities, attributes, removedEntityIds, removedAttributeIds })
+      set({ saving: false, dirty: false, removedEntityIds: [], removedAttributeIds: [] })
+    } catch (err) {
+      set({ saving: false, error: messageOf(err) })
+    }
+  },
+
   select: (id) => set({ selectedEntityId: id }),
 
-  addEntity: async (opts) => {
-    try {
-      const entity = await api.insertEntity({
-        name: opts?.name ?? (opts?.is_subobject ? 'Nouveau sous-objet' : 'Nouvel objet'),
-        is_subobject: opts?.is_subobject ?? false,
-        position_x: opts?.x ?? 0,
-        position_y: opts?.y ?? 0,
-      })
-      set((s) => ({ entities: upsertById(s.entities, entity), selectedEntityId: entity.id }))
-      return entity
-    } catch (err) {
-      set({ error: messageOf(err) })
-      return null
+  addEntity: (opts) => {
+    const entity: Entity = {
+      id: uuid(),
+      name: opts?.name ?? (opts?.is_subobject ? 'Nouveau sous-objet' : 'Nouvel objet'),
+      is_subobject: opts?.is_subobject ?? false,
+      position_x: opts?.x ?? 0,
+      position_y: opts?.y ?? 0,
+      color: null,
     }
+    set((s) => ({ entities: [...s.entities, entity], selectedEntityId: entity.id, dirty: true }))
+    return entity
   },
 
-  renameEntity: async (id, name) => {
-    patchEntityLocal(set, id, { name })
-    try {
-      await api.updateEntity(id, { name })
-    } catch (err) {
-      set({ error: messageOf(err) })
-    }
-  },
+  renameEntity: (id, name) => patchEntityLocal(set, id, { name }),
+  saveEntity: (id, patch) => patchEntityLocal(set, id, patch),
+  setEntityColor: (id, color) => patchEntityLocal(set, id, { color }),
+  setEntityPositionLocal: (id, x, y) => patchEntityLocal(set, id, { position_x: x, position_y: y }),
 
-  setEntityColor: async (id, color) => {
-    patchEntityLocal(set, id, { color })
-    try {
-      await api.updateEntity(id, { color })
-    } catch (err) {
-      set({ error: messageOf(err) })
-    }
-  },
-
-  saveEntity: async (id, patch) => {
-    patchEntityLocal(set, id, patch)
-    try {
-      await api.updateEntity(id, patch)
-    } catch (err) {
-      set({ error: messageOf(err) })
-    }
-  },
-
-  removeEntity: async (id) => {
-    // Retire l'entité, ses champs, et les champs d'autres entités qui la ciblaient.
+  removeEntity: (id) => {
     set((s) => ({
       entities: s.entities.filter((e) => e.id !== id),
       attributes: s.attributes
         .filter((a) => a.entity_id !== id)
         .map((a) => (a.target_entity_id === id ? { ...a, target_entity_id: null } : a)),
       selectedEntityId: s.selectedEntityId === id ? null : s.selectedEntityId,
+      removedEntityIds: s.removedEntityIds.includes(id)
+        ? s.removedEntityIds
+        : [...s.removedEntityIds, id],
+      dirty: true,
     }))
-    try {
-      await api.deleteEntity(id)
-    } catch (err) {
-      set({ error: messageOf(err) })
-    }
   },
 
-  setEntityPositionLocal: (id, x, y) => {
-    patchEntityLocal(set, id, { position_x: x, position_y: y })
-  },
-
-  persistEntityPosition: async (id) => {
-    const entity = get().entities.find((e) => e.id === id)
-    if (!entity) return
-    try {
-      await api.updateEntity(id, {
-        position_x: entity.position_x,
-        position_y: entity.position_y,
-      })
-    } catch (err) {
-      set({ error: messageOf(err) })
-    }
-  },
-
-  addAttribute: async (entityId, input) => {
+  addAttribute: (entityId, input) => {
     const siblings = get().attributes.filter((a) => a.entity_id === entityId)
-    const ordinal = siblings.length
     const isRelation = RELATION_TYPES.includes(input.data_type)
-    try {
-      const attr = await api.insertAttribute({
-        entity_id: entityId,
-        name: input.name,
-        data_type: input.data_type,
-        is_list: input.is_list ?? false,
-        enum_values: input.data_type === 'enum' ? input.enum_values ?? [] : null,
-        target_entity_id: isRelation ? input.target_entity_id ?? null : null,
-        required: input.required ?? false,
-        description: input.description ?? null,
-        ordinal,
-      })
-      set((s) => ({ attributes: upsertById(s.attributes, attr) }))
-      return attr
-    } catch (err) {
-      set({ error: messageOf(err) })
-      return null
+    const attr: Attribute = {
+      id: uuid(),
+      entity_id: entityId,
+      name: input.name,
+      data_type: input.data_type,
+      is_list: input.is_list ?? false,
+      enum_values: input.data_type === 'enum' ? input.enum_values ?? [] : null,
+      target_entity_id: isRelation ? input.target_entity_id ?? null : null,
+      required: input.required ?? false,
+      description: input.description ?? null,
+      ordinal: siblings.length,
     }
+    set((s) => ({ attributes: [...s.attributes, attr], dirty: true }))
+    return attr
   },
 
-  editAttribute: async (id, patch) => {
+  editAttribute: (id, patch) => {
     set((s) => ({
       attributes: s.attributes.map((a) => (a.id === id ? { ...a, ...patch } : a)),
+      dirty: true,
     }))
-    try {
-      await api.updateAttribute(id, patch)
-    } catch (err) {
-      set({ error: messageOf(err) })
-    }
   },
 
-  removeAttribute: async (id) => {
-    set((s) => ({ attributes: s.attributes.filter((a) => a.id !== id) }))
-    try {
-      await api.deleteAttribute(id)
-    } catch (err) {
-      set({ error: messageOf(err) })
-    }
-  },
-
-  applyEntityChange: (eventType, row) => {
-    set((s) => {
-      if (eventType === 'DELETE') {
-        return { entities: s.entities.filter((e) => e.id !== row.id) }
-      }
-      return { entities: upsertById(s.entities, row) }
-    })
-  },
-
-  applyAttributeChange: (eventType, row) => {
-    set((s) => {
-      if (eventType === 'DELETE') {
-        return { attributes: s.attributes.filter((a) => a.id !== row.id) }
-      }
-      return { attributes: upsertById(s.attributes, row) }
-    })
+  removeAttribute: (id) => {
+    set((s) => ({
+      attributes: s.attributes.filter((a) => a.id !== id),
+      removedAttributeIds: s.removedAttributeIds.includes(id)
+        ? s.removedAttributeIds
+        : [...s.removedAttributeIds, id],
+      dirty: true,
+    }))
   },
 }))
 
@@ -218,6 +167,7 @@ function patchEntityLocal(
 ) {
   set((s) => ({
     entities: s.entities.map((e) => (e.id === id ? { ...e, ...patch } : e)),
+    dirty: true,
   }))
 }
 
