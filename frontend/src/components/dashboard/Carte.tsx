@@ -7,10 +7,9 @@ import { STATUTS, type Entite } from '../../typesAthena'
 const STYLE_IGN =
   'https://data.geopf.fr/annexes/ressources/vectorTiles/styles/PLAN.IGN/standard.json'
 
-/** Centre France par défaut tant que l'intervention n'est pas localisée. */
+/** Centre France par défaut. */
 const CENTRE_FRANCE: [number, number] = [2.42, 46.6]
 
-/** Élément DOM d'un marqueur (défini hors composant — référence stable). */
 function creerElementMarqueur(entite: Entite): HTMLDivElement {
   const el = document.createElement('div')
   el.className =
@@ -25,11 +24,15 @@ function appliquerStyleMarqueur(el: HTMLElement, entite: Entite) {
   el.title = `${entite.libelle} — ${s.libelle}`
 }
 
-export function CarteIntervention({
-  entites,
+/**
+ * Carte MapLibre + fonds IGN. Affiche les entités géolocalisées (marqueurs).
+ * Générique : alimentée plus tard par la pipeline de traitement des appels.
+ */
+export function Carte({
+  entites = [],
   centre,
 }: {
-  entites: Entite[]
+  entites?: Entite[]
   centre?: { lon: number | null; lat: number | null } | null
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -37,7 +40,6 @@ export function CarteIntervention({
   const marqueursRef = useRef<Map<string, maplibregl.Marker>>(new Map())
   const dejaCentreRef = useRef(false)
 
-  // Création de la carte (une seule fois ; cleanup compatible StrictMode).
   useEffect(() => {
     if (!containerRef.current) return
     const m = new maplibregl.Map({
@@ -58,7 +60,6 @@ export function CarteIntervention({
     }
   }, [])
 
-  // Centrage initial sur l'intervention dès qu'elle est localisée.
   useEffect(() => {
     if (!map || dejaCentreRef.current) return
     if (centre?.lon != null && centre?.lat != null) {
@@ -67,7 +68,6 @@ export function CarteIntervention({
     }
   }, [map, centre])
 
-  // Synchronisation des marqueurs avec la projection `entites` (idempotent).
   useEffect(() => {
     if (!map) return
     const marqueurs = marqueursRef.current
@@ -92,7 +92,6 @@ export function CarteIntervention({
       }
     }
 
-    // Retire les marqueurs des entités disparues.
     for (const [id, marker] of marqueurs) {
       if (!idsVus.has(id)) {
         marker.remove()

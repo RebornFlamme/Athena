@@ -4,8 +4,7 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
 import { SchemaEditorPage } from './components/SchemaEditorPage'
 import { PlaceholderPage } from './components/PlaceholderPage'
-import { InterventionsListPage } from './components/intervention/InterventionsListPage'
-import { InterventionPage } from './components/intervention/InterventionPage'
+import { DashboardPage } from './components/dashboard/DashboardPage'
 import { SimulationPage } from './components/simulation/SimulationPage'
 import '@xyflow/react/dist/style.css'
 import './index.css'
@@ -16,8 +15,7 @@ const router = createBrowserRouter([
     children: [
       { path: '/', element: <SchemaEditorPage /> },
       { path: '/flux', element: <SimulationPage /> },
-      { path: '/tableau-de-bord', element: <InterventionsListPage /> },
-      { path: '/tableau-de-bord/:id', element: <InterventionPage /> },
+      { path: '/tableau-de-bord', element: <DashboardPage /> },
       { path: '/ressources', element: <PlaceholderPage title="Ressources" /> },
       { path: '/parametres', element: <PlaceholderPage title="Paramètres" /> },
     ],
