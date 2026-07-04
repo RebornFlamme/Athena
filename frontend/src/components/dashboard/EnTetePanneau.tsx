@@ -17,20 +17,20 @@ export function EnTetePanneau({
   right?: ReactNode
 }) {
   return (
-    <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-muted/30 px-3">
-      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-      <span className="truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="flex h-7 shrink-0 items-center gap-1.5 border-b bg-muted/30 px-2.5">
+      <Icon className="h-3 w-3 text-muted-foreground" />
+      <span className="truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {titre}
       </span>
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-1.5">
         {right}
         {onFermer && (
           <button
             onClick={onFermer}
-            className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="flex h-4 w-4 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             title="Fermer"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-3 w-3" />
           </button>
         )}
       </div>
