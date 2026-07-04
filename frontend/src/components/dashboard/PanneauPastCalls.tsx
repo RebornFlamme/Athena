@@ -7,6 +7,7 @@ import { listAppels } from '../../data/appelsApi'
 import { formaterMs } from '../../sim/audioMeta'
 import { useSimulationPlayback } from '../../store/useSimulationPlayback'
 import type { Appel } from '../../typesSimulation'
+import { FeuillePastCall } from './FeuillePastCall'
 
 type StatutAppel = 'a_venir' | 'en_direct' | 'termine'
 
@@ -23,6 +24,7 @@ const LIBELLE: Record<StatutAppel, string> = {
  */
 export function PanneauPastCalls() {
   const [appels, setAppels] = useState<Appel[]>([])
+  const [selection, setSelection] = useState<Appel | null>(null)
   const statut = useSimulationPlayback((s) => s.statut)
   const positionMs = useSimulationPlayback((s) => s.positionMs)
 
@@ -55,7 +57,12 @@ export function PanneauPastCalls() {
           {visibles.map((a) => {
             const s = statutDe(a)
             return (
-              <div key={a.id} className="flex items-center gap-3 border-b px-4 py-2.5 text-sm">
+              <button
+                key={a.id}
+                onClick={() => setSelection(a)}
+                className="flex w-full items-center gap-3 border-b px-4 py-2.5 text-left text-sm transition-colors hover:bg-accent"
+                title="Voir la transcription et les objets"
+              >
                 <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium">{a.titre}</div>
@@ -81,11 +88,12 @@ export function PanneauPastCalls() {
                     {LIBELLE[s]}
                   </Badge>
                 )}
-              </div>
+              </button>
             )
           })}
         </ScrollArea>
       )}
+      <FeuillePastCall appel={selection} onClose={() => setSelection(null)} />
     </aside>
   )
 }
