@@ -37,6 +37,7 @@ export interface Entity {
   position_x: number
   position_y: number
   color: string | null
+  width?: number | null // largeur de la carte en px (redimensionnable) ; null = défaut
   created_at?: string
   updated_at?: string
 }

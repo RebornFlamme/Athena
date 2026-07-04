@@ -52,10 +52,12 @@ interface SchemaState {
   setEntityColor: (id: string, color: string) => void
   removeEntity: (id: string) => void
   setEntityPositionLocal: (id: string, x: number, y: number) => void
+  setEntityWidthLocal: (id: string, width: number) => void
 
   addAttribute: (entityId: string, input: NewAttributeInput) => Attribute
   editAttribute: (id: string, patch: Partial<Attribute>) => void
   removeAttribute: (id: string) => void
+  reorderAttributes: (entityId: string, orderedIds: string[]) => void
 }
 
 function uuid(): string {
@@ -208,6 +210,7 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
   saveEntity: (id, patch) => patchEntityLocal(set, id, patch),
   setEntityColor: (id, color) => patchEntityLocal(set, id, { color }),
   setEntityPositionLocal: (id, x, y) => patchEntityLocal(set, id, { position_x: x, position_y: y }),
+  setEntityWidthLocal: (id, width) => patchEntityLocal(set, id, { width }),
 
   removeEntity: (id) => {
     set((s) => ({
@@ -258,6 +261,17 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
       removedAttributeIds: s.removedAttributeIds.includes(id)
         ? s.removedAttributeIds
         : [...s.removedAttributeIds, id],
+      dirty: true,
+    }))
+  },
+
+  // Réordonne les champs d'une entité : `ordinal` = index dans `orderedIds`.
+  reorderAttributes: (entityId, orderedIds) => {
+    const rank = new Map(orderedIds.map((id, i) => [id, i]))
+    set((s) => ({
+      attributes: s.attributes.map((a) =>
+        a.entity_id === entityId && rank.has(a.id) ? { ...a, ordinal: rank.get(a.id)! } : a,
+      ),
       dirty: true,
     }))
   },

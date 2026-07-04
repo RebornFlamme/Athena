@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflow/react'
-import { Plus, Trash2, X } from 'lucide-react'
+import { GripVertical, Plus, Trash2, X } from 'lucide-react'
 import { useSchemaStore } from '../../store/useSchemaStore'
 import { DATA_TYPES, RELATION_TYPES, type Attribute, type DataType } from '../../types'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -26,15 +26,33 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 
+const DEFAULT_WIDTH = 288
+const MIN_WIDTH = 240
+const MAX_WIDTH = 560
+
+// API de réordonnancement passée du node à chaque ligne (poignée + ref + état).
+interface ReorderApi {
+  register: (id: string, el: HTMLDivElement | null) => void
+  onGripDown: (id: string, e: React.PointerEvent) => void
+  onGripMove: (e: React.PointerEvent) => void
+  onGripUp: (e: React.PointerEvent) => void
+  draggingId: string | null
+}
+
 // ---------------------------------------------------------------------------
-// Ligne d'un champ : nom + sélecteur de type (TOUS les types, dont « objet ») +
-// toggle liste + suppr. Quand le type cible un autre objet (reference/object),
-// un Handle apparaît PILE en face de la ligne : on le tire vers une autre carte
-// pour poser la cible sur CE champ (aucun menu de sélection de cible).
-// Édition inline persistée sur événement discret (blur / change), jamais à
-// chaque frappe → pas de conflit avec l'écho Realtime.
+// Ligne d'un champ : poignée de réordre + nom + type (TOUS les types) + toggle
+// liste + suppr. Un champ-relation expose un Handle pile en face de sa ligne.
+// Tout élément interactif porte `nodrag` (sinon le drag déplace la carte).
 // ---------------------------------------------------------------------------
-function FieldRow({ attr, targetName }: { attr: Attribute; targetName?: string }) {
+function FieldRow({
+  attr,
+  targetName,
+  reorder,
+}: {
+  attr: Attribute
+  targetName?: string
+  reorder: ReorderApi
+}) {
   const editAttribute = useSchemaStore((s) => s.editAttribute)
   const removeAttribute = useSchemaStore((s) => s.removeAttribute)
 
@@ -44,10 +62,24 @@ function FieldRow({ attr, targetName }: { attr: Attribute; targetName?: string }
   useEffect(() => setEnumText((attr.enum_values ?? []).join(', ')), [attr.enum_values])
 
   const isRelation = RELATION_TYPES.includes(attr.data_type)
+  const dragging = reorder.draggingId === attr.id
 
   return (
-    <div className="space-y-1">
+    <div
+      ref={(el) => reorder.register(attr.id, el)}
+      className={`space-y-1 rounded ${dragging ? 'opacity-60 ring-1 ring-primary' : ''}`}
+    >
       <div className="relative flex items-center gap-1">
+        <button
+          type="button"
+          title="Glisser pour réordonner"
+          className="nodrag flex h-7 w-4 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground active:cursor-grabbing"
+          onPointerDown={(e) => reorder.onGripDown(attr.id, e)}
+          onPointerMove={reorder.onGripMove}
+          onPointerUp={reorder.onGripUp}
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </button>
         <Input
           className="nodrag h-7 flex-1 text-xs"
           value={name}
@@ -68,7 +100,6 @@ function FieldRow({ attr, targetName }: { attr: Attribute; targetName?: string }
             editAttribute(attr.id, {
               data_type: dt,
               enum_values: dt === 'enum' ? attr.enum_values ?? [] : null,
-              // sort d'un type-relation → on oublie la cible.
               target_entity_id: rel ? attr.target_entity_id : null,
             })
           }}
@@ -116,7 +147,7 @@ function FieldRow({ attr, targetName }: { attr: Attribute; targetName?: string }
       </div>
       {attr.data_type === 'enum' && (
         <Input
-          className="nodrag h-7 text-xs"
+          className="nodrag ml-5 h-7 text-xs"
           placeholder="valeurs : vert, jaune, rouge…"
           value={enumText}
           onChange={(e) => setEnumText(e.target.value)}
@@ -128,7 +159,7 @@ function FieldRow({ attr, targetName }: { attr: Attribute; targetName?: string }
         />
       )}
       {isRelation && (
-        <div className="px-1 text-[10px] text-muted-foreground truncate">
+        <div className="ml-5 px-1 text-[10px] text-muted-foreground truncate">
           {attr.target_entity_id ? `→ ${targetName ?? '?'}` : 'tirer le point → vers un objet'}
         </div>
       )}
@@ -148,13 +179,108 @@ export function EntityNode({ id }: NodeProps) {
   const saveEntity = useSchemaStore((s) => s.saveEntity)
   const removeEntity = useSchemaStore((s) => s.removeEntity)
   const addAttribute = useSchemaStore((s) => s.addAttribute)
+  const reorderAttributes = useSchemaStore((s) => s.reorderAttributes)
+  const setEntityWidthLocal = useSchemaStore((s) => s.setEntityWidthLocal)
 
-  // React Flow doit re-mesurer les handles quand les lignes changent (ajout /
-  // suppression / passage en objet ou enum → hauteur des cartes et donc Y des
-  // handles de champ). Signature volontairement limitée à ce qui bouge la mise
-  // en page (le nom, lui, ne change pas la hauteur).
   const updateNodeInternals = useUpdateNodeInternals()
-  const layoutSig = attributes.map((a) => `${a.id}:${a.data_type}`).join('|')
+
+  // --- Réordonnancement des champs (pointer pur) -----------------------------
+  const rowRefs = useRef(new Map<string, HTMLDivElement>())
+  const dragIdRef = useRef<string | null>(null)
+  const orderRef = useRef<string[] | null>(null)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [dragOrder, setDragOrder] = useState<string[] | null>(null)
+
+  const applyOrder = (next: string[] | null) => {
+    orderRef.current = next
+    setDragOrder(next)
+  }
+
+  const baseIds = attributes.map((a) => a.id)
+  const orderedAttrs = dragOrder
+    ? (dragOrder.map((oid) => attributes.find((a) => a.id === oid)).filter(Boolean) as Attribute[])
+    : attributes
+
+  const reorder: ReorderApi = {
+    register: (rid, el) => {
+      if (el) rowRefs.current.set(rid, el)
+      else rowRefs.current.delete(rid)
+    },
+    onGripDown: (rid, e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+      dragIdRef.current = rid
+      setDraggingId(rid)
+      applyOrder(baseIds)
+    },
+    onGripMove: (e) => {
+      const dragId = dragIdRef.current
+      if (!dragId) return
+      const cur = orderRef.current ?? baseIds
+      // Ligne survolée = première dont le pointeur est au-dessus du bas.
+      let targetId = cur[cur.length - 1] ?? null
+      for (const rid of cur) {
+        const r = rowRefs.current.get(rid)?.getBoundingClientRect()
+        if (r && e.clientY < r.bottom) {
+          targetId = rid
+          break
+        }
+      }
+      if (!targetId || targetId === dragId) return
+      const rt = rowRefs.current.get(targetId)?.getBoundingClientRect()
+      const after = rt ? e.clientY > rt.top + rt.height / 2 : false
+      const without = cur.filter((x) => x !== dragId)
+      let idx = without.indexOf(targetId)
+      if (after) idx += 1
+      without.splice(idx, 0, dragId)
+      if (without.join('|') !== cur.join('|')) applyOrder(without)
+    },
+    onGripUp: () => {
+      const dragId = dragIdRef.current
+      const finalOrder = orderRef.current
+      dragIdRef.current = null
+      setDraggingId(null)
+      applyOrder(null)
+      if (dragId && finalOrder) reorderAttributes(id, finalOrder)
+    },
+    draggingId,
+  }
+
+  // --- Redimensionnement de la largeur (pointer pur) -------------------------
+  const resizeRef = useRef<{ x: number; w: number } | null>(null)
+  const liveWidthRef = useRef<number | null>(null)
+  const [liveWidth, setLiveWidth] = useState<number | null>(null)
+  const width = liveWidth ?? entity?.width ?? DEFAULT_WIDTH
+
+  const setLive = (w: number | null) => {
+    liveWidthRef.current = w
+    setLiveWidth(w)
+  }
+  const onResizeDown = (e: React.PointerEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    resizeRef.current = { x: e.clientX, w: width }
+    setLive(width)
+  }
+  const onResizeMove = (e: React.PointerEvent) => {
+    const r = resizeRef.current
+    if (!r) return
+    setLive(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, r.w + (e.clientX - r.x))))
+  }
+  const onResizeUp = () => {
+    const r = resizeRef.current
+    const w = liveWidthRef.current
+    resizeRef.current = null
+    setLive(null)
+    if (r && w != null) setEntityWidthLocal(id, Math.round(w))
+  }
+
+  // React Flow doit re-mesurer les handles quand la mise en page change :
+  // ordre des champs, type (enum/relation → hauteur), OU largeur (x des handles).
+  const layoutSig =
+    orderedAttrs.map((a) => `${a.id}:${a.data_type}`).join('|') + `|w${Math.round(width)}`
   useEffect(() => {
     updateNodeInternals(id)
   }, [id, layoutSig, updateNodeInternals])
@@ -167,7 +293,7 @@ export function EntityNode({ id }: NodeProps) {
   const nameOf = (eid: string) => entities.find((e) => e.id === eid)?.name ?? '?'
 
   return (
-    <Card className="w-72 gap-0 py-0 shadow-lg">
+    <Card className="relative gap-0 py-0 shadow-lg" style={{ width }}>
       <Handle
         type="target"
         position={Position.Left}
@@ -183,7 +309,7 @@ export function EntityNode({ id }: NodeProps) {
           onChange={(e) => setName(e.target.value)}
           onBlur={() => {
             const v = name.trim()
-            if (!v) return setName(entity.name) // vidé → on restaure
+            if (!v) return setName(entity.name)
             if (v !== entity.name) saveEntity(entity.id, { name: v })
           }}
           onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
@@ -210,7 +336,7 @@ export function EntityNode({ id }: NodeProps) {
               <AlertDialogTitle>Supprimer « {entity.name} » ?</AlertDialogTitle>
               <AlertDialogDescription>
                 Cet objet et ses {attributes.length} champ{attributes.length > 1 ? 's' : ''} seront
-                retirés du schéma. La suppression devient définitive après « Enregistrer ».
+                retirés du schéma. La suppression devient définitive après « Écraser Supabase ».
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -227,11 +353,12 @@ export function EntityNode({ id }: NodeProps) {
       </CardHeader>
 
       <CardContent className="space-y-1.5 border-t p-2">
-        {attributes.map((a) => (
+        {orderedAttrs.map((a) => (
           <FieldRow
             key={a.id}
             attr={a}
             targetName={a.target_entity_id ? nameOf(a.target_entity_id) : undefined}
+            reorder={reorder}
           />
         ))}
 
@@ -245,6 +372,17 @@ export function EntityNode({ id }: NodeProps) {
           <Plus className="h-3.5 w-3.5" /> Ajouter un champ
         </Button>
       </CardContent>
+
+      {/* Poignée de redimensionnement (largeur), bas-droite. */}
+      <div
+        title="Redimensionner la largeur"
+        className="nodrag absolute bottom-0 right-0 z-10 flex h-4 w-4 cursor-ew-resize touch-none items-end justify-end p-0.5"
+        onPointerDown={onResizeDown}
+        onPointerMove={onResizeMove}
+        onPointerUp={onResizeUp}
+      >
+        <div className="h-2 w-2 rounded-sm border-b-2 border-r-2 border-muted-foreground/50" />
+      </div>
     </Card>
   )
 }

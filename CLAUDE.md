@@ -128,6 +128,15 @@ de cible. `reference` = arête pleine, `object` = arête pointillée.
   type / liste persistés au **change**. Évite les conflits avec l'écho Realtime.
 - Les **positions** sont gérées par React Flow pendant le drag (`useNodesState`) et persistées
   seulement `onNodeDragStop` (type `OnNodeDrag<Node>`, **pas** `NodeMouseHandler`).
+- **Réordonner les champs + redimensionner la carte** (poignées à **logique pointer pure**, pas de
+  lib DnD, cf. convention timeline) : chaque `FieldRow` a une poignée `GripVertical` (`nodrag`,
+  `setPointerCapture`) → `EntityNode` maintient un ordre local pendant le drag (via `orderRef` +
+  refs de lignes, cible = ligne sous le pointeur), et au relâché appelle `reorderAttributes`
+  (réécrit les `ordinal`). La **largeur** de la carte se règle via une poignée bas-droite (`nodrag`,
+  `cursor-ew-resize`) → `liveWidth` local pendant le drag, commit `setEntityWidthLocal` au relâché ;
+  `Card` porte `style={{ width }}` (plus de `w-72`), bornée `MIN/MAX_WIDTH`. **Le drag de carte
+  reste intact** : seules les poignées/champs sont `nodrag`. `updateNodeInternals` est déclenché
+  aussi sur l'**ordre** et la **largeur** (les handles de champ bougent).
 - Import du CSS React Flow requis : `@xyflow/react/dist/style.css` (dans `main.tsx`).
 
 ## Commandes
@@ -144,3 +153,6 @@ de cible. `reference` = arête pleine, `object` = arête pointillée.
 - **Prérequis runtime historique** : appliquer la migration **`0006_schema_versions.sql`** dans
   Supabase (SQL Editor). Sans elle, « Enregistrer la version » et le panneau Historique remontent
   une erreur (table absente) — l'éditeur EAV lui-même fonctionne quand même.
+- **Prérequis runtime largeur des cartes** : appliquer **`0007_entity_width.sql`** (colonne
+  `entities.width`). ⚠ Sans elle, « Écraser Supabase » **échoue** (l'upsert envoie `width`) — donc
+  le réordre (via `ordinal`) ne se sauvegarde pas non plus tant que `0007` n'est pas appliquée.
