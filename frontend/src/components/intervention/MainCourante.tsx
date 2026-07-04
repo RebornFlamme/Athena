@@ -4,7 +4,7 @@ import { BadgeFiabilite } from './BadgeFiabilite'
 
 /** « FEU_HABITATION » → « Feu habitation » */
 function libelleEventType(eventType: string): string {
-  const txt = eventType.replaceAll('_', ' ').toLowerCase()
+  const txt = eventType.replace(/_/g, ' ').toLowerCase()
   return txt.charAt(0).toUpperCase() + txt.slice(1)
 }
 
