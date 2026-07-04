@@ -4,6 +4,14 @@
 export type StatutInfo = 'presume' | 'confirme' | 'corrige' | 'perime'
 export type TypeEntite = 'acteur' | 'moyen' | 'zone'
 
+/**
+ * Intervention « propriétaire » de la simulation. Id fixe, partagé par tous les
+ * appels d'un run : le job d'extraction serveur (`extraction.py`) ancre entités
+ * et événements dessus. Les panneaux globaux (carte, couche sémantique) lisent
+ * tout le run via cet id. Doit rester synchronisé avec le backend.
+ */
+export const SIMULATION_INTERVENTION_ID = '00000000-0000-0000-0000-000000000001'
+
 export interface Intervention {
   id: string
   titre: string

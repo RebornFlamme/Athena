@@ -10,26 +10,25 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { isSupabaseConfigured } from '../../lib/supabase'
-import { Carte } from './Carte'
+import { CarteRun } from './CarteRun'
 import { PanneauDiff } from './PanneauDiff'
 import { PanneauObjets } from './PanneauObjets'
 import { PanneauPastCalls } from './PanneauPastCalls'
-import { PanneauSemanticLayer, type LigneSemantic } from './PanneauSemanticLayer'
+import { SemanticRun } from './SemanticRun'
+import { type LigneSemantic } from './PanneauSemanticLayer'
 import { PanneauFluxAudio } from '../simulation/PanneauFluxAudio'
 
 // Contenu de chaque panneau (l'onglet + le drag/split sont gérés par dockview).
 const COMPOSANTS: Record<string, FunctionComponent<IDockviewPanelProps>> = {
   carte: () => (
     <div className="relative h-full">
-      <Carte />
+      <CarteRun />
     </div>
   ),
   objets: () => <PanneauObjets />,
   live: () => <PanneauFluxAudio />,
   semantic: (p) => (
-    <PanneauSemanticLayer
-      onSelect={(p.params as { onSelect?: (l: LigneSemantic) => void }).onSelect}
-    />
+    <SemanticRun onSelect={(p.params as { onSelect?: (l: LigneSemantic) => void }).onSelect} />
   ),
   past: () => <PanneauPastCalls />,
   diff: (p) => <PanneauDiff ligne={(p.params as { ligne: LigneSemantic }).ligne} />,

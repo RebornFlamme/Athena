@@ -15,59 +15,6 @@ export interface LigneSemantic {
   diff: DiffChamp[]
 }
 
-// Placeholder : éditions de la couche sémantique produites par le LLM.
-// Chaque ligne porte le diff de l'objet modifié (figé pour l'instant).
-const LIGNES: LigneSemantic[] = [
-  {
-    id: 'l1',
-    t: '14:32:04',
-    texte: 'Address confirmed — 12 rue des Lilas',
-    objet: 'Sinistre',
-    diff: [{ champ: 'adresse', avant: null, apres: '12 rue des Lilas, Lyon' }],
-  },
-  {
-    id: 'l2',
-    t: '14:32:11',
-    texte: 'New victim located — 3rd floor',
-    objet: 'Victime #1',
-    diff: [
-      { champ: 'localisation', avant: null, apres: '3e étage' },
-      { champ: 'statut', avant: null, apres: 'présumé' },
-    ],
-  },
-  {
-    id: 'l3',
-    t: '14:32:19',
-    texte: 'Victim status updated — conscious',
-    objet: 'Victime #1',
-    diff: [{ champ: 'état', avant: 'inconnu', apres: 'consciente' }],
-  },
-  {
-    id: 'l4',
-    t: '14:33:02',
-    texte: 'Unit engaged — VSAV 12',
-    objet: 'Moyen — VSAV 12',
-    diff: [
-      { champ: 'engagé', avant: 'non', apres: 'oui' },
-      { champ: 'statut', avant: null, apres: 'en route' },
-    ],
-  },
-  {
-    id: 'l5',
-    t: '14:33:20',
-    texte: 'Danger flag raised — smoke',
-    objet: 'Sinistre',
-    diff: [{ champ: 'danger', avant: null, apres: 'fumée dense' }],
-  },
-  {
-    id: 'l6',
-    t: '14:34:41',
-    texte: 'Casualty count updated — 2',
-    objet: 'Sinistre',
-    diff: [{ champ: 'nb_victimes', avant: '1', apres: '2' }],
-  },
-]
-
 /** Genre d'édition : ajout (vert), suppression (rouge), modification (neutre). */
 function genreDe(diff: DiffChamp[]): 'ajout' | 'suppression' | 'modif' {
   if (diff.every((d) => d.avant == null && d.apres != null)) return 'ajout'
@@ -84,19 +31,33 @@ const PASTILLE = {
 
 /**
  * Panneau « Semantic Layer Edit » : le journal des actions du LLM. Cliquer une
- * ligne ouvre le diff visuel de l'objet modifié (à droite).
+ * ligne ouvre le diff visuel de l'objet modifié (à droite). Purement
+ * présentationnel — les lignes viennent des `evenements` du run (extraction LLM).
  */
 export function PanneauSemanticLayer({
+  lignes,
   onSelect,
   selectionId,
 }: {
+  lignes: LigneSemantic[]
   onSelect?: (ligne: LigneSemantic) => void
   selectionId?: string | null
 }) {
+  if (lignes.length === 0) {
+    return (
+      <aside className="flex h-full flex-col items-center justify-center gap-1 bg-card p-6 text-center">
+        <p className="text-sm font-medium text-muted-foreground">Aucune extraction pour l'instant</p>
+        <p className="text-[11px] text-muted-foreground">
+          Lance une simulation : les faits identifiés par le LLM s'afficheront ici en direct.
+        </p>
+      </aside>
+    )
+  }
+
   return (
     <aside className="flex h-full flex-col bg-card">
       <ScrollArea className="min-h-0 flex-1">
-        {LIGNES.map((l) => {
+        {lignes.map((l) => {
           const pastille = PASTILLE[genreDe(l.diff)]
           return (
             <button

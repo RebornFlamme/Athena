@@ -40,7 +40,7 @@ export function PanneauDiff({ ligne }: { ligne: LigneSemantic }) {
           </div>
 
           <p className="text-[11px] italic text-muted-foreground">
-            Diff illustratif — produit par la pipeline d'extraction (à venir).
+            Diff produit par l'extraction LLM à partir de la transcription de l'appel.
           </p>
         </div>
       </ScrollArea>

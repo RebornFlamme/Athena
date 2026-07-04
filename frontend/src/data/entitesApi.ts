@@ -22,6 +22,20 @@ export async function listEntites(appelId: string): Promise<EntiteCarte[]> {
   return (data ?? []) as EntiteCarte[]
 }
 
+/** Toutes les entités d'un run de simulation (agrégées sur l'intervention). */
+export async function listEntitesIntervention(interventionId: string): Promise<EntiteCarte[]> {
+  const { data, error } = await supabase
+    .from('entites')
+    .select('*')
+    .eq('intervention_id', interventionId)
+  if (error) throw error
+  return (data ?? []) as EntiteCarte[]
+}
+
+// Compteur pour rendre chaque canal Realtime unique (plusieurs panneaux peuvent
+// s'abonner au même run → éviter la collision de topic Supabase).
+let seqCanal = 0
+
 type ChangementEntite =
   | { type: 'upsert'; entite: EntiteCarte }
   | { type: 'delete'; id: string }
@@ -39,6 +53,35 @@ export function subscribeEntites(
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'entites', filter: `appel_id=eq.${appelId}` },
+      (payload) => {
+        if (payload.eventType === 'DELETE') {
+          onChange({ type: 'delete', id: (payload.old as { id: string }).id })
+        } else {
+          onChange({ type: 'upsert', entite: payload.new as EntiteCarte })
+        }
+      },
+    )
+    .subscribe()
+  return () => {
+    void supabase.removeChannel(channel)
+  }
+}
+
+/** S'abonne aux entités de tout un run (filtre sur l'intervention). */
+export function subscribeEntitesIntervention(
+  interventionId: string,
+  onChange: (c: ChangementEntite) => void,
+): () => void {
+  const channel = supabase
+    .channel(`entites-run:${interventionId}:${++seqCanal}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'entites',
+        filter: `intervention_id=eq.${interventionId}`,
+      },
       (payload) => {
         if (payload.eventType === 'DELETE') {
           onChange({ type: 'delete', id: (payload.old as { id: string }).id })
