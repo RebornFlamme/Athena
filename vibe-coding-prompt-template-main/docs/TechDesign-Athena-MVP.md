@@ -158,17 +158,13 @@ create table entites (
   maj_le timestamptz not null default now()
 );
 
--- 4. Les appels (l'audio + sa transcription)
-create table appels (
-  id uuid primary key default gen_random_uuid(),
-  intervention_id uuid references interventions(id),
-  audio_url text,                          -- fichier dans Supabase Storage
-  transcription text,                      -- texte complet au fil de l'eau
-  extraction jsonb,                        -- le JSON structuré extrait par le LLM
-  score_geocodage real,                    -- confiance de l'adresse (0 à 1)
-  valide_par_humain boolean default false, -- l'opérateur a-t-il confirmé ?
-  cree_le timestamptz not null default now()
-);
+-- (Décision produit, juil. 2026 : PAS de table « appels ». L'appel est traité
+--  en direct : la transcription est un état éphémère du frontend pendant l'appel,
+--  et chaque fait extrait entre dans `evenements` avec, dans son payload, la
+--  phrase source qui l'a produit (`payload.extrait_source`) + le score de
+--  géocodage le cas échéant. La traçabilité vit dans le journal, pas dans une
+--  table à part. Ré-ajoutable plus tard par migration additive si le besoin
+--  « réécouter l'appel » apparaît.)
 
 -- Index pour la vitesse
 create index idx_evt_intervention on evenements(intervention_id, event_id);
@@ -176,13 +172,12 @@ create index idx_entites_intervention on entites(intervention_id);
 create index idx_entites_geom on entites using gist(geom);
 
 -- Temps réel : le dashboard s'abonne aux nouveautés
-alter publication supabase_realtime add table evenements, entites, appels;
+alter publication supabase_realtime add table evenements, entites;
 
 -- Sécurité : activer Row Level Security sur TOUTES les tables
 alter table interventions enable row level security;
 alter table evenements   enable row level security;
 alter table entites      enable row level security;
-alter table appels       enable row level security;
 -- (politiques d'accès : utilisateurs authentifiés du SDIS uniquement — à générer avec Claude Code)
 ```
 
@@ -320,7 +315,7 @@ Poste à part (pilote) : juridique RGPD/DPO ~2-8 k€ one-shot + hébergement so
 **Prompt type — nouvelle fonctionnalité :**
 ```
 Je construis Athena (dashboard de crise pompiers). Stack : Next.js App Router,
-Supabase (tables evenements/entites/appels), MapLibre + tuiles IGN, Tailwind.
+Supabase (tables evenements/entites), MapLibre + tuiles IGN, Tailwind.
 Fonctionnalité : [nom, ex. F3 rejeu RETEX]
 Exigences : [copier les critères du PRD]
 Contraintes : clés API côté serveur uniquement ; jamais supprimer d'événement ;

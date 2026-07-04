@@ -45,7 +45,7 @@ Le TechDesign proposait Next.js. **Le code réel utilise Vite + React** (l'édit
 - [x] Éditeur EAV React Flow (entities/attributes, realtime, Supabase)
 
 ### Phase F0 : Socle dashboard (en cours)
-- [ ] Migration `0002_athena_core.sql` : tables `interventions`, `evenements` (journal append-only), `entites` (projection), `appels` + index + RLS + realtime (SQL prêt dans TechDesign §4)
+- [ ] Migration `0002_athena_core.sql` : tables `interventions`, `evenements` (journal append-only), `entites` (projection) + index + RLS + realtime (SQL prêt dans TechDesign §4). Pas de table `appels` (décision produit) : l'appel est traité en direct, la phrase source d'un fait vit dans `payload.extrait_source`.
 - [ ] Route `/intervention/:id` : carte MapLibre plein écran + fonds IGN (data.geopf.fr)
 - [ ] Abonnement Realtime : INSERT dans `evenements`/`entites` → marqueur carte + ligne main courante < 2 s
 - [ ] Test : insérer un événement à la main dans Supabase → il apparaît sans recharger

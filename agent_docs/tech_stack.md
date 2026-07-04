@@ -25,7 +25,7 @@ npm install maplibre-gl @mapbox/mapbox-gl-draw @turf/turf zod
 
 ## Supabase (projet unique, deux domaines)
 - Migration `0001_init_eav_editor.sql` : éditeur EAV (`entities`, `attributes`) — ne pas toucher.
-- Migration `0002_athena_core.sql` (à créer en F0) : `interventions`, `evenements`, `entites`, `appels` — SQL complet prêt dans `vibe-coding-prompt-template-main/docs/TechDesign-Athena-MVP.md` §4.
+- Migration `0002_athena_core.sql` (à créer en F0) : `interventions`, `evenements`, `entites` — SQL complet prêt dans `vibe-coding-prompt-template-main/docs/TechDesign-Athena-MVP.md` §4. Pas de table `appels` (décision produit) : l'appel est traité en direct, la transcription est éphémère, la phrase source d'un fait vit dans `payload.extrait_source` de l'événement.
 - Realtime activé sur les tables du dashboard ; PostGIS pour `geom`.
 - **Edge Functions** (`supabase/functions/`) : `extraction` (LLM), `stt-token` (token Gladia éphémère). C'est LE serveur du projet (Vite n'en a pas).
 
