@@ -81,6 +81,7 @@ Le TechDesign proposait Next.js. **Le code réel utilise Vite + React** (l'édit
 - [x] Géocodage IGN réel (`data/geocodageIgn.ts`, `data.geopf.fr/geocodage`, sans clé) + seuil 0,8 (`SEUIL_FIABLE`) → statut `presume`/`confirme` selon le score. NB : `12 rue des Lilas, Lyon` score ~0,76 → « présumé » (démo réaliste de la validation).
 - [x] Écriture au journal : chaque pas d'extraction → `insererEvenement` (`payload.extrait_source` = la phrase) + `upsertEntite` géolocalisée (`data/interventionApi.ts`). Journal toujours append-only.
 - [ ] **Test de référence F1.a** (⏳ bloqué par migration `0002`) : `/flux` → « Lancer la simulation » → victime placée sur la carte + main courante remplie, zéro clavier.
+> ⚠ **v1** : bâtie sur des primitives shadcn de base (`Card`/`Input`/`Badge`/`Skeleton`) + quelques `div` custom (bulles du transcript, marqueurs MapLibre). La **persistance des appels** (table `appels`) et la **conformité aux composants dédiés** (`Attachment`, `Message`, `Message Scroller`, `Sonner`, `Marker`) sont regroupées en **Phase F2** ci-dessous.
 **F1.b — Extraction LLM réelle** (prérequis : clé Anthropic + `supabase login` + `supabase link`) :
 - [ ] Edge Function `extraction` : texte → JSON structuré (champs optionnels : adresse?, nature?, nb_victimes?, etage?, moyens?, danger?) — secrets via `supabase secrets set`
 **F1.c — Transcription réelle + banc d'essai** (prérequis : compte Gladia + 2-3 enregistrements test) :
@@ -88,11 +89,12 @@ Le TechDesign proposait Next.js. **Le code réel utilise Vite + React** (l'édit
 - [ ] Banc d'essai STT : page interne d'upload audio → transcriptions comparées sur NOS enregistrements
 - [ ] Test de référence F1 : enregistrement joué → victime placée au bon endroit, zéro clavier
 
-### Phase F2 : Onglet Flux (les appels)
-- [ ] Migration `0003_appels.sql` (additive) : table `appels` (`id`, `intervention_id`, `titre`, `audio_url`, `ts_debut`, `duree`, `transcript`, timestamps)
-- [ ] Page Flux : liste des appels passés (`Item`/`Card` + `Empty`), upload d'audio (`Attachment`) vers `frontend/public/audio_demo/` (démo) ou Supabase Storage
-- [ ] Moteur de simulation : joue les audios de `audio_demo/` selon leurs heures de début — appels qui popent (`Sonner`), transcript live (`Message`+`Message Scroller`), entités progressives sur la carte
-- [ ] Sidebar : entrées « Flux » et « Carte » (remplacent/complètent « Tableau de bord »)
+### Phase F2 : Flux — persistance & conformité shadcn (finir la v1 F1.a)
+> L'onglet Flux + la simulation existent déjà (F1.a). Cette phase les rend persistants et 100 % conformes à la règle UI.
+- [ ] Migration `0003_appels.sql` (additive) : table `appels` (`id`, `intervention_id`, `titre`, `audio_url`, `ts_debut`, `duree`, `transcript`, timestamps) → la liste, les uploads et les heures de début deviennent persistants (aujourd'hui : manifeste statique + uploads en mémoire)
+- [ ] Upload d'audio via `Attachment` vers Supabase Storage (au lieu de l'`Input type=file` + object URL local) ; liste en `Item`/`Card` + `Empty`
+- [ ] Conformité composants dédiés : transcript en `Message` + `Message Scroller` (remplace les bulles `div`), notifications « appel entrant » en `Sonner`, marqueurs carte en `Marker` (remplace les `div` custom MapLibre)
+- [ ] Sidebar : ajouter l'entrée « Carte » à côté de « Flux » (déjà présente)
 
 ### Phase F3 : Onglet Carte — timeline de montage + replay
 ⚠️ À coder seulement quand la transcription (F1) fonctionne — instruction Oscar.
