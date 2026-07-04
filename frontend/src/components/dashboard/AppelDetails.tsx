@@ -1,7 +1,9 @@
 import { Brain, Building2, MapPin, User } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Appel } from '../../typesSimulation'
+import { useEvenementsDB } from '../../hooks/useEvenementsDB'
 
 function initiales(nom: string): string {
   return (
@@ -31,22 +33,63 @@ export function EnteteOperateur({ appel }: { appel: Appel }) {
   )
 }
 
-/** Espace réservé à la chaîne de raisonnement du LLM (à venir). */
-export function SectionRaisonnement() {
+/** Libellé lisible d'un type d'événement d'extraction. */
+const LIBELLE_EVENEMENT: Record<string, string> = {
+  ENTITE_CREEE: 'Objet identifié',
+  ENTITE_MAJ: 'Mise à jour',
+  RELATION: 'Relation',
+}
+
+/** Chaîne de raisonnement du LLM (journal `evenements` en direct via Realtime). */
+export function SectionRaisonnement({ appelId }: { appelId?: string | null }) {
+  const evenements = useEvenementsDB(appelId ?? null)
+
   return (
     <section>
       <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         <Brain className="h-3.5 w-3.5" /> Raisonnement du LLM
+        {evenements.length > 0 && (
+          <Badge variant="secondary" className="ml-auto h-5 px-1.5 text-[10px]">
+            {evenements.length}
+          </Badge>
+        )}
       </h3>
       <div className="rounded-lg border border-dashed p-3">
-        <div className="space-y-2">
-          <Skeleton className="h-3 w-4/5" />
-          <Skeleton className="h-3 w-3/5" />
-          <Skeleton className="h-3 w-2/3" />
-        </div>
-        <p className="mt-2 text-[11px] italic text-muted-foreground">
-          Espace réservé — la chaîne de raisonnement de l'extraction s'affichera ici.
-        </p>
+        {evenements.length === 0 ? (
+          <>
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-4/5" />
+              <Skeleton className="h-3 w-3/5" />
+              <Skeleton className="h-3 w-2/3" />
+            </div>
+            <p className="mt-2 text-[11px] italic text-muted-foreground">
+              En attente de l'extraction — les faits identifiés s'afficheront ici pendant l'appel.
+            </p>
+          </>
+        ) : (
+          <ul className="space-y-1.5">
+            {evenements.map((ev) => {
+              const p = ev.payload ?? {}
+              const source = typeof p.extrait_source === 'string' ? p.extrait_source : null
+              const detail =
+                ev.event_type === 'RELATION'
+                  ? String(p.relation ?? 'lien')
+                  : source
+              return (
+                <li key={ev.event_id} className="flex items-start gap-2 text-xs">
+                  <Badge variant="outline" className="shrink-0 px-1.5 py-0 text-[10px]">
+                    {LIBELLE_EVENEMENT[ev.event_type] ?? ev.event_type}
+                  </Badge>
+                  {detail && (
+                    <span className="min-w-0 flex-1 text-muted-foreground">
+                      {ev.event_type === 'RELATION' ? detail : `« ${detail} »`}
+                    </span>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </div>
     </section>
   )

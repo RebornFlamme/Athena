@@ -70,7 +70,7 @@ export function FeuillePastCall({ appel, onClose }: { appel: Appel | null; onClo
                   )}
                 </section>
 
-                <SectionRaisonnement />
+                <SectionRaisonnement appelId={appel.id} />
 
                 <section>
                   <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">

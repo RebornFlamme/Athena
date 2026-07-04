@@ -131,9 +131,9 @@ export function FeuilleTranscription({
               </div>
             </ScrollArea>
 
-            {/* Raisonnement LLM (réservé) */}
+            {/* Raisonnement LLM (journal d'extraction en direct) */}
             <div className="shrink-0 border-t p-4">
-              <SectionRaisonnement />
+              <SectionRaisonnement appelId={appel.id} />
             </div>
           </>
         )}
