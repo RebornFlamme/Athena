@@ -1,83 +1,104 @@
 # Modèle de données — Athena
 
-## 🧍 Victime
+4 entités : `Victime`, `Evenement`, `Vehicule`, `Personnel`.
 
-- **Appelant** : oui / non
-- **Langue** :
-- **Position** :
-  - **Localisation géographique**
-    - Détails : chaîne de caractères
-    - Accès possibles du site :
-  - **Position confirmée ?** — confirmée par les pompiers à leur arrivée sur les lieux
-- **Numéro de téléphone** :
-- **Événement considéré** : pointe vers l'objet [Événement](#-événement)
-- **Risque lié à l'environnement** : évaluation par IA, confirmation humaine
-- **Risque lié à la santé** :
+## Relations entre entités
 
-### Identité
-- Nom
-- Prénom
-- Âge
-- Sexe
-
-### Évaluation de l'état de la personne
-| Couleur | |
-|---|---|
-| 🟢 Vert | |
-| 🟡 Jaune | |
-| 🔴 Rouge | |
-| ⚫ Noir | |
-
-### Évaluation de la mobilité de la personne
-- Possibilité de déplacer (mobilité)
-- **Statut physique** : chaîne de caractères — ex. « Hémorragie »
-
-### Informations supplémentaires communiquées
-- Combien de personnes dans l'appartement
-- Possibilité de pointer vers une autre victime :
-  - **QUI ?** — avec une autre victime
-  - **Comment ?** — en visuel, proche physiquement
-
-### Actions déjà réalisées
-- Action : liste (temps, localisation)
+```
+Evenement 1 ──── n Victime      (un événement regroupe ses victimes)
+Evenement 1 ──── n Vehicule     (véhicules engagés / sur les lieux)
+Vehicule  1 ──── n Personnel    (équipage ; un chef par véhicule)
+Victime   n ──── n Victime      (une victime peut pointer vers une autre victime)
+Personnel 1 ──── n Personnel    (hiérarchie chef / subordonné)
+```
 
 ---
 
-## 🚨 Événement
+## Victime
 
-Pointe vers :
-- Une **heure de début**
-- Une **localisation**
-- **Description du sinistre** : chaîne de caractères
-- **Liste des victimes** → [Victime](#-victime)
-- **Les véhicules** (eux-mêmes pointent vers les personnels) → [Véhicules](#-véhicules)
-- **Les véhicules sur les lieux**
-- Conditions météos :
-	- mtn : 
-		- température
-		- humidité
-		- vent, (force direction)
-	- broadcast : 
+| Champ | Type | Description |
+|---|---|---|
+| `appelant` | booléen | La victime est-elle l'appelant ? |
+| `langue` | chaîne | Langue parlée |
+| `telephone` | chaîne | Numéro de téléphone |
+| `position` | objet | Voir [Position](#position-sous-objet) ci-dessous |
+| `evenement` | référence → `Evenement` | Événement considéré |
+| `risque_environnement` | évaluation | Évaluation par IA, confirmation humaine |
+| `risque_sante` | évaluation | Évaluation par IA, confirmation humaine |
+| `identite` | objet | `nom`, `prenom`, `age`, `sexe` |
+| `etat` | énum | `vert` / `jaune` / `rouge` / `noir` (triage) |
+| `mobilite` | booléen | Possibilité de déplacer la personne |
+| `statut_physique` | chaîne | Ex. « Hémorragie » |
+| `nb_personnes_sur_place` | entier | Combien de personnes dans l'appartement |
+| `victime_liee` | objet | Voir [Victime liée](#victime-liée-sous-objet) ci-dessous |
+| `actions_realisees` | liste d'objets | Chaque action : `action` (chaîne), `temps`, `localisation` |
+
+### Position (sous-objet)
+
+| Champ | Type | Description |
+|---|---|---|
+| `details` | chaîne | Description libre de la localisation géographique |
+| `acces_possibles` | liste de chaînes | Accès possibles du site |
+| `confirmee` | booléen | Confirmée par les pompiers à leur arrivée sur les lieux |
+
+### Victime liée (sous-objet)
+
+Possibilité de pointer vers une autre victime.
+
+| Champ | Type | Description |
+|---|---|---|
+| `qui` | référence → `Victime` | Avec quelle autre victime |
+| `comment` | énum | `visuel` / `proche_physiquement` |
 
 ---
 
-## 🚒 Véhicules
+## Evenement
 
-- **Type de véhicule** : VSAV, engin incendie, bras élévateur aérien
-- **Institution d'origine** : SAMU, Pompiers, SDIS
-- **Équipage** : pointe vers les membres de l'équipage, indique la fonction → [Personnels](#-personnels)
-- **Chef du véhicule** : pointe vers le chef du véhicule
-- **Statut du véhicule** :
-  - Niveau d'eau disponible (si engin incendie)
-  - Niveau d'oxygène disponible (si ambulance)
-- **Information en plus** : string
+| Champ | Type | Description |
+|---|---|---|
+| `heure_debut` | datetime | Heure de début |
+| `localisation` | objet | Localisation du sinistre |
+| `description` | chaîne | Description du sinistre |
+| `victimes` | liste de références → `Victime` | Victimes rattachées à l'événement |
+| `vehicules_engages` | liste de références → `Vehicule` | Véhicules engagés (pointent eux-mêmes vers les personnels) |
+| `vehicules_sur_place` | liste de références → `Vehicule` | Véhicules arrivés sur les lieux |
+| `meteo` | objet | Voir [Météo](#météo-sous-objet) ci-dessous |
+
+### Météo (sous-objet)
+
+| Champ | Type | Description |
+|---|---|---|
+| `actuelle` | objet | `temperature`, `humidite`, `vent` (force, direction) |
+| `broadcast` | objet | Prévisions — à préciser |
 
 ---
 
-## 👨‍🚒 Personnels
+## Vehicule
 
-- **Véhicule de rattachement** → [Véhicules](#-véhicules)
-- **Rôle dans le véhicule** :
-- **Radio** (le cas échéant) : STT avec timeline de ce qui a été dit
-- **Subordonné** : pointe vers un autre personnel, avec l'appellation de ce subordonné
-- **Chef** : pointe vers son chef, avec l'appellation de son chef
+| Champ | Type | Description |
+|---|---|---|
+| `type` | énum | `VSAV` / `engin_incendie` / `bras_elevateur_aerien` |
+| `institution` | énum | `SAMU` / `Pompiers` / `SDIS` — institution d'origine |
+| `equipage` | liste d'objets | Chaque membre : référence → `Personnel` + `fonction` |
+| `chef` | référence → `Personnel` | Chef du véhicule |
+| `statut` | objet | Voir [Statut](#statut-sous-objet) ci-dessous |
+| `infos` | chaîne | Information en plus |
+
+### Statut (sous-objet)
+
+| Champ | Type | Description |
+|---|---|---|
+| `niveau_eau` | nombre | Uniquement si engin incendie |
+| `niveau_oxygene` | nombre | Uniquement si ambulance (VSAV) |
+
+---
+
+## Personnel
+
+| Champ | Type | Description |
+|---|---|---|
+| `vehicule` | référence → `Vehicule` | Véhicule de rattachement |
+| `role` | chaîne | Rôle dans le véhicule |
+| `radio_transcription` | liste d'objets | Si équipé d'une radio : STT avec timeline — chaque entrée : `timestamp` + `texte` |
+| `subordonne` | objet | Référence → `Personnel` + `appellation` du subordonné |
+| `chef` | objet | Référence → `Personnel` + `appellation` du chef |
