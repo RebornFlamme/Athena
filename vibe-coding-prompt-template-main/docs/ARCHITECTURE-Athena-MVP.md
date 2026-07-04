@@ -52,7 +52,7 @@
 | **Navigateur** (COS, opérateur) | Afficher le dashboard, valider les infos | Chrome/Safari, tablette ou desktop | Chez l'utilisateur |
 | **Frontend Next.js** | Les écrans : carte, panneau appel, main courante, rejeu | React + Tailwind + MapLibre GL JS | Vercel (démo) |
 | **Routes API Next.js** (`/api/*`) | Tout ce qui touche aux **secrets** : appel LLM, géocodage, tokens STT | Next.js App Router (serveur) | Vercel (démo) |
-| **Base de données** | La vérité : journal + projection + appels + interventions | PostgreSQL + PostGIS | Supabase |
+| **Base de données** | La vérité : journal + projection + interventions | PostgreSQL + PostGIS | Supabase |
 | **Temps réel** | Pousser chaque nouvel événement à tous les écrans | Supabase Realtime (websocket) | Supabase |
 | **Stockage fichiers** | Les enregistrements audio | Supabase Storage | Supabase |
 | **Comptes utilisateurs** | Connexion, rôles (opérateur / COS) | Supabase Auth | Supabase |
@@ -95,13 +95,11 @@ interventions (le dossier)
      │         · source · fiabilite (Admiralty A1→F6) · statut
      │         · corrige_event_id (une correction POINTE l'ancien, ne l'efface pas)
      │ 1
-     ├──────< entites      LA PROJECTION — état courant affichable
-     │ N       · type (acteur|moyen|zone) · etat JSONB fusionné
-     │         · geom (point ou polygone PostGIS) · fiabilite · statut
-     │ 1
-     └──────< appels       L'AUDIO — fichier + transcription + extraction JSON
-       N       · score_geocodage · valide_par_humain
+     └──────< entites      LA PROJECTION — état courant affichable
+       N       · type (acteur|moyen|zone) · etat JSONB fusionné
+               · geom (point ou polygone PostGIS) · fiabilite · statut
 ```
+> Pas de table « appels » (décision produit) : l'appel est traité en direct, la transcription est éphémère ; chaque fait extrait garde sa phrase source dans `payload.extrait_source`.
 *(SQL complet prêt à copier : [TechDesign §4](TechDesign-Athena-MVP.md))*
 
 ### Cycle de vie d'une information

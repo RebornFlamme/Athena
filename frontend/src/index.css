@@ -84,3 +84,192 @@
 .react-flow__attribution {
   display: none;
 }
+
+/* ---------- Dashboard intervention (Athena) ---------- */
+.carte-wrap {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+.carte-conteneur {
+  position: absolute;
+  inset: 0;
+}
+.marqueur-entite {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 1px 6px #000a;
+  cursor: pointer;
+}
+.lien-retour {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.lien-retour:hover {
+  color: var(--text);
+}
+.pastille-statut {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-radius: 5px;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.pastille-statut.active {
+  color: var(--ok);
+  border-color: var(--ok);
+  background: #22c55e1a;
+}
+
+/* Main courante */
+.main-courante {
+  width: 360px;
+  flex-shrink: 0;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.main-courante__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+.main-courante__count {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0 7px;
+  font-size: 11px;
+}
+.main-courante__liste {
+  flex: 1;
+  overflow-y: auto;
+}
+.mc-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid #ffffff08;
+  font-size: 13px;
+}
+.mc-item__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+.mc-item__heure {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  font-size: 12px;
+}
+.mc-item__type {
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mc-item__desc {
+  line-height: 1.45;
+}
+.mc-item__source {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 2px;
+}
+.badge-statut {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border: 1px solid;
+  border-radius: 5px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+.mc-empty {
+  padding: 16px 14px;
+  color: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+/* Liste des interventions */
+.page-scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+.liste-interventions {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 16px 60px;
+  width: 100%;
+}
+.liste-interventions h2 {
+  margin: 0 0 16px;
+}
+.form-nouvelle-intervention {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.form-nouvelle-intervention .champ {
+  flex: 1;
+  min-width: 200px;
+}
+.cartes-interventions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.carte-intervention {
+  display: block;
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.12s ease;
+}
+.carte-intervention:hover {
+  border-color: var(--accent);
+}
+.carte-intervention__titre {
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.carte-intervention__meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+.carte-intervention .pastille-statut {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+/* La carte IGN est claire : garder les contrôles lisibles sur fond sombre. */
+.maplibregl-ctrl-attrib {
+  font-size: 10px;
+}
