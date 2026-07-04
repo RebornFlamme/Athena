@@ -11,6 +11,8 @@ persisté dans Supabase.
 - `supabase/` — `config.toml` + migrations SQL (méta-schéma versionné dans git)
 - `Ressources/` — modèle de données de référence Athena (inspiration, non chargé par l'outil)
 - `backend/` — réservé (vide pour l'instant)
+- `AGENTS.md` + `agent_docs/` — plan directeur et consignes pour les assistants IA (vibe-coding, étape 4)
+- `vibe-coding-prompt-template-main/docs/` — documents stratégiques (recherche, PRD, TechDesign, architecture)
 
 ## Concepts (méta-schéma EAV)
 
