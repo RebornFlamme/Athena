@@ -44,6 +44,13 @@ button.primary {
   border-color: var(--accent);
   color: white;
 }
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+button:disabled:hover {
+  border-color: var(--border);
+}
 button.danger {
   color: var(--danger);
   border-color: transparent;

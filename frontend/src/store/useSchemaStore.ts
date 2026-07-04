@@ -28,6 +28,8 @@ interface SchemaState {
   addEntity: (opts?: { name?: string; is_subobject?: boolean; x?: number; y?: number }) => Promise<Entity | null>
   renameEntity: (id: string, name: string) => Promise<void>
   setEntityColor: (id: string, color: string) => Promise<void>
+  /** Persiste plusieurs propriétés d'un objet en un seul écrit (bouton Enregistrer). */
+  saveEntity: (id: string, patch: { name?: string; color?: string | null }) => Promise<void>
   removeEntity: (id: string) => Promise<void>
 
   // Position : mise à jour locale pendant le drag, persistée au drag stop.
@@ -99,6 +101,15 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
     patchEntityLocal(set, id, { color })
     try {
       await api.updateEntity(id, { color })
+    } catch (err) {
+      set({ error: messageOf(err) })
+    }
+  },
+
+  saveEntity: async (id, patch) => {
+    patchEntityLocal(set, id, patch)
+    try {
+      await api.updateEntity(id, patch)
     } catch (err) {
       set({ error: messageOf(err) })
     }

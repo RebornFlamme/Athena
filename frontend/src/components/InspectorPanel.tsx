@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSchemaStore } from '../store/useSchemaStore'
 import { FieldEditor, type FieldFormValues } from './FieldEditor'
 import type { Attribute } from '../types'
@@ -13,16 +13,30 @@ export function InspectorPanel() {
     s.attributes.filter((a) => a.entity_id === selectedId).sort((a, b) => a.ordinal - b.ordinal),
   )
 
-  const renameEntity = useSchemaStore((s) => s.renameEntity)
-  const setEntityColor = useSchemaStore((s) => s.setEntityColor)
+  const saveEntity = useSchemaStore((s) => s.saveEntity)
   const removeEntity = useSchemaStore((s) => s.removeEntity)
   const addEntity = useSchemaStore((s) => s.addEntity)
   const addAttribute = useSchemaStore((s) => s.addAttribute)
   const editAttribute = useSchemaStore((s) => s.editAttribute)
   const removeAttribute = useSchemaStore((s) => s.removeAttribute)
 
+  // Brouillon local des propriétés de l'objet : rien n'est envoyé à Supabase
+  // tant que l'utilisateur ne clique pas sur « Enregistrer ».
+  const [name, setName] = useState('')
+  const [color, setColor] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+
+  // Recharge le brouillon quand on sélectionne un autre objet.
+  useEffect(() => {
+    setName(entity?.name ?? '')
+    setColor(entity?.color ?? null)
+    setAdding(false)
+    setEditingId(null)
+    // On ne dépend que de l'id : on ne veut PAS écraser le brouillon si le store
+    // change (ex. écho Realtime) pendant que l'utilisateur édite.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entity?.id])
 
   if (!entity) {
     return (
@@ -33,6 +47,19 @@ export function InspectorPanel() {
         </p>
       </aside>
     )
+  }
+
+  const dirty = name !== entity.name || (color ?? null) !== (entity.color ?? null)
+  const canSave = dirty && name.trim().length > 0
+
+  async function handleSaveEntity() {
+    if (!entity || !canSave) return
+    await saveEntity(entity.id, { name: name.trim(), color })
+  }
+
+  function resetDraft() {
+    setName(entity?.name ?? '')
+    setColor(entity?.color ?? null)
   }
 
   // Crée l'entité cible si nécessaire, renvoie l'id de cible à utiliser.
@@ -82,8 +109,11 @@ export function InspectorPanel() {
       <div className="field-block">
         <label>Nom de l'objet</label>
         <input
-          value={entity.name}
-          onChange={(e) => renameEntity(entity.id, e.target.value)}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void handleSaveEntity()
+          }}
         />
       </div>
 
@@ -94,19 +124,31 @@ export function InspectorPanel() {
             <button
               key={c}
               type="button"
-              onClick={() => setEntityColor(entity.id, c)}
+              onClick={() => setColor(c)}
               title={c}
               style={{
                 width: 26,
                 height: 26,
                 padding: 0,
                 background: c,
-                borderColor: entity.color === c ? '#fff' : 'transparent',
+                borderColor: color === c ? '#fff' : 'transparent',
               }}
             />
           ))}
         </div>
       </div>
+
+      <div className="row">
+        <button className="primary" disabled={!canSave} onClick={handleSaveEntity}>
+          {dirty ? 'Enregistrer la modification' : 'Enregistré'}
+        </button>
+        {dirty && (
+          <button type="button" onClick={resetDraft}>
+            Annuler
+          </button>
+        )}
+      </div>
+      {dirty && <p className="hint">Modifications non enregistrées.</p>}
 
       <div className="divider" />
 
