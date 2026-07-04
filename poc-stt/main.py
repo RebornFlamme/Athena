@@ -55,8 +55,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Pool de threads pour les jobs de transcription (chacun stream ~temps réel).
-_transcribe_pool = ThreadPoolExecutor(max_workers=4)
+# Pool de threads pour les jobs de transcription. Chaque job stream en TEMPS
+# RÉEL sur toute la durée de son appel → pour que TOUS les appels soient
+# transcrits simultanément (alignés sur la timeline de simulation) et non par
+# vagues de 4, on dimensionne large (1 worker par appel + marge).
+_transcribe_pool = ThreadPoolExecutor(max_workers=32)
 
 # S'assurer que le dossier data/ existe
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")

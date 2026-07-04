@@ -146,19 +146,44 @@ def run_stt_stream(
     4. Quand audio_queue reçoit None → le générateur s'arrête → le stream
        Google se termine → on pousse None dans result_queue.
     """
-    def request_generator(config_request):
-        """Générateur qui alimente streaming_recognize.
+    # Limite dure de Google STT V2 : un StreamingRecognize ne peut pas dépasser
+    # ~5 min. On rouvre un nouveau stream toutes les ~4 min en continuant à
+    # alimenter l'audio (pattern « infinite streaming ») → les fichiers longs
+    # (réseaux radio de ~15 min) sont transcrits en entier, sans coupure.
+    STREAM_LIMIT_BYTES = 4 * 60 * 16000 * 2  # 4 min de PCM 16 kHz mono s16le
 
+    # État partagé entre les redémarrages de stream (via closure).
+    carryover: list[bytes] = []   # chunk déjà lu mais qui appartient au stream suivant
+    state = {"finished": False}   # True quand audio_queue a livré None (fin réelle)
+
+    def request_generator(config_request):
+        """Alimente UN stream : config, puis chunks jusqu'à la limite ou la fin.
+
+        Rend la main (return) dans deux cas :
+        - fin réelle de l'audio (None reçu de audio_queue) → state['finished']=True
+        - limite de durée du stream atteinte → le chunk courant est reporté dans
+          `carryover` pour ouvrir le prochain stream sans perdre d'audio.
         Premier message = config uniquement.
-        Messages suivants = chunks audio.
-        S'arrête quand il reçoit None de audio_queue.
         """
         yield config_request
+        sent = 0
+        # Rejouer d'abord le chunk reporté du stream précédent, le cas échéant.
+        while carryover:
+            chunk = carryover.pop(0)
+            sent += len(chunk)
+            yield cloud_speech.StreamingRecognizeRequest(audio=chunk)
         while True:
             chunk = audio_queue.get()
             if chunk is None:
                 logger.info("Fin du stream audio (signal None reçu)")
-                break
+                state["finished"] = True
+                return
+            if sent + len(chunk) > STREAM_LIMIT_BYTES:
+                # Limite atteinte : ce chunk ouvrira le prochain stream.
+                carryover.append(chunk)
+                logger.info("Limite de durée du stream atteinte → reconnexion STT")
+                return
+            sent += len(chunk)
             logger.debug("Envoi chunk audio : %d octets", len(chunk))
             yield cloud_speech.StreamingRecognizeRequest(audio=chunk)
 
@@ -168,42 +193,47 @@ def run_stt_stream(
         # absent), l'erreur est renvoyée au client via result_queue au lieu de
         # tuer la WebSocket silencieusement (sinon : socket fermée, aucun JSON).
         client = get_client()
-        config_request = build_stt_config()
 
         logger.info("Démarrage du stream Google STT (chirp_3)...")
-        responses = client.streaming_recognize(requests=request_generator(config_request))
+        # Boucle de (re)connexion : un nouveau stream chaque fois que le
+        # précédent atteint la limite de durée, jusqu'à la fin réelle de l'audio.
+        while not state["finished"]:
+            config_request = build_stt_config()
+            responses = client.streaming_recognize(
+                requests=request_generator(config_request)
+            )
 
-        for response in responses:
-            if not response.results:
-                continue
-
-            for result in response.results:
-                if not result.alternatives:
+            for response in responses:
+                if not response.results:
                     continue
 
-                alternative = result.alternatives[0]
+                for result in response.results:
+                    if not result.alternatives:
+                        continue
 
-                # Récupération du code langue
-                language_code = getattr(result, "language_code", None)
-                if not language_code:
-                    language_code = getattr(alternative, "language_code", None)
-                if not language_code:
-                    language_code = "unknown"
+                    alternative = result.alternatives[0]
 
-                payload = {
-                    "type": "transcript",
-                    "text": alternative.transcript,
-                    "is_final": result.is_final,
-                    "language_code": language_code,
-                }
+                    # Récupération du code langue
+                    language_code = getattr(result, "language_code", None)
+                    if not language_code:
+                        language_code = getattr(alternative, "language_code", None)
+                    if not language_code:
+                        language_code = "unknown"
 
-                logger.debug(
-                    "Résultat STT : is_final=%s lang=%s text=%.60s",
-                    result.is_final,
-                    language_code,
-                    alternative.transcript,
-                )
-                result_queue.put(payload)
+                    payload = {
+                        "type": "transcript",
+                        "text": alternative.transcript,
+                        "is_final": result.is_final,
+                        "language_code": language_code,
+                    }
+
+                    logger.debug(
+                        "Résultat STT : is_final=%s lang=%s text=%.60s",
+                        result.is_final,
+                        language_code,
+                        alternative.transcript,
+                    )
+                    result_queue.put(payload)
 
         logger.info("Stream Google STT terminé normalement")
 
