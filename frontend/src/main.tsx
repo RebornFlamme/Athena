@@ -6,6 +6,7 @@ import { SchemaEditorPage } from './components/SchemaEditorPage'
 import { PlaceholderPage } from './components/PlaceholderPage'
 import { DashboardPage } from './components/dashboard/DashboardPage'
 import { SimulationPage } from './components/simulation/SimulationPage'
+import '@fontsource-variable/geist'
 import '@xyflow/react/dist/style.css'
 import './index.css'
 

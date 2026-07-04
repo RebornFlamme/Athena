@@ -3,6 +3,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { isSupabaseConfigured } from '../../lib/supabase'
 import { Carte } from './Carte'
+import { PanneauObjets } from './PanneauObjets'
 import { PanneauSemanticLayer } from './PanneauSemanticLayer'
 import { PanneauFluxAudio } from '../simulation/PanneauFluxAudio'
 
@@ -29,9 +30,17 @@ export function DashboardPage() {
 
       <ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
         <ResizablePanel defaultSize={68} minSize={40}>
-          <div className="relative h-full">
-            <Carte />
-          </div>
+          <ResizablePanelGroup direction="vertical">
+            <ResizablePanel defaultSize={62} minSize={25}>
+              <div className="relative h-full">
+                <Carte />
+              </div>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={38} minSize={15}>
+              <PanneauObjets />
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={32} minSize={24}>
