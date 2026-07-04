@@ -10,37 +10,16 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { formaterMs } from '../../sim/audioMeta'
-import { useTranscription } from '../../hooks/useTranscription'
-import type { SttStatut } from '../../lib/sttStream'
+import { useTranscriptionDB } from '../../hooks/useTranscriptionDB'
+import { useSimulationPlayback } from '../../store/useSimulationPlayback'
 import type { Appel } from '../../typesSimulation'
 import { VisualiseurVoix } from '../simulation/VisualiseurVoix'
 
-const LIBELLE_STATUT: Record<SttStatut | 'inactif', string> = {
-  inactif: '',
-  connexion: 'Connexion au serveur STT…',
-  actif: 'Transcription en direct',
-  termine: 'Transcription terminée',
-  erreur: 'Erreur',
-}
-
-function couleurStatut(statut: SttStatut | 'inactif'): string {
-  switch (statut) {
-    case 'actif':
-      return 'bg-emerald-500'
-    case 'connexion':
-      return 'bg-amber-500'
-    case 'erreur':
-      return 'bg-destructive'
-    default:
-      return 'bg-muted-foreground/50'
-  }
-}
-
 /**
- * Volet (Sheet à droite) ouvert au clic sur un appel du live feed. Reprend la
- * même carte audio (titre, minutage, histogramme de voix, toggle écoute) et
- * affiche la transcription qui arrive en direct depuis le backend Chirp 3 :
- * les segments `final` s'accumulent, la ligne `interim` (grisée) suit la parole.
+ * Volet (Sheet à droite) ouvert au clic sur un appel. **Pur lecteur** de la base :
+ * il affiche les segments de `transcriptions` (produits par le job serveur au
+ * lancement de la simulation) et se met à jour en direct via Supabase Realtime.
+ * Aucune STT ici — la transcription est un job serveur.
  */
 export function FeuilleTranscription({
   appel,
@@ -56,18 +35,17 @@ export function FeuilleTranscription({
   onToggleEcoute: () => void
   onClose: () => void
 }) {
-  const { statut, detail, interim, finals, langue } = useTranscription(
-    appel?.audio_url ?? null,
-    appel != null,
-  )
+  const segments = useTranscriptionDB(appel?.id ?? null)
+  const enLecture = useSimulationPlayback((s) => s.statut === 'lecture')
 
-  // Auto-scroll vers le bas quand le transcript grandit.
+  // Auto-scroll vers le bas quand des segments arrivent.
   const bas = useRef<HTMLDivElement | null>(null)
   useEffect(() => {
     bas.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [finals, interim])
+  }, [segments])
 
-  const vide = finals.length === 0 && !interim
+  const langue = segments.find((s) => s.langue)?.langue ?? ''
+  const vide = segments.length === 0
 
   return (
     <Sheet open={appel != null} onOpenChange={(o) => !o && onClose()}>
@@ -76,7 +54,7 @@ export function FeuilleTranscription({
           <>
             <SheetHeader className="space-y-1 border-b p-6 pb-4 text-left">
               <SheetTitle className="min-w-0 truncate pr-6">{appel.titre}</SheetTitle>
-              <SheetDescription>Transcription en direct — Chirp 3</SheetDescription>
+              <SheetDescription>Transcription — Chirp 3 (via Supabase)</SheetDescription>
             </SheetHeader>
 
             {/* La même carte audio que dans le live feed */}
@@ -106,15 +84,19 @@ export function FeuilleTranscription({
               </div>
             </div>
 
-            {/* Bandeau de statut STT + langue détectée */}
+            {/* Bandeau : état live + langue détectée */}
             <div className="flex items-center gap-2 border-b px-4 py-2 text-[11px] text-muted-foreground">
               <span
-                className={`h-2 w-2 shrink-0 rounded-full ${couleurStatut(statut)} ${
-                  statut === 'actif' || statut === 'connexion' ? 'animate-pulse' : ''
+                className={`h-2 w-2 shrink-0 rounded-full ${
+                  enLecture ? 'animate-pulse bg-emerald-500' : 'bg-muted-foreground/50'
                 }`}
               />
               <span className="min-w-0 flex-1 truncate">
-                {statut === 'erreur' ? (detail ?? LIBELLE_STATUT.erreur) : LIBELLE_STATUT[statut]}
+                {enLecture
+                  ? `Transcription en direct · ${segments.length} segment${segments.length > 1 ? 's' : ''}`
+                  : vide
+                    ? 'Aucune transcription — lancez la simulation'
+                    : `${segments.length} segment${segments.length > 1 ? 's' : ''} enregistré${segments.length > 1 ? 's' : ''}`}
               </span>
               {langue && (
                 <Badge variant="secondary" className="h-5 px-1.5 text-[10px] uppercase">
@@ -123,30 +105,21 @@ export function FeuilleTranscription({
               )}
             </div>
 
-            {/* Transcript live */}
+            {/* Transcript (lecture Realtime de la base) */}
             <ScrollArea className="min-h-0 flex-1">
-              <div className="space-y-2 p-4 text-sm leading-relaxed">
-                {statut === 'erreur' ? (
+              <div className="space-y-1 p-4 text-sm leading-relaxed">
+                {vide ? (
                   <p className="italic text-muted-foreground">
-                    {detail}. Vérifie que le backend STT tourne (
-                    <code className="text-xs">poc-stt/</code>, port 8000) et la variable{' '}
-                    <code className="text-xs">VITE_STT_WS_URL</code>.
-                  </p>
-                ) : vide ? (
-                  <p className="italic text-muted-foreground">
-                    {statut === 'connexion'
-                      ? 'Connexion…'
-                      : 'En attente de parole — le transcript apparaîtra ici.'}
+                    {enLecture
+                      ? 'Transcription en cours… les segments apparaîtront ici.'
+                      : 'Lancez la simulation pour générer la transcription.'}
                   </p>
                 ) : (
-                  <>
-                    {finals.map((seg, i) => (
-                      <span key={i} className="text-foreground">
-                        {seg}{' '}
-                      </span>
-                    ))}
-                    {interim && <span className="italic text-muted-foreground">{interim}</span>}
-                  </>
+                  segments.map((seg) => (
+                    <span key={seg.id} className="text-foreground">
+                      {seg.texte}{' '}
+                    </span>
+                  ))
                 )}
                 <div ref={bas} />
               </div>

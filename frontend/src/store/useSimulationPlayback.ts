@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { listAppels } from '../data/appelsApi'
+import { lancerTranscription } from '../data/transcribeApi'
 import type { Appel } from '../typesSimulation'
 
 // Moteur de lecture de la simulation active (Web Audio API).
@@ -94,6 +95,11 @@ export const useSimulationPlayback = create<PlaybackState>((set, get) => ({
     dureeTotaleMs = appels.reduce((m, a) => Math.max(m, a.ts_debut_ms + a.duree_ms), 0)
     t0 = performance.now()
     set({ statut: 'lecture', positionMs: 0, actifs: [], ecoutes: [] })
+
+    // Déclenche le job de transcription serveur (fire-and-forget). Les segments
+    // arrivent dans Supabase et s'affichent via Realtime — indépendant de la
+    // lecture audio du navigateur. N'échoue jamais la lecture si le back est KO.
+    void lancerTranscription(appels.map((a) => a.id)).catch(() => {})
 
     for (const a of appels) {
       const audio = new Audio()

@@ -16,11 +16,16 @@ import queue
 import time
 from pathlib import Path
 
+from concurrent.futures import ThreadPoolExecutor
+
 from fastapi import FastAPI, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
 from stt_client import run_stt_stream
+from supabase_client import get_supabase
+from transcribe_job import transcribe_appel
 
 # Charger .env si présent (pratique en dev local)
 load_dotenv()
@@ -39,6 +44,19 @@ logger = logging.getLogger("poc-stt")
 # Application FastAPI
 # ---------------------------------------------------------------------------
 app = FastAPI(title="POC STT Chirp 3", version="0.2.0")
+
+# CORS : le front (Vercel, HTTPS) fait un POST cross-origin vers /transcribe.
+# (Contrairement au WebSocket, un POST cross-origin est soumis au CORS.)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Pool de threads pour les jobs de transcription (chacun stream ~temps réel).
+_transcribe_pool = ThreadPoolExecutor(max_workers=4)
 
 # S'assurer que le dossier data/ existe
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -169,6 +187,39 @@ async def websocket_endpoint(websocket: WebSocket):
     )
 
     logger.info("WebSocket fermé proprement")
+
+
+# ---------------------------------------------------------------------------
+# Job de transcription serveur : déclenché au lancement de la simulation
+# ---------------------------------------------------------------------------
+@app.post("/transcribe")
+async def transcribe(payload: dict | None = None):
+    """Lance la transcription (streaming live) des appels vers Supabase.
+
+    « À chaque lancement » : supprime d'abord les transcriptions existantes des
+    appels ciblés, puis relance un job par appel (pool de threads, non bloquant).
+    Répond immédiatement — les segments arrivent ensuite via Realtime.
+
+    Body optionnel : {"appel_ids": [...]}. Sans body → tous les appels.
+    """
+    sb = get_supabase()
+
+    ids = (payload or {}).get("appel_ids")
+    query = sb.table("appels").select("*")
+    if ids:
+        query = query.in_("id", ids)
+    appels = query.execute().data or []
+
+    appel_ids = [a["id"] for a in appels]
+    if appel_ids:
+        # Recalcul : on repart d'une ardoise vierge pour ces appels.
+        sb.table("transcriptions").delete().in_("appel_id", appel_ids).execute()
+
+    for appel in appels:
+        _transcribe_pool.submit(transcribe_appel, appel)
+
+    logger.info("Transcription lancée pour %d appel(s)", len(appels))
+    return {"status": "started", "count": len(appels)}
 
 
 # ---------------------------------------------------------------------------
