@@ -16,5 +16,11 @@ export interface Appel {
   duree_ms: number
   /** Ligne/piste dans la timeline (permet l'overlap de plusieurs appels). */
   piste: number
+  /** Nom de l'opérateur au téléphone (saisi à l'upload). */
+  operateur: string | null
+  /** Localisation de l'appel (adresse / lieu de l'intervention). */
+  localisation: string | null
+  /** Caserne qui reçoit / traite l'appel. */
+  caserne: string | null
   cree_le: string
 }

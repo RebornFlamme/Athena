@@ -19,6 +19,9 @@ export async function insertAppel(input: {
   ts_debut_ms?: number
   duree_ms?: number
   piste?: number
+  operateur?: string | null
+  localisation?: string | null
+  caserne?: string | null
 }): Promise<Appel> {
   const { data, error } = await supabase.from('appels').insert(input).select().single()
   if (error) throw error

@@ -8,9 +8,11 @@ import {
 } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
 import { formaterMs } from '../../sim/audioMeta'
 import { useTranscriptionDB } from '../../hooks/useTranscriptionDB'
 import type { Appel } from '../../typesSimulation'
+import { DetailsLieu, EnteteOperateur, SectionRaisonnement } from './AppelDetails'
 
 // Objets créés — placeholder illustratif tant que la pipeline d'extraction
 // (transcription → LLM → entités) n'est pas branchée.
@@ -48,6 +50,9 @@ export function FeuillePastCall({ appel, onClose }: { appel: Appel | null; onClo
 
             <ScrollArea className="min-h-0 flex-1">
               <div className="space-y-6 p-6">
+                <EnteteOperateur appel={appel} />
+                <Separator />
+
                 <section>
                   <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Transcription
@@ -64,6 +69,10 @@ export function FeuillePastCall({ appel, onClose }: { appel: Appel | null; onClo
                     </p>
                   )}
                 </section>
+
+                <SectionRaisonnement />
+
+                <DetailsLieu appel={appel} />
 
                 <section>
                   <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">

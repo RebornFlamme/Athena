@@ -1,6 +1,16 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { Loader2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -31,6 +41,8 @@ export function SimulationPage() {
   const [envoiEnCours, setEnvoiEnCours] = useState(0)
   const [survol, setSurvol] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const [fileQueue, setFileQueue] = useState<File[]>([])
+  const [meta, setMeta] = useState({ titre: '', operateur: '', localisation: '', caserne: '' })
   const enLecture = useSimulationPlayback((s) => s.statut === 'lecture')
   const positionMs = useSimulationPlayback((s) => s.positionMs)
 
@@ -46,30 +58,48 @@ export function SimulationPage() {
       .finally(() => setChargement(false))
   }, [])
 
-  async function ajouterFichiers(fichiers: FileList | null) {
+  // Pré-remplit le titre avec le nom du fichier en tête de file.
+  useEffect(() => {
+    if (fileQueue.length > 0) {
+      setMeta((m) => ({ ...m, titre: fileQueue[0].name.replace(/\.[^.]+$/, '') }))
+    }
+  }, [fileQueue])
+
+  // Ajout d'un MP3 = mise en file → un Dialog demande les métadonnées avant l'upload.
+  function ajouterFichiers(fichiers: FileList | null) {
     if (!fichiers || !isSupabaseConfigured) return
-    const audios = Array.from(fichiers).filter((f) => f.type.startsWith('audio/') || f.name.toLowerCase().endsWith('.mp3'))
+    const audios = Array.from(fichiers).filter(
+      (f) => f.type.startsWith('audio/') || f.name.toLowerCase().endsWith('.mp3'),
+    )
     if (audios.length === 0) return
     setErreur(null)
-    setEnvoiEnCours((n) => n + audios.length)
-    for (const file of audios) {
-      try {
-        const duree_ms = await lireDureeMs(file)
-        const { url, path } = await televerserAudio(file)
-        const appel = await appelsApi.insertAppel({
-          titre: file.name.replace(/\.[^.]+$/, ''),
-          audio_url: url,
-          audio_path: path,
-          duree_ms,
-          ts_debut_ms: 0,
-          piste: 0,
-        })
-        setAppels((prev) => [...prev, appel])
-      } catch (err) {
-        setErreur(messageErreur(String((err as { message?: string })?.message ?? err)))
-      } finally {
-        setEnvoiEnCours((n) => n - 1)
-      }
+    setFileQueue((prev) => [...prev, ...audios])
+  }
+
+  async function confirmerAppel() {
+    const file = fileQueue[0]
+    if (!file) return
+    setEnvoiEnCours((n) => n + 1)
+    try {
+      const duree_ms = await lireDureeMs(file)
+      const { url, path } = await televerserAudio(file)
+      const appel = await appelsApi.insertAppel({
+        titre: meta.titre.trim() || file.name.replace(/\.[^.]+$/, ''),
+        audio_url: url,
+        audio_path: path,
+        duree_ms,
+        ts_debut_ms: 0,
+        piste: 0,
+        operateur: meta.operateur.trim() || null,
+        localisation: meta.localisation.trim() || null,
+        caserne: meta.caserne.trim() || null,
+      })
+      setAppels((prev) => [...prev, appel])
+    } catch (err) {
+      setErreur(messageErreur(String((err as { message?: string })?.message ?? err)))
+    } finally {
+      setEnvoiEnCours((n) => n - 1)
+      setFileQueue((prev) => prev.slice(1))
     }
   }
 
@@ -189,6 +219,66 @@ export function SimulationPage() {
           )}
         </div>
       </div>
+
+      <Dialog open={fileQueue.length > 0} onOpenChange={(o) => !o && setFileQueue([])}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nouvel appel</DialogTitle>
+            <DialogDescription className="truncate">
+              {fileQueue[0]?.name}
+              {fileQueue.length > 1 ? ` · +${fileQueue.length - 1} en attente` : ''}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="titre">Titre</Label>
+              <Input
+                id="titre"
+                value={meta.titre}
+                onChange={(e) => setMeta((m) => ({ ...m, titre: e.target.value }))}
+                placeholder="Feu d'appartement — rue des Lilas"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="operateur">Opérateur au téléphone</Label>
+              <Input
+                id="operateur"
+                value={meta.operateur}
+                onChange={(e) => setMeta((m) => ({ ...m, operateur: e.target.value }))}
+                placeholder="Sgt. Marie Lefèvre"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="localisation">Localisation de l'appel</Label>
+              <Input
+                id="localisation"
+                value={meta.localisation}
+                onChange={(e) => setMeta((m) => ({ ...m, localisation: e.target.value }))}
+                placeholder="12 rue des Lilas, Lyon 7e"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="caserne">Caserne qui reçoit</Label>
+              <Input
+                id="caserne"
+                value={meta.caserne}
+                onChange={(e) => setMeta((m) => ({ ...m, caserne: e.target.value }))}
+                placeholder="CS Lyon-Corneille"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setFileQueue([])}>
+              Annuler
+            </Button>
+            <Button onClick={() => void confirmerAppel()} disabled={envoiEnCours > 0}>
+              {envoiEnCours > 0 ? 'Ajout…' : 'Ajouter'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
