@@ -146,10 +146,7 @@ def run_stt_stream(
     4. Quand audio_queue reçoit None → le générateur s'arrête → le stream
        Google se termine → on pousse None dans result_queue.
     """
-    client = get_client()
-    config_request = build_stt_config()
-
-    def request_generator():
+    def request_generator(config_request):
         """Générateur qui alimente streaming_recognize.
 
         Premier message = config uniquement.
@@ -166,8 +163,15 @@ def run_stt_stream(
             yield cloud_speech.StreamingRecognizeRequest(audio=chunk)
 
     try:
+        # Init du client Google DANS le try : si les credentials / le projet ne
+        # sont pas configurés (SpeechClient introuvable, GOOGLE_CLOUD_PROJECT
+        # absent), l'erreur est renvoyée au client via result_queue au lieu de
+        # tuer la WebSocket silencieusement (sinon : socket fermée, aucun JSON).
+        client = get_client()
+        config_request = build_stt_config()
+
         logger.info("Démarrage du stream Google STT (chirp_3)...")
-        responses = client.streaming_recognize(requests=request_generator())
+        responses = client.streaming_recognize(requests=request_generator(config_request))
 
         for response in responses:
             if not response.results:
