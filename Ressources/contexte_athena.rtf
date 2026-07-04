@@ -1,0 +1,61 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2870
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
+{\colortbl;\red255\green255\blue255;\red10\green10\blue10;\red10\green10\blue10;}
+{\*\expandedcolortbl;;\cssrgb\c3922\c3922\c3922;\cssrgb\c3922\c3922\c3922\c5882;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs28 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 \
+## Demande de recherche approfondie : Athena \'97 logiciel de gestion de crise pour les pompiers\
+\
+<context>\
+Je d\'e9veloppe **Athena** : un logiciel de gestion de crise / d'intervention d'urgence pour les \'e9quipes de pompiers (feux de for\'eat, incendies d'immeubles, sauvetages\'85).\
+\
+Le produit : un **dashboard web temps r\'e9el de la situation de crise**, destin\'e9 au commandant des op\'e9rations de secours (COS) et aux chefs d'\'e9quipe terrain. Il couvre l'intervention de A \'e0 Z : prise en compte des appels d'urgence (victimes/t\'e9moins), d\'e9ploiement des \'e9quipes et du mat\'e9riel, suivi temps r\'e9el de l'intervention (carte du terrain, localisation des acteurs, \'e9v\'e9nements ponctuels, conditions du terrain), puis analyse post-intervention.\
+\
+**Diff\'e9renciateur cl\'e9** : toutes les informations du dashboard sont extraites automatiquement et en temps r\'e9el par IA, depuis les appels des victimes/t\'e9moins et les communications radio des \'e9quipes terrain. Z\'e9ro saisie manuelle pendant la crise \'97 le dashboard se construit tout seul au fil de l'intervention.\
+\
+March\'e9 prioritaire : la France (SDIS, s\'e9curit\'e9 civile), ouverture internationale ensuite. J'ai besoin d'une recherche accessible \'e0 un non-d\'e9veloppeur, avec des recommandations actionnables.\
+</context>\
+\
+<instructions>\
+### Questions cl\'e9s \'e0 r\'e9pondre :\
+\
+1. **Statu quo** \'97 Comment les pompiers g\'e8rent-ils aujourd'hui l'information pendant une intervention (en France : SDIS, CTA-CODIS, poste de commandement, SITAC, main courante, radio ANTARES) ? Quels outils et processus r\'e9els, et quels points de douleur document\'e9s ?\
+2. **Concurrence** \'97 Quelles solutions existent d\'e9j\'e0 ? En France (NexSIS 18-112, Systel, \'e9diteurs SDIS\'85) et \'e0 l'international (CAD systems, Tablet Command, FirstDue, Genasys, ESRI/ArcGIS situational awareness\'85). Fonctionnalit\'e9s, prix, adoption, ce que les utilisateurs adorent/d\'e9testent, faiblesses exploitables.\
+3. \uc0\u11088  **PRIORIT\'c9 ABSOLUE \'97 La structure de donn\'e9es de l'\'e9tat live de la situation.** Quelle est la mani\'e8re la plus ing\'e9nieuse et la mieux adapt\'e9e de repr\'e9senter et stocker l'\'e9tat d'une situation de crise qui \'e9volue \'e0 chaque instant ? Creuser en profondeur :\
+   - Les mod\'e8les de donn\'e9es de \'ab Common Operational Picture \'bb (COP) utilis\'e9s en gestion de crise et en syst\'e8mes de commandement (C2 militaire, inspiration jeux de strat\'e9gie temps r\'e9el)\
+   - **Event sourcing vs \'e9tat mutable** : journal d'\'e9v\'e9nements horodat\'e9s + snapshots, capacit\'e9 de replay post-intervention\
+   - La gestion des informations **incertaines, contradictoires ou p\'e9rim\'e9es** : niveaux de confiance, tra\'e7abilit\'e9 de la source, horodatage, corrections successives\
+   - Les standards du secteur : EDXL, CAP, EMSI\'85 \'97 lesquels adopter ou ignorer ?\
+   - La repr\'e9sentation : graphe d'entit\'e9s (acteurs, moyens, zones, \'e9v\'e9nements) vs documents vs relationnel ; quelles bases de donn\'e9es pour du temps r\'e9el ?\
+4. **Extraction IA temps r\'e9el** \'97 Meilleures solutions actuelles de speech-to-text temps r\'e9el **en fran\'e7ais**, pour appels t\'e9l\'e9phoniques et radio bruyante (Whisper, Deepgram, AssemblyAI, Gladia\'85) ; extraction structur\'e9e fiable par LLM ; latence bout-en-bout r\'e9aliste ; co\'fbts ; gestion des erreurs critiques (une adresse mal extraite peut co\'fbter des vies \'97 quelles strat\'e9gies de validation ?).\
+5. **Dashboard cartographique temps r\'e9el** \'97 La stack la plus simple pour un non-d\'e9veloppeur assist\'e9 par IA : cartes (Mapbox vs MapLibre vs Leaflet vs Google Maps), synchro temps r\'e9el (Supabase Realtime, Firebase, WebSockets\'85), frameworks web adapt\'e9s.\
+6. **Mon\'e9tisation & adoption** \'97 Comment ces logiciels se vendent-ils (march\'e9s publics, cycle de vente aux SDIS, pricing SaaS vs licence) ? Contraintes r\'e9glementaires (RGPD, h\'e9bergement des donn\'e9es d'urgence, SecNumCloud ?) ? Comment obtenir un premier terrain d'essai (SDIS pilote, exercices, partenariats) ?\
+\
+### Focus de la recherche :\
+- Insights simples et actionnables, avec exemples concrets\
+- Recommandations d'outils actuelles (privil\'e9gier le plus r\'e9cent/meilleur)\
+- Guidance \'e9tape par \'e9tape pour l'impl\'e9mentation\
+- Estimations de co\'fbts avec options gratuites/payantes (budget flexible si justifi\'e9)\
+- Exemples de projets similaires r\'e9ussis \'97 et d'\'e9checs instructifs\
+- Sources fran\'e7aises ET internationales (le march\'e9 cible est la France)\
+\
+### Livrables requis :\
+1. **Tableau concurrents** \'97 fonctionnalit\'e9s, prix, adoption, avis utilisateurs, faiblesses\
+2. \uc0\u11088  **Mod\'e8le de donn\'e9es recommand\'e9 pour l'\'e9tat live** \'97 LE livrable le plus important : recommandation argument\'e9e avec sch\'e9ma conceptuel (entit\'e9s, \'e9v\'e9nements, relations), comparaison des approches, exemples de syst\'e8mes existants qui l'utilisent\
+3. **Stack technique** \'97 recommand\'e9e pour un fondateur non-technique qui construit avec l'IA\
+4. **Priorisation MVP** \'97 parmi les 6 fonctionnalit\'e9s (extraction appels, extraction radio, dashboard carte, main courante auto, gestion du d\'e9ploiement, analyse post-intervention) : par quoi commencer pour une d\'e9mo cr\'e9dible devant des pompiers ?\
+5. **Roadmap de d\'e9veloppement** \'97 avec strat\'e9gie d'assistance IA\
+6. **Budget** \'97 outils, services, d\'e9ploiement\
+</instructions>\
+\
+<output_format>\
+- Tout expliquer en langage clair (je ne suis pas d\'e9veloppeur), avec des exemples\
+- **Inclure les URLs des sources avec dates d'acc\'e8s** pour chaque recommandation majeure\
+- Utiliser des tableaux pour les comparaisons\
+- **Signaler explicitement les informations contradictoires** entre les sources\
+- Rapport r\'e9dig\'e9 en fran\'e7ais\
+</output_format>}
