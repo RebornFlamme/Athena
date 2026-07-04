@@ -175,6 +175,7 @@ export async function saveSchema(p: SavePayload): Promise<void> {
       position_y: e.position_y,
       color: e.color,
       width: e.width ?? null,
+      height: e.height ?? null,
     }))
     const { error } = await supabase.from('entities').upsert(rows)
     if (error) throw error

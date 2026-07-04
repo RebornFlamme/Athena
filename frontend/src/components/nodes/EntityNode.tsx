@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { Handle, Position, useUpdateNodeInternals, type NodeProps } from '@xyflow/react'
+import {
+  Handle,
+  Position,
+  useReactFlow,
+  useUpdateNodeInternals,
+  type NodeProps,
+} from '@xyflow/react'
 import { GripVertical, Plus, Trash2, X } from 'lucide-react'
 import { useSchemaStore } from '../../store/useSchemaStore'
 import { DATA_TYPES, RELATION_TYPES, type Attribute, type DataType } from '../../types'
@@ -29,6 +35,8 @@ import {
 const DEFAULT_WIDTH = 288
 const MIN_WIDTH = 240
 const MAX_WIDTH = 560
+const MIN_HEIGHT = 96
+const MAX_HEIGHT = 800
 
 // API de réordonnancement passée du node à chaque ligne (poignée + ref + état).
 interface ReorderApi {
@@ -44,15 +52,7 @@ interface ReorderApi {
 // liste + suppr. Un champ-relation expose un Handle pile en face de sa ligne.
 // Tout élément interactif porte `nodrag` (sinon le drag déplace la carte).
 // ---------------------------------------------------------------------------
-function FieldRow({
-  attr,
-  targetName,
-  reorder,
-}: {
-  attr: Attribute
-  targetName?: string
-  reorder: ReorderApi
-}) {
+function FieldRow({ attr, reorder }: { attr: Attribute; reorder: ReorderApi }) {
   const editAttribute = useSchemaStore((s) => s.editAttribute)
   const removeAttribute = useSchemaStore((s) => s.removeAttribute)
 
@@ -158,11 +158,6 @@ function FieldRow({
           }
         />
       )}
-      {isRelation && (
-        <div className="ml-5 px-1 text-[10px] text-muted-foreground truncate">
-          {attr.target_entity_id ? `→ ${targetName ?? '?'}` : 'tirer le point → vers un objet'}
-        </div>
-      )}
     </div>
   )
 }
@@ -175,12 +170,11 @@ export function EntityNode({ id }: NodeProps) {
   const attributes = useSchemaStore((s) =>
     s.attributes.filter((a) => a.entity_id === id).sort((a, b) => a.ordinal - b.ordinal),
   )
-  const entities = useSchemaStore((s) => s.entities)
   const saveEntity = useSchemaStore((s) => s.saveEntity)
   const removeEntity = useSchemaStore((s) => s.removeEntity)
   const addAttribute = useSchemaStore((s) => s.addAttribute)
   const reorderAttributes = useSchemaStore((s) => s.reorderAttributes)
-  const setEntityWidthLocal = useSchemaStore((s) => s.setEntityWidthLocal)
+  const setEntitySizeLocal = useSchemaStore((s) => s.setEntitySizeLocal)
 
   const updateNodeInternals = useUpdateNodeInternals()
 
@@ -247,40 +241,69 @@ export function EntityNode({ id }: NodeProps) {
     draggingId,
   }
 
-  // --- Redimensionnement de la largeur (pointer pur) -------------------------
-  const resizeRef = useRef<{ x: number; w: number } | null>(null)
-  const liveWidthRef = useRef<number | null>(null)
+  // --- Redimensionnement largeur + hauteur (pointer pur, poignées invisibles) -
+  // Largeur = fixe (style.width). Hauteur = min-height (le contenu reste toujours
+  // visible : agrandir ajoute de l'espace, on ne rogne jamais). Le delta écran est
+  // divisé par le zoom pour rester en coordonnées « flow ».
+  const rf = useReactFlow()
+  const resizeRef = useRef<
+    { x: number; y: number; w: number; h: number; zoom: number; axis: 'x' | 'y' | 'xy' } | null
+  >(null)
+  const liveRef = useRef<{ w: number | null; h: number | null }>({ w: null, h: null })
   const [liveWidth, setLiveWidth] = useState<number | null>(null)
-  const width = liveWidth ?? entity?.width ?? DEFAULT_WIDTH
+  const [liveHeight, setLiveHeight] = useState<number | null>(null)
 
-  const setLive = (w: number | null) => {
-    liveWidthRef.current = w
+  const width = liveWidth ?? entity?.width ?? DEFAULT_WIDTH
+  const height = liveHeight ?? entity?.height ?? null
+
+  const setLive = (w: number | null, h: number | null) => {
+    liveRef.current = { w, h }
     setLiveWidth(w)
+    setLiveHeight(h)
   }
-  const onResizeDown = (e: React.PointerEvent) => {
+  const startResize = (axis: 'x' | 'y' | 'xy') => (e: React.PointerEvent) => {
     e.preventDefault()
     e.stopPropagation()
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
-    resizeRef.current = { x: e.clientX, w: width }
-    setLive(width)
+    const zoom = rf.getZoom() || 1
+    const rect = (e.currentTarget as HTMLElement).parentElement?.getBoundingClientRect()
+    const startH = rect ? rect.height / zoom : height ?? MIN_HEIGHT
+    resizeRef.current = { x: e.clientX, y: e.clientY, w: width, h: startH, zoom, axis }
+    setLive(width, startH)
   }
   const onResizeMove = (e: React.PointerEvent) => {
     const r = resizeRef.current
     if (!r) return
-    setLive(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, r.w + (e.clientX - r.x))))
+    const w =
+      r.axis === 'y'
+        ? r.w
+        : Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, r.w + (e.clientX - r.x) / r.zoom))
+    const h =
+      r.axis === 'x'
+        ? r.h
+        : Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, r.h + (e.clientY - r.y) / r.zoom))
+    setLive(w, h)
   }
   const onResizeUp = () => {
     const r = resizeRef.current
-    const w = liveWidthRef.current
+    const { w, h } = liveRef.current
     resizeRef.current = null
-    setLive(null)
-    if (r && w != null) setEntityWidthLocal(id, Math.round(w))
+    if (r) {
+      setEntitySizeLocal(
+        id,
+        r.axis === 'y' ? undefined : w != null ? Math.round(w) : undefined,
+        r.axis === 'x' ? undefined : h != null ? Math.round(h) : undefined,
+      )
+    }
+    setLive(null, null)
   }
 
-  // React Flow doit re-mesurer les handles quand la mise en page change :
-  // ordre des champs, type (enum/relation → hauteur), OU largeur (x des handles).
+  // React Flow doit re-mesurer les handles quand la mise en page change : ordre
+  // des champs, type (enum/relation → hauteur), largeur (x des handles) ou
+  // hauteur (y du handle cible centré).
   const layoutSig =
-    orderedAttrs.map((a) => `${a.id}:${a.data_type}`).join('|') + `|w${Math.round(width)}`
+    orderedAttrs.map((a) => `${a.id}:${a.data_type}`).join('|') +
+    `|w${Math.round(width)}|h${Math.round(height ?? 0)}`
   useEffect(() => {
     updateNodeInternals(id)
   }, [id, layoutSig, updateNodeInternals])
@@ -290,10 +313,11 @@ export function EntityNode({ id }: NodeProps) {
 
   if (!entity) return null
 
-  const nameOf = (eid: string) => entities.find((e) => e.id === eid)?.name ?? '?'
-
   return (
-    <Card className="relative gap-0 py-0 shadow-lg" style={{ width }}>
+    <Card
+      className="relative gap-0 py-0 shadow-lg"
+      style={{ width, minHeight: height ?? undefined }}
+    >
       <Handle
         type="target"
         position={Position.Left}
@@ -354,12 +378,7 @@ export function EntityNode({ id }: NodeProps) {
 
       <CardContent className="space-y-1.5 border-t p-2">
         {orderedAttrs.map((a) => (
-          <FieldRow
-            key={a.id}
-            attr={a}
-            targetName={a.target_entity_id ? nameOf(a.target_entity_id) : undefined}
-            reorder={reorder}
-          />
+          <FieldRow key={a.id} attr={a} reorder={reorder} />
         ))}
 
         <Button
@@ -373,16 +392,32 @@ export function EntityNode({ id }: NodeProps) {
         </Button>
       </CardContent>
 
-      {/* Poignée de redimensionnement (largeur), bas-droite. */}
+      {/* Poignées de redimensionnement invisibles : bord droit (largeur), bord
+          bas (hauteur), coin bas-droit (les deux). Aucune chrome visible. */}
       <div
-        title="Redimensionner la largeur"
-        className="nodrag absolute bottom-0 right-0 z-10 flex h-4 w-4 cursor-ew-resize touch-none items-end justify-end p-0.5"
-        onPointerDown={onResizeDown}
+        title="Redimensionner (largeur)"
+        className="nodrag absolute top-0 z-10 h-full w-1.5 cursor-ew-resize touch-none"
+        style={{ right: -3 }}
+        onPointerDown={startResize('x')}
         onPointerMove={onResizeMove}
         onPointerUp={onResizeUp}
-      >
-        <div className="h-2 w-2 rounded-sm border-b-2 border-r-2 border-muted-foreground/50" />
-      </div>
+      />
+      <div
+        title="Redimensionner (hauteur)"
+        className="nodrag absolute left-0 z-10 h-1.5 w-full cursor-ns-resize touch-none"
+        style={{ bottom: -3 }}
+        onPointerDown={startResize('y')}
+        onPointerMove={onResizeMove}
+        onPointerUp={onResizeUp}
+      />
+      <div
+        title="Redimensionner"
+        className="nodrag absolute z-10 h-3.5 w-3.5 cursor-nwse-resize touch-none"
+        style={{ right: -3, bottom: -3 }}
+        onPointerDown={startResize('xy')}
+        onPointerMove={onResizeMove}
+        onPointerUp={onResizeUp}
+      />
     </Card>
   )
 }

@@ -52,7 +52,7 @@ interface SchemaState {
   setEntityColor: (id: string, color: string) => void
   removeEntity: (id: string) => void
   setEntityPositionLocal: (id: string, x: number, y: number) => void
-  setEntityWidthLocal: (id: string, width: number) => void
+  setEntitySizeLocal: (id: string, width?: number, height?: number) => void
 
   addAttribute: (entityId: string, input: NewAttributeInput) => Attribute
   editAttribute: (id: string, patch: Partial<Attribute>) => void
@@ -210,7 +210,12 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
   saveEntity: (id, patch) => patchEntityLocal(set, id, patch),
   setEntityColor: (id, color) => patchEntityLocal(set, id, { color }),
   setEntityPositionLocal: (id, x, y) => patchEntityLocal(set, id, { position_x: x, position_y: y }),
-  setEntityWidthLocal: (id, width) => patchEntityLocal(set, id, { width }),
+  setEntitySizeLocal: (id, width, height) => {
+    const patch: Partial<Entity> = {}
+    if (width != null) patch.width = width
+    if (height != null) patch.height = height
+    if (Object.keys(patch).length) patchEntityLocal(set, id, patch)
+  },
 
   removeEntity: (id) => {
     set((s) => ({
