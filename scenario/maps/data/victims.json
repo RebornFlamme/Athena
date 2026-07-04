@@ -1,0 +1,192 @@
+{
+ "event": "PRADO-167",
+ "building_local_origin": {
+  "lat": 43.27823,
+  "lon": 5.388545
+ },
+ "victims": [
+  {
+   "id": "V01",
+   "name": "Pavel Horak",
+   "age": 46,
+   "persons": 1,
+   "location": "3rd-floor landing (fled flat 3B)",
+   "x": 3,
+   "y": 1,
+   "floor": 3,
+   "caller": false,
+   "triage": "red",
+   "found": "02:53:20",
+   "resolved": "02:55:30",
+   "resolution": "carry-down by attack pair 1",
+   "transported": "03:05:00",
+   "destination": "La Timone (hyperbaric)"
+  },
+  {
+   "id": "V02",
+   "name": "Théo Marchal + Emma Costa",
+   "age": 31,
+   "persons": 2,
+   "location": "flat 3A balcony (Prado side)",
+   "x": -5,
+   "y": 4,
+   "floor": 3,
+   "caller": "CALL-05",
+   "triage": "green",
+   "resolved": "02:56:30",
+   "resolution": "ladder rescue #1 (LADDER LOUVAIN)"
+  },
+  {
+   "id": "V03",
+   "name": "Roger Fabre",
+   "age": 82,
+   "persons": 1,
+   "location": "flat 4A window (Prado side)",
+   "x": -5,
+   "y": 0,
+   "floor": 4,
+   "caller": "CALL-02",
+   "triage": "green-watch",
+   "resolved": "03:05:30",
+   "resolution": "ladder rescue #2 (LADDER LOUVAIN)",
+   "transported": "03:40:00",
+   "destination": "Hôpital Européen"
+  },
+  {
+   "id": "V04",
+   "name": "Fatima Belkacem",
+   "age": 67,
+   "persons": 1,
+   "location": "flat 5C window (rue Borde side)",
+   "x": 3,
+   "y": -5,
+   "floor": 5,
+   "caller": "CALL-04",
+   "triage": "green-watch",
+   "resolved": "03:10:20",
+   "resolution": "ladder rescue #3 (LADDER SAINT-PIERRE)",
+   "transported": "03:40:00",
+   "destination": "Hôpital Européen"
+  },
+  {
+   "id": "V05",
+   "name": "Nguyen couple",
+   "age": null,
+   "persons": 2,
+   "location": "flat 5A window (Prado side)",
+   "x": -5,
+   "y": 2,
+   "floor": 5,
+   "caller": false,
+   "triage": "white",
+   "resolved": "03:13:40",
+   "resolution": "ladder rescue #4 (LADDER LOUVAIN)"
+  },
+  {
+   "id": "V06",
+   "name": "Leïla Benali + Yanis (8) + Lina (5)",
+   "age": 34,
+   "persons": 3,
+   "location": "flat 6C corner window",
+   "x": 0,
+   "y": -5,
+   "floor": 6,
+   "caller": "CALL-01",
+   "triage": "green (children green-watch)",
+   "resolved": "03:18:10",
+   "resolution": "ladder rescue #5 (LADDER SAINT-PIERRE)",
+   "transported": "03:58:40",
+   "destination": "Hôpital Européen"
+  },
+  {
+   "id": "V07",
+   "name": "Berthe Roux",
+   "age": 88,
+   "persons": 1,
+   "location": "flat 5B (courtyard side)",
+   "x": 8,
+   "y": 2,
+   "floor": 5,
+   "caller": false,
+   "triage": "yellow",
+   "found": "03:24:00",
+   "resolved": "03:27:00",
+   "resolution": "interior extraction, smoke hood",
+   "transported": "03:36:00",
+   "destination": "La Timone"
+  },
+  {
+   "id": "V08",
+   "name": "Dylan Girard",
+   "age": 24,
+   "persons": 1,
+   "location": "flat 7B (courtyard side)",
+   "x": 8,
+   "y": 0,
+   "floor": 7,
+   "caller": "CALL-03",
+   "triage": "green",
+   "resolved": "03:30:20",
+   "resolution": "escorted down with smoke hood (search pair 2)"
+  },
+  {
+   "id": "V09",
+   "name": "42 other residents",
+   "age": null,
+   "persons": 42,
+   "location": "floors 1-8",
+   "x": 2,
+   "y": 2,
+   "floor": null,
+   "caller": false,
+   "triage": "19 green-minor / 26 white (incl. above)",
+   "resolved": "03:47:00",
+   "resolution": "controlled evacuation to 163 lobby reception point"
+  }
+ ],
+ "fire_state": [
+  {
+   "t": "02:40:00",
+   "extent": "flat 3B kitchen",
+   "floors": [
+    3
+   ]
+  },
+  {
+   "t": "02:46:30",
+   "extent": "flat 3B flashover, courtyard windows failed",
+   "floors": [
+    3
+   ]
+  },
+  {
+   "t": "03:09:30",
+   "extent": "extension flat 4B (2 rooms)",
+   "floors": [
+    3,
+    4
+   ]
+  },
+  {
+   "t": "03:34:30",
+   "extent": "SURROUNDED",
+   "floors": [
+    3,
+    4
+   ]
+  },
+  {
+   "t": "04:05:40",
+   "extent": "UNDER CONTROL",
+   "floors": [
+    3,
+    4
+   ]
+  },
+  {
+   "t": "05:45:00",
+   "extent": "EXTINGUISHED",
+   "floors": []
+  }
+ ]
+}

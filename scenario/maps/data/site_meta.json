@@ -1,0 +1,150 @@
+{
+  "incident_address": "167 avenue du Prado / 3 rue Borde, 13008 Marseille, France",
+  "incident_building": {
+    "osm_id": "way/154626611",
+    "centroid": {
+      "lat": 43.27823,
+      "lon": 5.388545
+    },
+    "levels_osm": "9",
+    "footprint_wgs84": [
+      [
+        5.388472,
+        43.278251
+      ],
+      [
+        5.3884967,
+        43.2782064
+      ],
+      [
+        5.388503,
+        43.278195
+      ],
+      [
+        5.38854,
+        43.278184
+      ],
+      [
+        5.388684,
+        43.278225
+      ],
+      [
+        5.388644,
+        43.278298
+      ],
+      [
+        5.388472,
+        43.278251
+      ]
+    ],
+    "footprint_local_m": [
+      [
+        -5.88,
+        2.32
+      ],
+      [
+        -3.88,
+        -2.62
+      ],
+      [
+        -3.37,
+        -3.88
+      ],
+      [
+        -0.37,
+        -5.09
+      ],
+      [
+        11.3,
+        -0.56
+      ],
+      [
+        8.06,
+        7.51
+      ],
+      [
+        -5.88,
+        2.32
+      ]
+    ]
+  },
+  "local_crs": {
+    "origin": {
+      "lat": 43.27823,
+      "lon": 5.388545
+    },
+    "formula": "x=(lon-lon0)*cos(lat0)*111320 ; y=(lat-lat0)*110540 (metres)"
+  },
+  "fire_stations": [
+    {
+      "name": "Centre d'incendie et de secours Louvain",
+      "operator": "Bataillon de marins-pompiers de Marseille",
+      "lat": 43.275977,
+      "lon": 5.391084,
+      "dist_line_m": 324,
+      "osm_id": "way/1271677519"
+    },
+    {
+      "name": "Centre d’incendie et de secours Saint-Pierre",
+      "operator": "Bataillon de marins-pompiers de Marseille",
+      "lat": 43.292541,
+      "lon": 5.402157,
+      "dist_line_m": 1936,
+      "osm_id": "way/174099089"
+    },
+    {
+      "name": "Centre d'incendie et de secours Canebière",
+      "operator": "Bataillon de marins-pompiers de Marseille",
+      "lat": 43.297519,
+      "lon": 5.379901,
+      "dist_line_m": 2256,
+      "osm_id": "way/67707942"
+    },
+    {
+      "name": "Centre d’incendie et de secours Endoume",
+      "operator": "Bataillon de marins-pompiers de Marseille",
+      "lat": 43.287151,
+      "lon": 5.361544,
+      "dist_line_m": 2400,
+      "osm_id": "way/345674559"
+    },
+    {
+      "name": "Centre d'incendie et de secours Saint-Lazare",
+      "operator": "Bataillon de marins-pompiers de Marseille",
+      "lat": 43.30626,
+      "lon": 5.374883,
+      "dist_line_m": 3307,
+      "osm_id": "way/456122137"
+    },
+    {
+      "name": "État-major du bataillon de marins-pompiers de Marseille",
+      "operator": "Bataillon de marins-pompiers de Marseille",
+      "lat": 43.306992,
+      "lon": 5.37472,
+      "dist_line_m": 3388,
+      "osm_id": "way/1264116186"
+    },
+    {
+      "name": "Centre d'incendie et de secours Plombières",
+      "operator": "Bataillon de marins-pompiers de Marseille",
+      "lat": 43.317295,
+      "lon": 5.379804,
+      "dist_line_m": 4401,
+      "osm_id": "way/232831034"
+    },
+    {
+      "name": "Centre d'incendie et de secours de Pointe-Rouge",
+      "operator": "Bataillon de marins-pompiers de Marseille",
+      "lat": 43.242089,
+      "lon": 5.364598,
+      "dist_line_m": 4462,
+      "osm_id": "way/577704069"
+    }
+  ],
+  "counts": {
+    "buildings": 591,
+    "streets": 122,
+    "hydrants": 11,
+    "stations": 8
+  }
+}

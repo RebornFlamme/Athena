@@ -1,0 +1,1582 @@
+{
+ "crs": "local metres from 43.278230,5.388545 (x=east,y=north); WGS84 included",
+ "date": "2026-03-14",
+ "units": [
+  {
+   "callsign": "ENGINE LOUVAIN 1",
+   "type": "engine (FPT)",
+   "station": "CIS Louvain",
+   "crew": 6,
+   "crew_commander": "CPO M. Bouzid",
+   "track": [
+    {
+     "t": "02:48:05",
+     "x": 205,
+     "y": -249,
+     "lat": 43.275977,
+     "lon": 5.391074,
+     "status": "at_station"
+    },
+    {
+     "t": "02:48:50",
+     "x": 205,
+     "y": -249,
+     "lat": 43.275977,
+     "lon": 5.391074,
+     "status": "responding"
+    },
+    {
+     "t": "02:49:35",
+     "x": 190,
+     "y": -120,
+     "lat": 43.277144,
+     "lon": 5.390889,
+     "status": "responding"
+    },
+    {
+     "t": "02:50:18",
+     "x": 120,
+     "y": -14,
+     "lat": 43.278103,
+     "lon": 5.390026,
+     "status": "responding"
+    },
+    {
+     "t": "02:50:56",
+     "x": 10,
+     "y": -11,
+     "lat": 43.27813,
+     "lon": 5.388668,
+     "status": "responding"
+    },
+    {
+     "t": "02:51:05",
+     "x": -14,
+     "y": -22,
+     "lat": 43.278031,
+     "lon": 5.388372,
+     "status": "on_scene"
+    },
+    {
+     "t": "07:00:00",
+     "x": -14,
+     "y": -22,
+     "lat": 43.278031,
+     "lon": 5.388372,
+     "status": "on_scene_fire_watch"
+    }
+   ]
+  },
+  {
+   "callsign": "LADDER LOUVAIN",
+   "type": "aerial ladder (EPA)",
+   "station": "CIS Louvain",
+   "crew": 3,
+   "crew_commander": "PO1 V. Lange",
+   "track": [
+    {
+     "t": "02:48:05",
+     "x": 205,
+     "y": -249,
+     "lat": 43.275977,
+     "lon": 5.391074,
+     "status": "at_station"
+    },
+    {
+     "t": "02:48:55",
+     "x": 205,
+     "y": -249,
+     "lat": 43.275977,
+     "lon": 5.391074,
+     "status": "responding"
+    },
+    {
+     "t": "02:49:49",
+     "x": 190,
+     "y": -120,
+     "lat": 43.277144,
+     "lon": 5.390889,
+     "status": "responding"
+    },
+    {
+     "t": "02:50:42",
+     "x": 120,
+     "y": -14,
+     "lat": 43.278103,
+     "lon": 5.390026,
+     "status": "responding"
+    },
+    {
+     "t": "02:51:28",
+     "x": 10,
+     "y": -11,
+     "lat": 43.27813,
+     "lon": 5.388668,
+     "status": "responding"
+    },
+    {
+     "t": "02:51:40",
+     "x": -14,
+     "y": 6,
+     "lat": 43.278284,
+     "lon": 5.388372,
+     "status": "on_scene"
+    },
+    {
+     "t": "06:40:00",
+     "x": -14,
+     "y": 6,
+     "lat": 43.278284,
+     "lon": 5.388372,
+     "status": "on_scene"
+    },
+    {
+     "t": "06:55:00",
+     "x": 205,
+     "y": -249,
+     "lat": 43.275977,
+     "lon": 5.391074,
+     "status": "returning"
+    }
+   ]
+  },
+  {
+   "callsign": "MEDIC LOUVAIN",
+   "type": "medic (VSAV)",
+   "station": "CIS Louvain",
+   "crew": 3,
+   "crew_commander": "PO2 I. Robert",
+   "track": [
+    {
+     "t": "02:48:05",
+     "x": 205,
+     "y": -249,
+     "lat": 43.275977,
+     "lon": 5.391074,
+     "status": "at_station"
+    },
+    {
+     "t": "02:48:55",
+     "x": 205,
+     "y": -249,
+     "lat": 43.275977,
+     "lon": 5.391074,
+     "status": "responding"
+    },
+    {
+     "t": "02:49:48",
+     "x": 190,
+     "y": -120,
+     "lat": 43.277144,
+     "lon": 5.390889,
+     "status": "responding"
+    },
+    {
+     "t": "02:50:40",
+     "x": 120,
+     "y": -14,
+     "lat": 43.278103,
+     "lon": 5.390026,
+     "status": "responding"
+    },
+    {
+     "t": "02:51:25",
+     "x": 10,
+     "y": -11,
+     "lat": 43.27813,
+     "lon": 5.388668,
+     "status": "responding"
+    },
+    {
+     "t": "02:51:40",
+     "x": -16,
+     "y": -35,
+     "lat": 43.277913,
+     "lon": 5.388348,
+     "status": "on_scene"
+    },
+    {
+     "t": "03:05:00",
+     "x": -16,
+     "y": -35,
+     "lat": 43.277913,
+     "lon": 5.388348,
+     "status": "transporting"
+    },
+    {
+     "t": "03:05:10",
+     "x": -20,
+     "y": -40,
+     "lat": 43.277868,
+     "lon": 5.388298,
+     "status": "transporting"
+    },
+    {
+     "t": "03:06:38",
+     "x": 150,
+     "y": 150,
+     "lat": 43.279587,
+     "lon": 5.390396,
+     "status": "transporting"
+    },
+    {
+     "t": "03:10:24",
+     "x": 500,
+     "y": 700,
+     "lat": 43.284563,
+     "lon": 5.394714,
+     "status": "transporting"
+    },
+    {
+     "t": "03:15:00",
+     "x": 953,
+     "y": 1356,
+     "lat": 43.290497,
+     "lon": 5.400304,
+     "status": "transporting"
+    },
+    {
+     "t": "03:15:00",
+     "x": 953,
+     "y": 1356,
+     "lat": 43.290497,
+     "lon": 5.400304,
+     "status": "at_hospital"
+    },
+    {
+     "t": "03:32:00",
+     "x": 953,
+     "y": 1356,
+     "lat": 43.290497,
+     "lon": 5.400304,
+     "status": "at_hospital"
+    },
+    {
+     "t": "03:32:10",
+     "x": 953,
+     "y": 1356,
+     "lat": 43.290497,
+     "lon": 5.400304,
+     "status": "returning"
+    },
+    {
+     "t": "03:36:50",
+     "x": 500,
+     "y": 700,
+     "lat": 43.284563,
+     "lon": 5.394714,
+     "status": "returning"
+    },
+    {
+     "t": "03:40:38",
+     "x": 150,
+     "y": 150,
+     "lat": 43.279587,
+     "lon": 5.390396,
+     "status": "returning"
+    },
+    {
+     "t": "03:42:08",
+     "x": -20,
+     "y": -40,
+     "lat": 43.277868,
+     "lon": 5.388298,
+     "status": "returning"
+    },
+    {
+     "t": "03:42:10",
+     "x": -16,
+     "y": -35,
+     "lat": 43.277913,
+     "lon": 5.388348,
+     "status": "on_scene"
+    },
+    {
+     "t": "03:58:40",
+     "x": -16,
+     "y": -35,
+     "lat": 43.277913,
+     "lon": 5.388348,
+     "status": "transporting"
+    },
+    {
+     "t": "03:58:50",
+     "x": -20,
+     "y": -40,
+     "lat": 43.277868,
+     "lon": 5.388298,
+     "status": "transporting"
+    },
+    {
+     "t": "03:59:34",
+     "x": 150,
+     "y": 150,
+     "lat": 43.279587,
+     "lon": 5.390396,
+     "status": "transporting"
+    },
+    {
+     "t": "04:04:18",
+     "x": -800,
+     "y": 1500,
+     "lat": 43.2918,
+     "lon": 5.378674,
+     "status": "transporting"
+    },
+    {
+     "t": "04:10:00",
+     "x": -2151,
+     "y": 2960,
+     "lat": 43.305008,
+     "lon": 5.362004,
+     "status": "at_hospital"
+    },
+    {
+     "t": "04:20:00",
+     "x": -2151,
+     "y": 2960,
+     "lat": 43.305008,
+     "lon": 5.362004,
+     "status": "at_hospital"
+    },
+    {
+     "t": "04:20:10",
+     "x": -2151,
+     "y": 2960,
+     "lat": 43.305008,
+     "lon": 5.362004,
+     "status": "returning"
+    },
+    {
+     "t": "04:27:45",
+     "x": -800,
+     "y": 1500,
+     "lat": 43.2918,
+     "lon": 5.378674,
+     "status": "returning"
+    },
+    {
+     "t": "04:34:03",
+     "x": 150,
+     "y": 150,
+     "lat": 43.279587,
+     "lon": 5.390396,
+     "status": "returning"
+    },
+    {
+     "t": "04:35:00",
+     "x": -16,
+     "y": -35,
+     "lat": 43.277913,
+     "lon": 5.388348,
+     "status": "on_scene"
+    },
+    {
+     "t": "07:00:00",
+     "x": -16,
+     "y": -35,
+     "lat": 43.277913,
+     "lon": 5.388348,
+     "status": "on_scene_fire_watch"
+    }
+   ]
+  },
+  {
+   "callsign": "ENGINE SAINT-PIERRE 1",
+   "type": "engine (FPT)",
+   "station": "CIS Saint-Pierre",
+   "crew": 6,
+   "crew_commander": "CPO Y. Le Goff",
+   "track": [
+    {
+     "t": "02:48:05",
+     "x": 1103,
+     "y": 1582,
+     "lat": 43.292542,
+     "lon": 5.402155,
+     "status": "at_station"
+    },
+    {
+     "t": "02:49:30",
+     "x": 1103,
+     "y": 1582,
+     "lat": 43.292542,
+     "lon": 5.402155,
+     "status": "responding"
+    },
+    {
+     "t": "02:51:29",
+     "x": 700,
+     "y": 900,
+     "lat": 43.286372,
+     "lon": 5.397182,
+     "status": "responding"
+    },
+    {
+     "t": "02:53:22",
+     "x": 250,
+     "y": 300,
+     "lat": 43.280944,
+     "lon": 5.39163,
+     "status": "responding"
+    },
+    {
+     "t": "02:54:09",
+     "x": 50,
+     "y": 60,
+     "lat": 43.278773,
+     "lon": 5.389162,
+     "status": "responding"
+    },
+    {
+     "t": "02:54:21",
+     "x": -20,
+     "y": 20,
+     "lat": 43.278411,
+     "lon": 5.388298,
+     "status": "responding"
+    },
+    {
+     "t": "02:54:30",
+     "x": 30,
+     "y": -11,
+     "lat": 43.27813,
+     "lon": 5.388915,
+     "status": "on_scene"
+    },
+    {
+     "t": "06:40:00",
+     "x": 30,
+     "y": -11,
+     "lat": 43.27813,
+     "lon": 5.388915,
+     "status": "on_scene"
+    },
+    {
+     "t": "06:55:00",
+     "x": 1103,
+     "y": 1582,
+     "lat": 43.292542,
+     "lon": 5.402155,
+     "status": "returning"
+    }
+   ]
+  },
+  {
+   "callsign": "GROUP SOUTH",
+   "type": "group commander (VLCG)",
+   "station": "CIS Saint-Pierre",
+   "crew": 2,
+   "crew_commander": "LT C. Aubry",
+   "track": [
+    {
+     "t": "02:48:05",
+     "x": 1103,
+     "y": 1582,
+     "lat": 43.292542,
+     "lon": 5.402155,
+     "status": "at_station"
+    },
+    {
+     "t": "02:49:40",
+     "x": 1103,
+     "y": 1582,
+     "lat": 43.292542,
+     "lon": 5.402155,
+     "status": "responding"
+    },
+    {
+     "t": "02:51:53",
+     "x": 700,
+     "y": 900,
+     "lat": 43.286372,
+     "lon": 5.397182,
+     "status": "responding"
+    },
+    {
+     "t": "02:53:58",
+     "x": 250,
+     "y": 300,
+     "lat": 43.280944,
+     "lon": 5.39163,
+     "status": "responding"
+    },
+    {
+     "t": "02:54:50",
+     "x": 50,
+     "y": 60,
+     "lat": 43.278773,
+     "lon": 5.389162,
+     "status": "responding"
+    },
+    {
+     "t": "02:55:04",
+     "x": -20,
+     "y": 20,
+     "lat": 43.278411,
+     "lon": 5.388298,
+     "status": "responding"
+    },
+    {
+     "t": "02:55:10",
+     "x": -20,
+     "y": -16,
+     "lat": 43.278085,
+     "lon": 5.388298,
+     "status": "on_scene"
+    },
+    {
+     "t": "07:00:00",
+     "x": -20,
+     "y": -16,
+     "lat": 43.278085,
+     "lon": 5.388298,
+     "status": "on_scene_fire_watch"
+    }
+   ]
+  },
+  {
+   "callsign": "ENGINE ENDOUME 1",
+   "type": "engine (FPT)",
+   "station": "CIS Endoume",
+   "crew": 6,
+   "crew_commander": "CPO R. Santini",
+   "track": [
+    {
+     "t": "02:50:15",
+     "x": -2188,
+     "y": 986,
+     "lat": 43.28715,
+     "lon": 5.361548,
+     "status": "at_station"
+    },
+    {
+     "t": "02:51:30",
+     "x": -2188,
+     "y": 986,
+     "lat": 43.28715,
+     "lon": 5.361548,
+     "status": "responding"
+    },
+    {
+     "t": "02:53:40",
+     "x": -1400,
+     "y": 600,
+     "lat": 43.283658,
+     "lon": 5.371271,
+     "status": "responding"
+    },
+    {
+     "t": "02:55:53",
+     "x": -600,
+     "y": 200,
+     "lat": 43.280039,
+     "lon": 5.381142,
+     "status": "responding"
+    },
+    {
+     "t": "02:57:13",
+     "x": -100,
+     "y": 0,
+     "lat": 43.27823,
+     "lon": 5.387311,
+     "status": "responding"
+    },
+    {
+     "t": "02:57:30",
+     "x": -40,
+     "y": -100,
+     "lat": 43.277325,
+     "lon": 5.388051,
+     "status": "staging"
+    },
+    {
+     "t": "02:58:20",
+     "x": -40,
+     "y": -100,
+     "lat": 43.277325,
+     "lon": 5.388051,
+     "status": "staging"
+    },
+    {
+     "t": "02:58:30",
+     "x": -14,
+     "y": 32,
+     "lat": 43.278519,
+     "lon": 5.388372,
+     "status": "on_scene"
+    },
+    {
+     "t": "05:00:45",
+     "x": -14,
+     "y": 32,
+     "lat": 43.278519,
+     "lon": 5.388372,
+     "status": "on_scene"
+    },
+    {
+     "t": "05:15:00",
+     "x": -2188,
+     "y": 986,
+     "lat": 43.28715,
+     "lon": 5.361548,
+     "status": "returning"
+    }
+   ]
+  },
+  {
+   "callsign": "MEDIC SAINT-PIERRE",
+   "type": "medic (VSAV)",
+   "station": "CIS Saint-Pierre",
+   "crew": 3,
+   "crew_commander": "PO2 L. Pons",
+   "track": [
+    {
+     "t": "02:50:15",
+     "x": 1103,
+     "y": 1582,
+     "lat": 43.292542,
+     "lon": 5.402155,
+     "status": "at_station"
+    },
+    {
+     "t": "02:51:00",
+     "x": 1103,
+     "y": 1582,
+     "lat": 43.292542,
+     "lon": 5.402155,
+     "status": "responding"
+    },
+    {
+     "t": "02:53:58",
+     "x": 700,
+     "y": 900,
+     "lat": 43.286372,
+     "lon": 5.397182,
+     "status": "responding"
+    },
+    {
+     "t": "02:56:46",
+     "x": 250,
+     "y": 300,
+     "lat": 43.280944,
+     "lon": 5.39163,
+     "status": "responding"
+    },
+    {
+     "t": "02:57:56",
+     "x": 50,
+     "y": 60,
+     "lat": 43.278773,
+     "lon": 5.389162,
+     "status": "responding"
+    },
+    {
+     "t": "02:58:14",
+     "x": -20,
+     "y": 20,
+     "lat": 43.278411,
+     "lon": 5.388298,
+     "status": "responding"
+    },
+    {
+     "t": "02:58:30",
+     "x": -26,
+     "y": -52,
+     "lat": 43.27776,
+     "lon": 5.388224,
+     "status": "on_scene"
+    },
+    {
+     "t": "03:36:00",
+     "x": -26,
+     "y": -52,
+     "lat": 43.27776,
+     "lon": 5.388224,
+     "status": "transporting"
+    },
+    {
+     "t": "03:36:10",
+     "x": -20,
+     "y": -40,
+     "lat": 43.277868,
+     "lon": 5.388298,
+     "status": "transporting"
+    },
+    {
+     "t": "03:37:38",
+     "x": 150,
+     "y": 150,
+     "lat": 43.279587,
+     "lon": 5.390396,
+     "status": "transporting"
+    },
+    {
+     "t": "03:41:24",
+     "x": 500,
+     "y": 700,
+     "lat": 43.284563,
+     "lon": 5.394714,
+     "status": "transporting"
+    },
+    {
+     "t": "03:46:00",
+     "x": 953,
+     "y": 1356,
+     "lat": 43.290497,
+     "lon": 5.400304,
+     "status": "transporting"
+    },
+    {
+     "t": "03:46:00",
+     "x": 953,
+     "y": 1356,
+     "lat": 43.290497,
+     "lon": 5.400304,
+     "status": "at_hospital"
+    },
+    {
+     "t": "04:12:00",
+     "x": 953,
+     "y": 1356,
+     "lat": 43.290497,
+     "lon": 5.400304,
+     "status": "at_hospital"
+    },
+    {
+     "t": "04:12:10",
+     "x": 953,
+     "y": 1356,
+     "lat": 43.290497,
+     "lon": 5.400304,
+     "status": "returning"
+    },
+    {
+     "t": "04:18:07",
+     "x": 500,
+     "y": 700,
+     "lat": 43.284563,
+     "lon": 5.394714,
+     "status": "returning"
+    },
+    {
+     "t": "04:23:00",
+     "x": 150,
+     "y": 150,
+     "lat": 43.279587,
+     "lon": 5.390396,
+     "status": "returning"
+    },
+    {
+     "t": "04:24:54",
+     "x": -20,
+     "y": -40,
+     "lat": 43.277868,
+     "lon": 5.388298,
+     "status": "returning"
+    },
+    {
+     "t": "04:25:00",
+     "x": -26,
+     "y": -52,
+     "lat": 43.27776,
+     "lon": 5.388224,
+     "status": "on_scene"
+    },
+    {
+     "t": "05:30:00",
+     "x": -26,
+     "y": -52,
+     "lat": 43.27776,
+     "lon": 5.388224,
+     "status": "on_scene"
+    },
+    {
+     "t": "05:45:00",
+     "x": 1103,
+     "y": 1582,
+     "lat": 43.292542,
+     "lon": 5.402155,
+     "status": "returning"
+    }
+   ]
+  },
+  {
+   "callsign": "ENGINE CANEBIERE 1",
+   "type": "engine (FPT)",
+   "station": "CIS Canebière",
+   "crew": 6,
+   "crew_commander": "CPO A. Fischer",
+   "track": [
+    {
+     "t": "02:50:15",
+     "x": -701,
+     "y": 2132,
+     "lat": 43.297517,
+     "lon": 5.379895,
+     "status": "at_station"
+    },
+    {
+     "t": "02:51:30",
+     "x": -701,
+     "y": 2132,
+     "lat": 43.297517,
+     "lon": 5.379895,
+     "status": "responding"
+    },
+    {
+     "t": "02:55:16",
+     "x": -400,
+     "y": 1200,
+     "lat": 43.289086,
+     "lon": 5.383609,
+     "status": "responding"
+    },
+    {
+     "t": "02:58:29",
+     "x": -150,
+     "y": 400,
+     "lat": 43.281849,
+     "lon": 5.386694,
+     "status": "responding"
+    },
+    {
+     "t": "02:59:53",
+     "x": -60,
+     "y": 50,
+     "lat": 43.278682,
+     "lon": 5.387805,
+     "status": "responding"
+    },
+    {
+     "t": "03:00:30",
+     "x": -42,
+     "y": -110,
+     "lat": 43.277235,
+     "lon": 5.388027,
+     "status": "staging"
+    },
+    {
+     "t": "03:09:50",
+     "x": -42,
+     "y": -110,
+     "lat": 43.277235,
+     "lon": 5.388027,
+     "status": "staging"
+    },
+    {
+     "t": "03:10:30",
+     "x": -48,
+     "y": 25,
+     "lat": 43.278456,
+     "lon": 5.387953,
+     "status": "on_scene"
+    },
+    {
+     "t": "05:00:30",
+     "x": -48,
+     "y": 25,
+     "lat": 43.278456,
+     "lon": 5.387953,
+     "status": "on_scene"
+    },
+    {
+     "t": "05:15:00",
+     "x": -701,
+     "y": 2132,
+     "lat": 43.297517,
+     "lon": 5.379895,
+     "status": "returning"
+    }
+   ]
+  },
+  {
+   "callsign": "LADDER SAINT-PIERRE",
+   "type": "aerial ladder (EPA)",
+   "station": "CIS Saint-Pierre",
+   "crew": 3,
+   "crew_commander": "PO1 G. Moreau",
+   "track": [
+    {
+     "t": "02:50:15",
+     "x": 1103,
+     "y": 1582,
+     "lat": 43.292542,
+     "lon": 5.402155,
+     "status": "at_station"
+    },
+    {
+     "t": "02:51:45",
+     "x": 1103,
+     "y": 1582,
+     "lat": 43.292542,
+     "lon": 5.402155,
+     "status": "responding"
+    },
+    {
+     "t": "02:55:31",
+     "x": 700,
+     "y": 900,
+     "lat": 43.286372,
+     "lon": 5.397182,
+     "status": "responding"
+    },
+    {
+     "t": "02:59:05",
+     "x": 250,
+     "y": 300,
+     "lat": 43.280944,
+     "lon": 5.39163,
+     "status": "responding"
+    },
+    {
+     "t": "03:00:34",
+     "x": 50,
+     "y": 60,
+     "lat": 43.278773,
+     "lon": 5.389162,
+     "status": "responding"
+    },
+    {
+     "t": "03:00:55",
+     "x": 60,
+     "y": -12,
+     "lat": 43.278121,
+     "lon": 5.389285,
+     "status": "responding"
+    },
+    {
+     "t": "03:01:10",
+     "x": 8,
+     "y": -11,
+     "lat": 43.27813,
+     "lon": 5.388644,
+     "status": "on_scene"
+    },
+    {
+     "t": "06:40:00",
+     "x": 8,
+     "y": -11,
+     "lat": 43.27813,
+     "lon": 5.388644,
+     "status": "on_scene"
+    },
+    {
+     "t": "06:55:00",
+     "x": 1103,
+     "y": 1582,
+     "lat": 43.292542,
+     "lon": 5.402155,
+     "status": "returning"
+    }
+   ]
+  },
+  {
+   "callsign": "COLUMN 1",
+   "type": "column commander (VLCC)",
+   "station": "Battalion HQ",
+   "crew": 2,
+   "crew_commander": "LCDR A. Verne",
+   "track": [
+    {
+     "t": "02:50:15",
+     "x": -1120,
+     "y": 3179,
+     "lat": 43.306989,
+     "lon": 5.374725,
+     "status": "at_station"
+    },
+    {
+     "t": "02:50:40",
+     "x": -1120,
+     "y": 3179,
+     "lat": 43.306989,
+     "lon": 5.374725,
+     "status": "responding"
+    },
+    {
+     "t": "02:55:31",
+     "x": -600,
+     "y": 1800,
+     "lat": 43.294514,
+     "lon": 5.381142,
+     "status": "responding"
+    },
+    {
+     "t": "02:59:42",
+     "x": -200,
+     "y": 600,
+     "lat": 43.283658,
+     "lon": 5.386077,
+     "status": "responding"
+    },
+    {
+     "t": "03:01:29",
+     "x": -50,
+     "y": 80,
+     "lat": 43.278954,
+     "lon": 5.387928,
+     "status": "responding"
+    },
+    {
+     "t": "03:02:00",
+     "x": -32,
+     "y": -78,
+     "lat": 43.277524,
+     "lon": 5.38815,
+     "status": "on_scene"
+    },
+    {
+     "t": "06:10:00",
+     "x": -32,
+     "y": -78,
+     "lat": 43.277524,
+     "lon": 5.38815,
+     "status": "on_scene"
+    },
+    {
+     "t": "06:25:00",
+     "x": -1120,
+     "y": 3179,
+     "lat": 43.306989,
+     "lon": 5.374725,
+     "status": "returning"
+    }
+   ]
+  },
+  {
+   "callsign": "MEDIC ENDOUME",
+   "type": "medic (VSAV)",
+   "station": "CIS Endoume",
+   "crew": 3,
+   "crew_commander": "PO2 B. Sila",
+   "track": [
+    {
+     "t": "02:50:15",
+     "x": -2188,
+     "y": 986,
+     "lat": 43.28715,
+     "lon": 5.361548,
+     "status": "at_station"
+    },
+    {
+     "t": "02:52:00",
+     "x": -2188,
+     "y": 986,
+     "lat": 43.28715,
+     "lon": 5.361548,
+     "status": "responding"
+    },
+    {
+     "t": "02:56:01",
+     "x": -1400,
+     "y": 600,
+     "lat": 43.283658,
+     "lon": 5.371271,
+     "status": "responding"
+    },
+    {
+     "t": "03:00:06",
+     "x": -600,
+     "y": 200,
+     "lat": 43.280039,
+     "lon": 5.381142,
+     "status": "responding"
+    },
+    {
+     "t": "03:02:34",
+     "x": -100,
+     "y": 0,
+     "lat": 43.27823,
+     "lon": 5.387311,
+     "status": "responding"
+    },
+    {
+     "t": "03:03:00",
+     "x": -28,
+     "y": -64,
+     "lat": 43.277651,
+     "lon": 5.3882,
+     "status": "on_scene"
+    },
+    {
+     "t": "03:40:00",
+     "x": -28,
+     "y": -64,
+     "lat": 43.277651,
+     "lon": 5.3882,
+     "status": "transporting"
+    },
+    {
+     "t": "03:40:10",
+     "x": -100,
+     "y": 0,
+     "lat": 43.27823,
+     "lon": 5.387311,
+     "status": "transporting"
+    },
+    {
+     "t": "03:41:31",
+     "x": -600,
+     "y": 200,
+     "lat": 43.280039,
+     "lon": 5.381142,
+     "status": "transporting"
+    },
+    {
+     "t": "03:43:46",
+     "x": -1400,
+     "y": 600,
+     "lat": 43.283658,
+     "lon": 5.371271,
+     "status": "transporting"
+    },
+    {
+     "t": "03:50:00",
+     "x": -2151,
+     "y": 2960,
+     "lat": 43.305008,
+     "lon": 5.362004,
+     "status": "at_hospital"
+    },
+    {
+     "t": "04:00:00",
+     "x": -2151,
+     "y": 2960,
+     "lat": 43.305008,
+     "lon": 5.362004,
+     "status": "at_hospital"
+    },
+    {
+     "t": "04:00:10",
+     "x": -2151,
+     "y": 2960,
+     "lat": 43.305008,
+     "lon": 5.362004,
+     "status": "returning"
+    },
+    {
+     "t": "04:06:15",
+     "x": -1400,
+     "y": 600,
+     "lat": 43.283658,
+     "lon": 5.371271,
+     "status": "returning"
+    },
+    {
+     "t": "04:08:26",
+     "x": -600,
+     "y": 200,
+     "lat": 43.280039,
+     "lon": 5.381142,
+     "status": "returning"
+    },
+    {
+     "t": "04:09:46",
+     "x": -100,
+     "y": 0,
+     "lat": 43.27823,
+     "lon": 5.387311,
+     "status": "returning"
+    },
+    {
+     "t": "04:10:00",
+     "x": -28,
+     "y": -64,
+     "lat": 43.277651,
+     "lon": 5.3882,
+     "status": "on_scene"
+    },
+    {
+     "t": "04:41:00",
+     "x": -28,
+     "y": -64,
+     "lat": 43.277651,
+     "lon": 5.3882,
+     "status": "on_scene"
+    },
+    {
+     "t": "04:55:00",
+     "x": -2188,
+     "y": 986,
+     "lat": 43.28715,
+     "lon": 5.361548,
+     "status": "returning"
+    }
+   ]
+  },
+  {
+   "callsign": "GROUP NORTH",
+   "type": "group commander (VLCG)",
+   "station": "Battalion HQ",
+   "crew": 2,
+   "crew_commander": "LT H. Reyes",
+   "track": [
+    {
+     "t": "02:50:15",
+     "x": -1120,
+     "y": 3179,
+     "lat": 43.306989,
+     "lon": 5.374725,
+     "status": "at_station"
+    },
+    {
+     "t": "02:53:00",
+     "x": -1120,
+     "y": 3179,
+     "lat": 43.306989,
+     "lon": 5.374725,
+     "status": "responding"
+    },
+    {
+     "t": "02:59:22",
+     "x": -600,
+     "y": 1800,
+     "lat": 43.294514,
+     "lon": 5.381142,
+     "status": "responding"
+    },
+    {
+     "t": "03:04:50",
+     "x": -200,
+     "y": 600,
+     "lat": 43.283658,
+     "lon": 5.386077,
+     "status": "responding"
+    },
+    {
+     "t": "03:07:11",
+     "x": -50,
+     "y": 80,
+     "lat": 43.278954,
+     "lon": 5.387928,
+     "status": "responding"
+    },
+    {
+     "t": "03:07:48",
+     "x": 60,
+     "y": -12,
+     "lat": 43.278121,
+     "lon": 5.389285,
+     "status": "responding"
+    },
+    {
+     "t": "03:08:00",
+     "x": 14,
+     "y": -18,
+     "lat": 43.278067,
+     "lon": 5.388718,
+     "status": "on_scene"
+    },
+    {
+     "t": "06:40:00",
+     "x": 14,
+     "y": -18,
+     "lat": 43.278067,
+     "lon": 5.388718,
+     "status": "on_scene"
+    },
+    {
+     "t": "06:55:00",
+     "x": -1120,
+     "y": 3179,
+     "lat": 43.306989,
+     "lon": 5.374725,
+     "status": "returning"
+    }
+   ]
+  },
+  {
+   "callsign": "COMMAND POST",
+   "type": "command post (PC)",
+   "station": "Battalion HQ",
+   "crew": 3,
+   "crew_commander": "PO1 M. Adler",
+   "track": [
+    {
+     "t": "02:50:15",
+     "x": -1120,
+     "y": 3179,
+     "lat": 43.306989,
+     "lon": 5.374725,
+     "status": "at_station"
+    },
+    {
+     "t": "02:55:00",
+     "x": -1120,
+     "y": 3179,
+     "lat": 43.306989,
+     "lon": 5.374725,
+     "status": "responding"
+    },
+    {
+     "t": "03:01:42",
+     "x": -600,
+     "y": 1800,
+     "lat": 43.294514,
+     "lon": 5.381142,
+     "status": "responding"
+    },
+    {
+     "t": "03:07:27",
+     "x": -200,
+     "y": 600,
+     "lat": 43.283658,
+     "lon": 5.386077,
+     "status": "responding"
+    },
+    {
+     "t": "03:09:55",
+     "x": -50,
+     "y": 80,
+     "lat": 43.278954,
+     "lon": 5.387928,
+     "status": "responding"
+    },
+    {
+     "t": "03:10:40",
+     "x": -36,
+     "y": -85,
+     "lat": 43.277461,
+     "lon": 5.388101,
+     "status": "on_scene"
+    },
+    {
+     "t": "06:10:00",
+     "x": -36,
+     "y": -85,
+     "lat": 43.277461,
+     "lon": 5.388101,
+     "status": "on_scene"
+    },
+    {
+     "t": "06:25:00",
+     "x": -1120,
+     "y": 3179,
+     "lat": 43.306989,
+     "lon": 5.374725,
+     "status": "returning"
+    }
+   ]
+  },
+  {
+   "callsign": "AIR SUPPORT",
+   "type": "BA logistics (VAR)",
+   "station": "CIS Saint-Lazare",
+   "crew": 2,
+   "crew_commander": "PO1 J. Brun",
+   "track": [
+    {
+     "t": "02:50:15",
+     "x": -1107,
+     "y": 3098,
+     "lat": 43.306256,
+     "lon": 5.374886,
+     "status": "at_station"
+    },
+    {
+     "t": "02:54:00",
+     "x": -1107,
+     "y": 3098,
+     "lat": 43.306256,
+     "lon": 5.374886,
+     "status": "responding"
+    },
+    {
+     "t": "03:02:22",
+     "x": -600,
+     "y": 1800,
+     "lat": 43.294514,
+     "lon": 5.381142,
+     "status": "responding"
+    },
+    {
+     "t": "03:09:58",
+     "x": -200,
+     "y": 600,
+     "lat": 43.283658,
+     "lon": 5.386077,
+     "status": "responding"
+    },
+    {
+     "t": "03:13:13",
+     "x": -50,
+     "y": 80,
+     "lat": 43.278954,
+     "lon": 5.387928,
+     "status": "responding"
+    },
+    {
+     "t": "03:13:30",
+     "x": -16,
+     "y": 48,
+     "lat": 43.278664,
+     "lon": 5.388348,
+     "status": "on_scene"
+    },
+    {
+     "t": "06:40:00",
+     "x": -16,
+     "y": 48,
+     "lat": 43.278664,
+     "lon": 5.388348,
+     "status": "on_scene"
+    },
+    {
+     "t": "06:55:00",
+     "x": -1107,
+     "y": 3098,
+     "lat": 43.306256,
+     "lon": 5.374886,
+     "status": "returning"
+    }
+   ]
+  },
+  {
+   "callsign": "SMUR 1",
+   "type": "SAMU mobile ICU",
+   "station": "La Timone",
+   "crew": 3,
+   "crew_commander": "SAMU physician",
+   "track": [
+    {
+     "t": "03:04:00",
+     "x": 953,
+     "y": 1356,
+     "lat": 43.290497,
+     "lon": 5.400304,
+     "status": "at_hospital"
+    },
+    {
+     "t": "03:04:10",
+     "x": 953,
+     "y": 1356,
+     "lat": 43.290497,
+     "lon": 5.400304,
+     "status": "responding"
+    },
+    {
+     "t": "03:08:50",
+     "x": 500,
+     "y": 700,
+     "lat": 43.284563,
+     "lon": 5.394714,
+     "status": "responding"
+    },
+    {
+     "t": "03:12:40",
+     "x": 150,
+     "y": 150,
+     "lat": 43.279587,
+     "lon": 5.390396,
+     "status": "responding"
+    },
+    {
+     "t": "03:14:09",
+     "x": -20,
+     "y": -40,
+     "lat": 43.277868,
+     "lon": 5.388298,
+     "status": "responding"
+    },
+    {
+     "t": "03:14:20",
+     "x": -22,
+     "y": -70,
+     "lat": 43.277597,
+     "lon": 5.388274,
+     "status": "on_scene"
+    },
+    {
+     "t": "04:40:40",
+     "x": -22,
+     "y": -70,
+     "lat": 43.277597,
+     "lon": 5.388274,
+     "status": "on_scene"
+    },
+    {
+     "t": "04:52:00",
+     "x": 953,
+     "y": 1356,
+     "lat": 43.290497,
+     "lon": 5.400304,
+     "status": "returning"
+    }
+   ]
+  },
+  {
+   "callsign": "MEDICAL 1",
+   "type": "medical director (DSM)",
+   "station": "La Timone",
+   "crew": 2,
+   "crew_commander": "LCDR (MD) S. Bonnet",
+   "track": [
+    {
+     "t": "03:06:00",
+     "x": 953,
+     "y": 1356,
+     "lat": 43.290497,
+     "lon": 5.400304,
+     "status": "at_hospital"
+    },
+    {
+     "t": "03:06:10",
+     "x": 953,
+     "y": 1356,
+     "lat": 43.290497,
+     "lon": 5.400304,
+     "status": "responding"
+    },
+    {
+     "t": "03:10:40",
+     "x": 500,
+     "y": 700,
+     "lat": 43.284563,
+     "lon": 5.394714,
+     "status": "responding"
+    },
+    {
+     "t": "03:14:20",
+     "x": 150,
+     "y": 150,
+     "lat": 43.279587,
+     "lon": 5.390396,
+     "status": "responding"
+    },
+    {
+     "t": "03:15:46",
+     "x": -20,
+     "y": -40,
+     "lat": 43.277868,
+     "lon": 5.388298,
+     "status": "responding"
+    },
+    {
+     "t": "03:16:00",
+     "x": -44,
+     "y": -72,
+     "lat": 43.277579,
+     "lon": 5.388002,
+     "status": "on_scene"
+    },
+    {
+     "t": "05:00:00",
+     "x": -44,
+     "y": -72,
+     "lat": 43.277579,
+     "lon": 5.388002,
+     "status": "on_scene"
+    },
+    {
+     "t": "05:12:00",
+     "x": 953,
+     "y": 1356,
+     "lat": 43.290497,
+     "lon": 5.400304,
+     "status": "returning"
+    }
+   ]
+  }
+ ]
+}
