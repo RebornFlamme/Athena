@@ -1,0 +1,6 @@
+key.local
+.cache/
+*.wav
+*.log
+_selftest.mp3
+__pycache__/

@@ -26,3 +26,18 @@ Realism notes: transmissions are short (< 15 s of speech), one idea per exchange
 read-backs for orders and numbers, "over/out" discipline loosens under load —
 as on real incident grounds. Transcripts are written to be TTS-friendly for
 replaying through Athena's speech pipeline.
+
+## Folder layout (audio)
+
+Each channel is a folder holding its audio and, beside it, the script:
+
+```
+CH1_OPS_DISPATCH/
+├── CH1_OPS_DISPATCH.mp3      ← multi-voice comms + squelch/roger-beep + fireground bed
+└── script/
+    └── transcript.md         ← this transcript
+```
+
+Each callsign has a consistent voice (radio band-pass + squelch); see
+`../audio_tools/`. **Audio status:** all 5 channel MP3s are generated. To rebuild,
+run `python ../audio_tools/generate.py radio` (cached lines are reused).

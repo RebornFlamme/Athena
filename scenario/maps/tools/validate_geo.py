@@ -162,8 +162,18 @@ for v in vd["victims"]:
 print("[3] radio transcripts")
 line_re = re.compile(r"^\[([^\]]+)\] \[(\d\d:\d\d:\d\d)\]: (.+)$")
 radio_dir = SCEN / "radio_comms"
+
+
+def radio_transcript(ch_dir):
+    """Locate a channel's transcript in either layout (flat or script/ subfolder)."""
+    for cand in (ch_dir / "script" / "transcript.md", ch_dir / "transcript.md"):
+        if cand.exists():
+            return cand
+    return ch_dir / "transcript.md"
+
+
 for ch_dir in sorted(p for p in radio_dir.iterdir() if p.is_dir()):
-    f = ch_dir / "transcript.md"
+    f = radio_transcript(ch_dir)
     if not f.exists():
         fail(f"{ch_dir.name}: transcript.md missing")
         continue
@@ -180,7 +190,7 @@ for ch_dir in sorted(p for p in radio_dir.iterdir() if p.is_dir()):
     print(f"    {ch_dir.name}: {len(msgs)} transmissions, chronological={'yes' if not bad else 'NO'}")
 
 for ch, t, rx in MILESTONES:
-    f = radio_dir / ch / "transcript.md"
+    f = radio_transcript(radio_dir / ch)
     txt = f.read_text(encoding="utf-8") if f.exists() else ""
     pat = re.compile(r"\[" + re.escape(t) + r"\]:.*" + rx, re.IGNORECASE)
     if not any(pat.search(ln) for ln in txt.splitlines()):
@@ -192,7 +202,9 @@ for ch, t, rx in MILESTONES:
 print("[4] emergency calls")
 calls_dir = SCEN / "emergency_calls"
 for n, t in EXPECTED_CALLS.items():
-    hits = list(calls_dir.glob(f"CALL-{n:02d}_*.md"))
+    # match either layout: flat CALL-XX_*.md or CALL-XX_*/script/*.md
+    hits = (list(calls_dir.glob(f"CALL-{n:02d}_*.md"))
+            + list(calls_dir.glob(f"CALL-{n:02d}_*/script/*.md")))
     if not hits:
         fail(f"CALL-{n:02d}: file missing")
         continue

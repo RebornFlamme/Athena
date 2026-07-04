@@ -34,9 +34,13 @@ one MAYDAY (resolved). Fire surrounded 03:34, under control 04:05, extinguished 
 | `03_COMMAND_STRUCTURE.md` | Full BMPM-style command chain, callsigns, radio channel plan |
 | `04_OPERATIONAL_RESPONSE.md` | Dispatch orders, units, crewing, escalation logic, scale-up hooks |
 | `05_MASTER_TIMELINE.md` | Master event timeline (single source of truth for all times) |
-| `emergency_calls/` | 10 timestamped 112-call transcripts (5 trapped victims, 5 witnesses; CALL-04 Arabic, CALL-09 Spanish) |
-| `radio_comms/` | Radio transcripts — **one folder per channel** (CH1 dispatch, CH2 command, CH3 attack, CH4 search & rescue, CH5 medical) |
+| `emergency_calls/` | 10 timestamped 112-call transcripts (5 trapped victims, 5 witnesses; CALL-04 Arabic, CALL-09 Spanish). Each is a folder: `<call>.mp3` + `script/<call>.md` |
+| `radio_comms/` | Radio transcripts — **one folder per channel** (CH1 dispatch, CH2 command, CH3 attack, CH4 search & rescue, CH5 medical). Each: `<CH>.mp3` + `script/transcript.md` |
 | `maps/` | Real OSM geodata, unit-position-vs-time data, validation & rendering scripts, key-moment SVG snapshots, interactive time map |
+| `audio_tools/` | Gradium TTS pipeline: transcripts → one MP3 per conversation, consistent voice per character, procedural scenario SFX (key gitignored) |
+
+**Audio status:** all 15 conversation MP3s generated (10 calls + 5 radio channels).
+Rebuild any time with `python audio_tools/generate.py all` (cached lines are reused).
 
 ## Consistency rules (for scale-up)
 

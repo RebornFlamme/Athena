@@ -47,3 +47,19 @@ Each `CALL-xx_*.md` has: metadata table (times, numbers, CAD id), full
 timestamped dialogue (`[hh:mm:ss] SPEAKER:`), `[CAD]` dispatch-action lines,
 outcome cross-reference to `../05_MASTER_TIMELINE.md`. Foreign-language calls
 carry an *(EN: …)* gloss line under each non-English utterance.
+
+## Folder layout (audio)
+
+Each call is a **folder** holding the generated audio and, beside it, the script:
+
+```
+CALL-01_trapped_6C_mother_children/
+├── CALL-01_trapped_6C_mother_children.mp3   ← two-voice dialogue + SFX (Gradium TTS)
+└── script/
+    └── CALL-01_trapped_6C_mother_children.md ← this transcript
+```
+
+The MP3 uses one consistent voice per person (operator vs caller, gender-matched),
+a telephone-line colour on the caller, and scenario SFX (smoke-detector chirp for
+trapped callers, approaching siren). See `../audio_tools/` for the generator.
+All 10 call MP3s are generated.
