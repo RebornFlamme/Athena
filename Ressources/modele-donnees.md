@@ -52,6 +52,12 @@ Pointe vers :
 - **Liste des victimes** → [Victime](#-victime)
 - **Les véhicules** (eux-mêmes pointent vers les personnels) → [Véhicules](#-véhicules)
 - **Les véhicules sur les lieux**
+- Conditions météos :
+	- mtn : 
+		- température
+		- humidité
+		- vent, (force direction)
+	- broadcast : 
 
 ---
 
