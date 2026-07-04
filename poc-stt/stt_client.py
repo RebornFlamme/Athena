@@ -14,6 +14,7 @@ l'active en streaming, la transcription se fait sans distinction de locuteur.
 import os
 import queue
 import logging
+import time
 
 from google.cloud.speech_v2 import SpeechClient
 from google.cloud.speech_v2.types import cloud_speech
@@ -24,8 +25,21 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Configuration depuis l'environnement
 # ---------------------------------------------------------------------------
-PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-REGION = os.getenv("GOOGLE_CLOUD_REGION", "us")
+# ⚠ Lecture PARESSEUSE (à l'usage), pas à l'import : le module peut être importé
+# avant que `load_dotenv()` n'ait peuplé l'environnement (ordre des imports).
+# Lire au premier appel garantit qu'on voit bien les variables du .env / de Render.
+def _project_id() -> str:
+    pid = os.getenv("GOOGLE_CLOUD_PROJECT")
+    if not pid:
+        raise ValueError(
+            "GOOGLE_CLOUD_PROJECT n'est pas défini. "
+            "Exportez la variable d'environnement avant de lancer le serveur."
+        )
+    return pid
+
+
+def _region() -> str:
+    return os.getenv("GOOGLE_CLOUD_REGION", "us")
 
 
 # ---------------------------------------------------------------------------
@@ -45,22 +59,18 @@ def get_client() -> SpeechClient:
     if _speech_client is not None:
         return _speech_client
 
-    if not PROJECT_ID:
-        raise ValueError(
-            "GOOGLE_CLOUD_PROJECT n'est pas défini. "
-            "Exportez la variable d'environnement avant de lancer le serveur."
-        )
-
+    region = _region()
+    project = _project_id()  # lève ValueError si absent
     _speech_client = SpeechClient(
         client_options=ClientOptions(
-            api_endpoint=f"{REGION}-speech.googleapis.com",
+            api_endpoint=f"{region}-speech.googleapis.com",
         )
     )
     logger.info(
         "SpeechClient initialisé — projet=%s région=%s endpoint=%s-speech.googleapis.com",
-        PROJECT_ID,
-        REGION,
-        REGION,
+        project,
+        region,
+        region,
     )
     return _speech_client
 
@@ -106,7 +116,7 @@ def build_stt_config() -> cloud_speech.StreamingRecognizeRequest:
     )
 
     config_request = cloud_speech.StreamingRecognizeRequest(
-        recognizer=f"projects/{PROJECT_ID}/locations/{REGION}/recognizers/_",
+        recognizer=f"projects/{_project_id()}/locations/{_region()}/recognizers/_",
         streaming_config=streaming_config,
     )
 
@@ -150,7 +160,9 @@ def run_stt_stream(
     # ~5 min. On rouvre un nouveau stream toutes les ~4 min en continuant à
     # alimenter l'audio (pattern « infinite streaming ») → les fichiers longs
     # (réseaux radio de ~15 min) sont transcrits en entier, sans coupure.
-    STREAM_LIMIT_BYTES = 4 * 60 * 16000 * 2  # 4 min de PCM 16 kHz mono s16le
+    # Surchargeable via STT_STREAM_LIMIT_SEC (utile pour tester le redémarrage).
+    limit_sec = int(os.getenv("STT_STREAM_LIMIT_SEC", "240"))
+    STREAM_LIMIT_BYTES = limit_sec * 16000 * 2  # PCM 16 kHz mono s16le
 
     # État partagé entre les redémarrages de stream (via closure).
     carryover: list[bytes] = []   # chunk déjà lu mais qui appartient au stream suivant
@@ -187,17 +199,28 @@ def run_stt_stream(
             logger.debug("Envoi chunk audio : %d octets", len(chunk))
             yield cloud_speech.StreamingRecognizeRequest(audio=chunk)
 
+    # Init du client Google : si les credentials / le projet ne sont pas
+    # configurés, l'erreur est renvoyée au client via result_queue (pas de socket
+    # fermée silencieusement).
     try:
-        # Init du client Google DANS le try : si les credentials / le projet ne
-        # sont pas configurés (SpeechClient introuvable, GOOGLE_CLOUD_PROJECT
-        # absent), l'erreur est renvoyée au client via result_queue au lieu de
-        # tuer la WebSocket silencieusement (sinon : socket fermée, aucun JSON).
         client = get_client()
+    except Exception as exc:
+        logger.error("Init client STT KO : %s", exc, exc_info=True)
+        result_queue.put({"type": "error", "message": f"Google STT init error: {exc}"})
+        result_queue.put(None)
+        return
 
-        logger.info("Démarrage du stream Google STT (chirp_3)...")
-        # Boucle de (re)connexion : un nouveau stream chaque fois que le
-        # précédent atteint la limite de durée, jusqu'à la fin réelle de l'audio.
-        while not state["finished"]:
+    logger.info("Démarrage du stream Google STT (chirp_3)...")
+    # Boucle de (re)connexion. Un nouveau stream est ouvert :
+    #  - quand le précédent atteint la limite de durée (redémarrage propre), OU
+    #  - quand Google coupe le stream (RST_STREAM/500 transitoire) → on reconnecte
+    #    et on continue à consommer l'audio restant, jusqu'à `MAX_ERREURS`.
+    # Dans les deux cas on repart sur l'audio encore en file : aucune perte pour
+    # le redémarrage-limite, perte minime (le fragment en vol) pour une erreur.
+    MAX_ERREURS = 5
+    erreurs = 0
+    while not state["finished"]:
+        try:
             config_request = build_stt_config()
             responses = client.streaming_recognize(
                 requests=request_generator(config_request)
@@ -235,15 +258,20 @@ def run_stt_stream(
                     )
                     result_queue.put(payload)
 
-        logger.info("Stream Google STT terminé normalement")
+            # Fin de ce stream : soit l'audio est épuisé (state finished → on sort),
+            # soit la limite de durée a été atteinte (on rouvre un stream).
+            erreurs = 0
 
-    except Exception as exc:
-        logger.error("Erreur dans le stream Google STT : %s", exc, exc_info=True)
-        result_queue.put({
-            "type": "error",
-            "message": f"Google STT error: {exc}",
-        })
+        except Exception as exc:
+            erreurs += 1
+            logger.error(
+                "Erreur stream STT (%d/%d) : %s", erreurs, MAX_ERREURS, exc,
+                exc_info=True,
+            )
+            if state["finished"] or erreurs >= MAX_ERREURS:
+                result_queue.put({"type": "error", "message": f"Google STT error: {exc}"})
+                break
+            time.sleep(0.5)  # petit backoff avant reconnexion
 
-    finally:
-        # Signale la fin au sender async
-        result_queue.put(None)
+    logger.info("Stream Google STT terminé")
+    result_queue.put(None)

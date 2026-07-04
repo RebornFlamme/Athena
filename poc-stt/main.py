@@ -13,6 +13,7 @@ import asyncio
 import logging
 import os
 import queue
+import threading
 import time
 from pathlib import Path
 
@@ -60,6 +61,12 @@ app.add_middleware(
 # transcrits simultanément (alignés sur la timeline de simulation) et non par
 # vagues de 4, on dimensionne large (1 worker par appel + marge).
 _transcribe_pool = ThreadPoolExecutor(max_workers=32)
+
+# Suivi du run courant pour l'annuler proprement quand la simulation est relancée
+# (« Revenir au début » / re-clic « Lancer ») : on stoppe les jobs en cours et on
+# annule les timers encore en attente avant de replanifier.
+_pending_timers: list[threading.Timer] = []
+_stop_event = threading.Event()
 
 # S'assurer que le dossier data/ existe
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -213,16 +220,42 @@ async def transcribe(payload: dict | None = None):
         query = query.in_("id", ids)
     appels = query.execute().data or []
 
+    # Annule le run précédent (relance / retour au début) : stoppe les jobs en
+    # cours (via stop_event) et les timers encore en attente, puis repart neuf.
+    global _stop_event
+    _stop_event.set()
+    for timer in _pending_timers:
+        timer.cancel()
+    _pending_timers.clear()
+    _stop_event = threading.Event()
+    stop = _stop_event
+
     appel_ids = [a["id"] for a in appels]
     if appel_ids:
         # Recalcul : on repart d'une ardoise vierge pour ces appels.
         sb.table("transcriptions").delete().in_("appel_id", appel_ids).execute()
 
+    # Planification PROGRESSIVE : chaque appel est transcrit à l'instant où il
+    # devient actif sur la timeline (délai = ts_debut_ms normalisé sur le plus
+    # précoce), en phase avec la lecture audio du navigateur. Un `Timer` léger
+    # diffère la soumission → le pool ne réserve un worker qu'au démarrage réel du
+    # job, et la charge (mémoire/CPU/streams Google) s'étale au lieu d'exploser
+    # d'un coup au lancement.
+    min_ts = min((a.get("ts_debut_ms") or 0) for a in appels) if appels else 0
     for appel in appels:
-        _transcribe_pool.submit(transcribe_appel, appel)
+        delai_s = max(0, (appel.get("ts_debut_ms") or 0) - min_ts) / 1000
+        if delai_s <= 0:
+            _transcribe_pool.submit(transcribe_appel, appel, stop)
+        else:
+            timer = threading.Timer(
+                delai_s, _transcribe_pool.submit, args=(transcribe_appel, appel, stop)
+            )
+            timer.daemon = True
+            _pending_timers.append(timer)
+            timer.start()
 
-    logger.info("Transcription lancée pour %d appel(s)", len(appels))
-    return {"status": "started", "count": len(appels)}
+    logger.info("Transcription planifiée pour %d appel(s)", len(appels))
+    return {"status": "scheduled", "count": len(appels)}
 
 
 # ---------------------------------------------------------------------------

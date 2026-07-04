@@ -1,0 +1,16 @@
+# Secrets locaux — NE JAMAIS committer
+.env
+.env.*
+!.env.example
+key.json
+*-key.json
+*.credentials.json
+
+# venv local d'itération
+.venv/
+
+# scripts de debug local (jetables)
+debug_stt.py
+debug_job.py
+debug_progressive.mjs
+key.json

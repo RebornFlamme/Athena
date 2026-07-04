@@ -39,7 +39,17 @@ SIMULATION_INTERVENTION_ID = "00000000-0000-0000-0000-000000000001"
 # Garde-fou : nombre max de tours de boucle d'outils par appel.
 MAX_TOURS = 16
 
-_client = anthropic.Anthropic()
+_client: anthropic.Anthropic | None = None
+
+
+def _get_client() -> anthropic.Anthropic:
+    """Client Anthropic (init paresseuse) — n'impose pas ANTHROPIC_API_KEY à
+    l'import du module (sinon la transcription elle-même casserait si la clé
+    d'extraction manque)."""
+    global _client
+    if _client is None:
+        _client = anthropic.Anthropic()
+    return _client
 
 SYSTEME = """Tu es le module d'extraction d'Athena, un dashboard temps réel de gestion \
 de crise pour sapeurs-pompiers. Tu reçois la transcription d'UN appel d'urgence et tu \
@@ -284,7 +294,7 @@ def extraire_appel(appel: dict, sb) -> None:
     messages = [{"role": "user", "content": f"Transcription de l'appel :\n\n{transcript}"}]
 
     for _ in range(MAX_TOURS):
-        reponse = _client.messages.create(
+        reponse = _get_client().messages.create(
             model=EXTRACTION_MODEL,
             max_tokens=2048,
             system=SYSTEME,

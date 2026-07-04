@@ -13,7 +13,7 @@ import threading
 import time
 import urllib.request
 
-from audio_decode import decode_to_pcm16k_mono
+from audio_decode import stream_pcm16k_mono
 from extraction import extraire_appel
 from stt_client import run_stt_stream
 from supabase_client import get_supabase
@@ -29,32 +29,51 @@ def _download(url: str) -> bytes:
         return resp.read()
 
 
-def transcribe_appel(appel: dict) -> None:
+def transcribe_appel(appel: dict, stop_event: threading.Event | None = None) -> None:
     """Transcrit un appel en streaming et insère les segments dans Supabase.
 
     Args:
         appel: ligne `appels` (au moins `id` et `audio_url`).
+        stop_event: si fourni et déclenché (nouveau lancement de simulation),
+            le job s'arrête proprement (utile quand l'utilisateur relance / revient
+            au début : on ne veut pas que l'ancien run continue d'écrire).
     """
     appel_id = appel["id"]
     url = appel["audio_url"]
+    # Job annulé avant même de démarrer (relance pendant qu'il était en file).
+    if stop_event is not None and stop_event.is_set():
+        return
     sb = get_supabase()
     logger.info("Transcription appel %s (%s)", appel_id, appel.get("titre"))
 
     try:
-        pcm = decode_to_pcm16k_mono(_download(url))
+        raw = _download(url)
     except Exception as exc:  # noqa: BLE001
-        logger.error("Téléchargement/décodage KO pour %s : %s", appel_id, exc)
+        logger.error("Téléchargement KO pour %s : %s", appel_id, exc)
         return
 
     audio_q: queue.Queue = queue.Queue()
     result_q: queue.Queue = queue.Queue()
 
     def feeder() -> None:
-        """Pousse le PCM en chunks 80 ms au rythme réel, puis None (fin)."""
-        for off in range(0, len(pcm), CHUNK_BYTES):
-            audio_q.put(pcm[off:off + CHUNK_BYTES])
-            time.sleep(CHUNK_MS / 1000)  # cadence temps réel → transcription live
-        audio_q.put(None)
+        """Décode + pousse le PCM en chunks 80 ms au rythme réel, puis None (fin).
+
+        Décodage **au fil de l'eau** (`stream_pcm16k_mono`) : on ne matérialise
+        jamais tout le PCM en mémoire → indispensable quand plusieurs jobs (dont
+        des réseaux radio de ~15 min) tournent en parallèle sur un petit serveur.
+        S'interrompt si `stop_event` est déclenché (relance de la simulation).
+        """
+        try:
+            for chunk in stream_pcm16k_mono(raw, CHUNK_BYTES):
+                if stop_event is not None and stop_event.is_set():
+                    logger.info("Job appel %s interrompu (relance)", appel_id)
+                    break
+                audio_q.put(chunk)
+                time.sleep(CHUNK_MS / 1000)  # cadence temps réel → transcription live
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Décodage KO pour %s : %s", appel_id, exc)
+        finally:
+            audio_q.put(None)
 
     threading.Thread(target=feeder, daemon=True).start()
     threading.Thread(target=run_stt_stream, args=(audio_q, result_q), daemon=True).start()
@@ -83,6 +102,10 @@ def transcribe_appel(appel: dict) -> None:
                 logger.error("Insert transcription KO (appel %s) : %s", appel_id, exc)
 
     logger.info("Appel %s transcrit : %d segments", appel_id, ordinal)
+
+    # Run annulé (relance) : on ne lance pas l'extraction sur un transcript partiel.
+    if stop_event is not None and stop_event.is_set():
+        return
 
     # Extraction LLM : transcript → entités/événements liés dans Supabase
     # (→ carte via Realtime). Non bloquant pour la transcription en cas d'échec.
