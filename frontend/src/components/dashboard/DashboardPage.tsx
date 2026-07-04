@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react'
-import { Map as MapIcon } from 'lucide-react'
+import { useState, type ComponentType, type ReactNode } from 'react'
+import { Boxes, History, Layers, Map as MapIcon, Radio } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
@@ -9,16 +9,18 @@ import { Carte } from './Carte'
 import { EnTetePanneau } from './EnTetePanneau'
 import { PanneauObjets } from './PanneauObjets'
 import { PanneauDiff } from './PanneauDiff'
+import { PanneauPastCalls } from './PanneauPastCalls'
 import { PanneauSemanticLayer, type LigneSemantic } from './PanneauSemanticLayer'
 import { PanneauFluxAudio } from '../simulation/PanneauFluxAudio'
 
-type PanId = 'carte' | 'objets' | 'live' | 'semantic'
-const PANS: PanId[] = ['carte', 'objets', 'live', 'semantic']
-const TITRES: Record<PanId, string> = {
-  carte: 'Carte',
-  objets: 'Objets',
-  live: 'Live feed',
-  semantic: 'Semantic Layer Edit',
+type PanId = 'carte' | 'objets' | 'live' | 'semantic' | 'past'
+const PANS: PanId[] = ['carte', 'objets', 'live', 'semantic', 'past']
+const META: Record<PanId, { titre: string; icon: ComponentType<{ className?: string }> }> = {
+  carte: { titre: 'Carte', icon: MapIcon },
+  objets: { titre: 'Objets', icon: Boxes },
+  live: { titre: 'Live feed', icon: Radio },
+  semantic: { titre: 'Semantic', icon: Layers },
+  past: { titre: 'Past calls', icon: History },
 }
 
 interface Item {
@@ -28,7 +30,6 @@ interface Item {
   min: number
 }
 
-/** Empile des panneaux verticalement (ou un seul, sans groupe superflu). */
 function GroupeVertical({ items }: { items: Item[] }) {
   if (items.length === 1) return <div className="h-full">{items[0].node}</div>
   const enfants: ReactNode[] = []
@@ -44,9 +45,9 @@ function GroupeVertical({ items }: { items: Item[] }) {
 }
 
 /**
- * Le dashboard : deux colonnes redimensionnables (carte+objets / live+sémantique),
- * plus une colonne diff qui s'ouvre à droite au clic d'une action LLM. Chaque
- * panneau est un onglet fermable ; on le rouvre depuis l'en-tête.
+ * Le dashboard : une barre en haut pour ouvrir/fermer les panneaux, deux
+ * colonnes redimensionnables, et une colonne diff qui s'ouvre à droite au clic
+ * d'une action LLM. Chaque panneau est un onglet fermable.
  */
 export function DashboardPage() {
   const [ouverts, setOuverts] = useState<Record<PanId, boolean>>({
@@ -54,11 +55,12 @@ export function DashboardPage() {
     objets: true,
     live: true,
     semantic: true,
+    past: false,
   })
   const [diff, setDiff] = useState<LigneSemantic | null>(null)
 
   const fermer = (id: PanId) => setOuverts((o) => ({ ...o, [id]: false }))
-  const ouvrir = (id: PanId) => setOuverts((o) => ({ ...o, [id]: true }))
+  const basculer = (id: PanId) => setOuverts((o) => ({ ...o, [id]: !o[id] }))
 
   const carteNode = (
     <div className="flex h-full flex-col">
@@ -84,7 +86,7 @@ export function DashboardPage() {
       id: 'p-live',
       order: 0,
       node: <PanneauFluxAudio onFermer={() => fermer('live')} />,
-      min: 15,
+      min: 12,
     },
     ouverts.semantic && {
       id: 'p-semantic',
@@ -96,6 +98,12 @@ export function DashboardPage() {
           selectionId={diff?.id}
         />
       ),
+      min: 12,
+    },
+    ouverts.past && {
+      id: 'p-past',
+      order: 2,
+      node: <PanneauPastCalls onFermer={() => fermer('past')} />,
       min: 12,
     },
   ].filter(Boolean) as Item[]
@@ -114,8 +122,6 @@ export function DashboardPage() {
       node: <PanneauDiff ligne={diff} onFermer={() => setDiff(null)} />,
     })
 
-  const fermes = PANS.filter((p) => !ouverts[p])
-
   const enfantsH: ReactNode[] = []
   colonnes.forEach((c, i) => {
     if (i > 0) enfantsH.push(<ResizableHandle key={`h-${c.id}`} withHandle />)
@@ -132,23 +138,27 @@ export function DashboardPage() {
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-1 h-5" />
         <h1 className="text-sm font-semibold">Tableau de bord</h1>
-        {fermes.length > 0 && (
-          <div className="ml-4 flex items-center gap-1">
-            <span className="text-[11px] text-muted-foreground">Rouvrir :</span>
-            {fermes.map((p) => (
-              <Button
-                key={p}
-                size="sm"
-                variant="outline"
-                className="h-6 px-2 text-[11px]"
-                onClick={() => ouvrir(p)}
-              >
-                + {TITRES[p]}
-              </Button>
-            ))}
-          </div>
-        )}
       </header>
+
+      {/* Barre des panneaux : clic pour ouvrir/fermer */}
+      <div className="flex h-9 shrink-0 items-center gap-1 overflow-x-auto border-b bg-muted/20 px-3">
+        {PANS.map((p) => {
+          const { titre, icon: Icon } = META[p]
+          const actif = ouverts[p]
+          return (
+            <Button
+              key={p}
+              size="sm"
+              variant={actif ? 'secondary' : 'ghost'}
+              className="h-7 shrink-0 gap-1.5 text-xs"
+              onClick={() => basculer(p)}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {titre}
+            </Button>
+          )
+        })}
+      </div>
 
       {!isSupabaseConfigured && (
         <div className="border-b bg-amber-500/10 px-4 py-2 text-sm text-amber-600 dark:text-amber-400">
@@ -159,7 +169,7 @@ export function DashboardPage() {
 
       {colonnes.length === 0 ? (
         <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-          Tous les panneaux sont fermés — rouvrez-en un ci-dessus.
+          Tous les panneaux sont fermés — rouvrez-en un depuis la barre ci-dessus.
         </div>
       ) : (
         <ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
