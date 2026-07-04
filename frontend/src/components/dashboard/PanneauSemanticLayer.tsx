@@ -1,3 +1,5 @@
+import { Minus, PenLine, Plus } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
 export interface DiffChamp {
@@ -67,6 +69,19 @@ const LIGNES: LigneSemantic[] = [
   },
 ]
 
+/** Genre d'édition : ajout (vert), suppression (rouge), modification (neutre). */
+function genreDe(diff: DiffChamp[]): 'ajout' | 'suppression' | 'modif' {
+  if (diff.every((d) => d.avant == null && d.apres != null)) return 'ajout'
+  if (diff.every((d) => d.apres == null && d.avant != null)) return 'suppression'
+  return 'modif'
+}
+
+const ICONE = {
+  ajout: { Icon: Plus, couleur: 'text-emerald-500' },
+  suppression: { Icon: Minus, couleur: 'text-red-500' },
+  modif: { Icon: PenLine, couleur: 'text-muted-foreground' },
+} as const
+
 /**
  * Panneau « Semantic Layer Edit » : le journal des actions du LLM. Cliquer une
  * ligne ouvre le diff visuel de l'objet modifié (à droite).
@@ -81,18 +96,35 @@ export function PanneauSemanticLayer({
   return (
     <aside className="flex h-full flex-col bg-card">
       <ScrollArea className="min-h-0 flex-1">
-        {LIGNES.map((l) => (
-          <button
-            key={l.id}
-            onClick={() => onSelect?.(l)}
-            className={`flex w-full items-center gap-3 border-b px-4 py-2 text-left text-sm transition-colors hover:bg-accent ${
-              selectionId === l.id ? 'bg-primary/10' : ''
-            }`}
-          >
-            <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">{l.t}</span>
-            <span className="min-w-0 flex-1 truncate">{l.texte}</span>
-          </button>
-        ))}
+        {LIGNES.map((l) => {
+          const { Icon, couleur } = ICONE[genreDe(l.diff)]
+          return (
+            <button
+              key={l.id}
+              onClick={() => onSelect?.(l)}
+              className={`flex w-full items-center gap-2 border-b px-4 py-2 text-left text-sm transition-colors hover:bg-accent ${
+                selectionId === l.id ? 'bg-primary/10' : ''
+              }`}
+            >
+              <Icon className={`h-4 w-4 shrink-0 ${couleur}`} />
+              <span className="max-w-[45%] shrink-0 truncate font-medium">{l.objet}</span>
+              <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
+                {l.diff.map((d) => (
+                  <Badge
+                    key={d.champ}
+                    variant="outline"
+                    className="h-5 shrink-0 px-1.5 text-[10px] font-normal"
+                  >
+                    {d.champ}
+                  </Badge>
+                ))}
+              </div>
+              <span className="ml-auto shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                {l.t}
+              </span>
+            </button>
+          )
+        })}
       </ScrollArea>
     </aside>
   )
