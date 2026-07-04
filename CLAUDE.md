@@ -70,9 +70,18 @@ Realtime activé sur les deux tables.
   suppression au milieu). `saveAll()` **relance `load()`** après le push → l'état canonique
   (created_at, ordre, ids) revient de Supabase. `resetSchema()` **vide tout** le schéma en base
   (bouton « Réinitialiser », dialog de confirmation) puis remet le local à zéro.
+- **Deux boutons d'enregistrement distincts** (demande explicite) : `saveAll()` = « **Écraser
+  Supabase** » (remplace le schéma live des tables entities/attributes) ; `saveVersion(label?)` =
+  « **Enregistrer la version** » = snapshot du canvas courant (même non écrasé) dans l'historique
+  `schema_versions`. Historique : `loadVersions()` (métadonnées), `restoreVersion(id)` recharge le
+  payload **dans le canvas** en `dirty` **sans** toucher les tables live (l'utilisateur écrase
+  ensuite s'il veut), `renameVersion`/`removeVersion` (optimistes). UI = `SchemaHistorySheet.tsx`
+  (Sheet droite : liste, renommage inline, Restaurer, Supprimer).
 - `src/data/schemaApi.ts` — CRUD + `saveSchema()` (suppressions puis upserts en lot, entités
   avant attributs pour la FK `target_entity_id`) + `deleteAllSchema()` (delete all attributs puis
-  entités ; filtre `neq('id', <uuid impossible>)` car Supabase exige un filtre sur un delete).
+  entités ; filtre `neq('id', <uuid impossible>)` car Supabase exige un filtre sur un delete) +
+  historique (`listVersions`/`saveVersion`/`getVersionPayload`/`renameVersion`/`deleteVersion`,
+  table `schema_versions`, migration **`0006`**).
 - **Pas de synchronisation temps réel** (choix produit : édition locale + save explicite).
   Un garde-fou `beforeunload` avertit si `dirty` à la fermeture de l'onglet. **Resynchro à
   l'ouverture** : la remonte de `SchemaEditorPage` par le routeur relance `load()` → le canvas
@@ -84,7 +93,8 @@ Realtime activé sur les deux tables.
   `/ressources`, `/parametres`). `AppSidebar` = nav (composant `Sidebar` shadcn, collapsible
   icon). Le `SidebarTrigger` vit dans l'en-tête de chaque page.
 - `src/components/` — `SchemaEditorPage` (`ReactFlowProvider` + header + canvas, `h-svh`),
-  `Toolbar` (header : trigger sidebar, statut save, boutons Objet / **Réinitialiser** / Enregistrer),
+  `Toolbar` (header : trigger sidebar, statut save, boutons Objet / **Historique** (`SchemaHistorySheet`) /
+  **Réinitialiser** / **Enregistrer la version** / **Écraser Supabase**),
   `Canvas` (React Flow, nodes/edges dérivés du store ; **pas de MiniMap**), `nodes/EntityNode`
   (carte shadcn éditable, un seul composant `FieldRow` ; suppression via `AlertDialog`),
   `edges/RelationEdge` (edge custom), `ui/*` (primitives shadcn, dont `sidebar`).
@@ -131,3 +141,6 @@ de cible. `reference` = arête pleine, `object` = arête pointillée.
 - Pas d'authentification (accès ouvert assumé) — à durcir avant prod.
 - Pas d'export SQL/JSON (décision produit : hors scope v1).
 - Bundle > 500 kB (React Flow + Radix/shadcn) — warning bénin, code-splitting possible plus tard.
+- **Prérequis runtime historique** : appliquer la migration **`0006_schema_versions.sql`** dans
+  Supabase (SQL Editor). Sans elle, « Enregistrer la version » et le panneau Historique remontent
+  une erreur (table absente) — l'éditeur EAV lui-même fonctionne quand même.

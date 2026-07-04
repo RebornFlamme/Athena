@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import type { Attribute, Entity } from '../types'
+import type { Attribute, Entity, SchemaPayload, SchemaVersion } from '../types'
 
 // Couche d'accès Supabase. Toutes les fonctions renvoient les lignes créées /
 // mises à jour pour que le store puisse refléter l'état canonique de la base.
@@ -94,6 +94,55 @@ export async function deleteAllSchema(): Promise<void> {
   if (attrs.error) throw attrs.error
   const ents = await supabase.from('entities').delete().neq('id', ALL)
   if (ents.error) throw ents.error
+}
+
+// ---------------------------------------------------------------------------
+// Historique de versions (table schema_versions) — snapshots JSON du canvas.
+// ---------------------------------------------------------------------------
+
+/** Liste les versions (métadonnées seules, sans le payload) — plus récentes d'abord. */
+export async function listVersions(): Promise<SchemaVersion[]> {
+  const { data, error } = await supabase
+    .from('schema_versions')
+    .select('id, label, created_at')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as SchemaVersion[]
+}
+
+/** Enregistre un snapshot du schéma courant dans l'historique. */
+export async function saveVersion(
+  label: string | null,
+  payload: SchemaPayload,
+): Promise<SchemaVersion> {
+  const { data, error } = await supabase
+    .from('schema_versions')
+    .insert({ label, payload })
+    .select('id, label, created_at')
+    .single()
+  if (error) throw error
+  return data as SchemaVersion
+}
+
+/** Récupère le payload d'une version (chargé à la demande, à la restauration). */
+export async function getVersionPayload(id: string): Promise<SchemaPayload> {
+  const { data, error } = await supabase
+    .from('schema_versions')
+    .select('payload')
+    .eq('id', id)
+    .single()
+  if (error) throw error
+  return (data?.payload ?? { entities: [], attributes: [] }) as SchemaPayload
+}
+
+export async function renameVersion(id: string, label: string): Promise<void> {
+  const { error } = await supabase.from('schema_versions').update({ label }).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteVersion(id: string): Promise<void> {
+  const { error } = await supabase.from('schema_versions').delete().eq('id', id)
+  if (error) throw error
 }
 
 export interface SavePayload {

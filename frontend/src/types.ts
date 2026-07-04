@@ -55,3 +55,16 @@ export interface Attribute {
   created_at?: string
   updated_at?: string
 }
+
+/** Contenu d'un snapshot de schéma (tout le canvas sérialisé). */
+export interface SchemaPayload {
+  entities: Entity[]
+  attributes: Attribute[]
+}
+
+/** Métadonnées d'une version du schéma (table `schema_versions`, sans le payload). */
+export interface SchemaVersion {
+  id: string
+  label: string | null
+  created_at: string
+}

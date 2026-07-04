@@ -1,6 +1,7 @@
 import { useReactFlow } from '@xyflow/react'
-import { Plus, RotateCcw, Save } from 'lucide-react'
+import { DatabaseZap, Plus, RotateCcw, Save } from 'lucide-react'
 import { useSchemaStore } from '../store/useSchemaStore'
+import { SchemaHistorySheet } from './SchemaHistorySheet'
 import { Button } from '@/components/ui/button'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
@@ -19,6 +20,8 @@ import {
 export function Toolbar() {
   const addEntity = useSchemaStore((s) => s.addEntity)
   const saveAll = useSchemaStore((s) => s.saveAll)
+  const saveVersion = useSchemaStore((s) => s.saveVersion)
+  const savingVersion = useSchemaStore((s) => s.savingVersion)
   const resetSchema = useSchemaStore((s) => s.resetSchema)
   const dirty = useSchemaStore((s) => s.dirty)
   const saving = useSchemaStore((s) => s.saving)
@@ -65,6 +68,7 @@ export function Toolbar() {
       <Button size="sm" variant="outline" className="gap-1" onClick={handleAdd}>
         <Plus className="h-4 w-4" /> Nouvel objet
       </Button>
+      <SchemaHistorySheet />
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button
@@ -96,8 +100,25 @@ export function Toolbar() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <Button size="sm" className="gap-1" disabled={!dirty || saving} onClick={() => void saveAll()}>
-        <Save className="h-4 w-4" /> Enregistrer
+      <Separator orientation="vertical" className="h-5" />
+      <Button
+        size="sm"
+        variant="outline"
+        className="gap-1"
+        disabled={savingVersion || count === 0}
+        title="Enregistrer un instantané du schéma dans l'historique"
+        onClick={() => void saveVersion()}
+      >
+        <Save className="h-4 w-4" /> Enregistrer la version
+      </Button>
+      <Button
+        size="sm"
+        className="gap-1"
+        disabled={!dirty || saving}
+        title="Remplacer le schéma live dans Supabase par le canvas actuel"
+        onClick={() => void saveAll()}
+      >
+        <DatabaseZap className="h-4 w-4" /> Écraser Supabase
       </Button>
     </header>
   )

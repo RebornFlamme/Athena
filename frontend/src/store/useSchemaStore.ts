@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import * as api from '../data/schemaApi'
-import type { Attribute, DataType, Entity } from '../types'
+import type { Attribute, DataType, Entity, SchemaVersion } from '../types'
 import { RELATION_TYPES } from '../types'
 
 type Status = 'idle' | 'loading' | 'ready' | 'error'
@@ -30,10 +30,21 @@ interface SchemaState {
   removedEntityIds: string[]
   removedAttributeIds: string[]
 
+  // Historique de versions (snapshots dans schema_versions).
+  versions: SchemaVersion[]
+  versionsStatus: Status
+  savingVersion: boolean
+
   load: () => Promise<void>
   saveAll: () => Promise<void>
   resetSchema: () => Promise<void>
   select: (id: string | null) => void
+
+  loadVersions: () => Promise<void>
+  saveVersion: (label?: string | null) => Promise<void>
+  restoreVersion: (id: string) => Promise<void>
+  renameVersion: (id: string, label: string) => Promise<void>
+  removeVersion: (id: string) => Promise<void>
 
   addEntity: (opts?: { name?: string; is_subobject?: boolean; x?: number; y?: number }) => Entity
   renameEntity: (id: string, name: string) => void
@@ -61,6 +72,9 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
   saving: false,
   removedEntityIds: [],
   removedAttributeIds: [],
+  versions: [],
+  versionsStatus: 'idle',
+  savingVersion: false,
 
   load: async () => {
     set({ status: 'loading', error: null })
@@ -114,6 +128,68 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
   },
 
   select: (id) => set({ selectedEntityId: id }),
+
+  // --- Historique de versions -------------------------------------------------
+  loadVersions: async () => {
+    set({ versionsStatus: 'loading' })
+    try {
+      const versions = await api.listVersions()
+      set({ versions, versionsStatus: 'ready' })
+    } catch (err) {
+      set({ versionsStatus: 'error', error: messageOf(err) })
+    }
+  },
+
+  // Snapshot du canvas courant (même non écrasé sur le schéma live) → historique.
+  saveVersion: async (label) => {
+    const { entities, attributes } = get()
+    set({ savingVersion: true, error: null })
+    try {
+      await api.saveVersion(label ?? null, { entities, attributes })
+      await get().loadVersions()
+      set({ savingVersion: false })
+    } catch (err) {
+      set({ savingVersion: false, error: messageOf(err) })
+    }
+  },
+
+  // Recharge une version dans le canvas (édition locale, marqué `dirty`). N'écrase
+  // PAS les tables entities/attributes tant que l'utilisateur ne clique pas « Écraser ».
+  restoreVersion: async (id) => {
+    set({ error: null })
+    try {
+      const payload = await api.getVersionPayload(id)
+      set({
+        entities: payload.entities ?? [],
+        attributes: payload.attributes ?? [],
+        selectedEntityId: null,
+        dirty: true,
+        removedEntityIds: [],
+        removedAttributeIds: [],
+      })
+    } catch (err) {
+      set({ error: messageOf(err) })
+    }
+  },
+
+  renameVersion: async (id, label) => {
+    // Optimiste : on met à jour la liste locale puis on persiste.
+    set((s) => ({ versions: s.versions.map((v) => (v.id === id ? { ...v, label } : v)) }))
+    try {
+      await api.renameVersion(id, label)
+    } catch (err) {
+      set({ error: messageOf(err) })
+    }
+  },
+
+  removeVersion: async (id) => {
+    set((s) => ({ versions: s.versions.filter((v) => v.id !== id) }))
+    try {
+      await api.deleteVersion(id)
+    } catch (err) {
+      set({ error: messageOf(err) })
+    }
+  },
 
   addEntity: (opts) => {
     const entity: Entity = {
