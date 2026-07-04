@@ -1,4 +1,3 @@
-import { Minus, PenLine, Plus } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
@@ -76,10 +75,11 @@ function genreDe(diff: DiffChamp[]): 'ajout' | 'suppression' | 'modif' {
   return 'modif'
 }
 
-const ICONE = {
-  ajout: { Icon: Plus, couleur: 'text-emerald-500' },
-  suppression: { Icon: Minus, couleur: 'text-red-500' },
-  modif: { Icon: PenLine, couleur: 'text-muted-foreground' },
+// Style Vercel : une petite pastille colorée (point), pas d'icône.
+const PASTILLE = {
+  ajout: 'bg-emerald-500',
+  suppression: 'bg-red-500',
+  modif: 'bg-muted-foreground/50',
 } as const
 
 /**
@@ -97,16 +97,16 @@ export function PanneauSemanticLayer({
     <aside className="flex h-full flex-col bg-card">
       <ScrollArea className="min-h-0 flex-1">
         {LIGNES.map((l) => {
-          const { Icon, couleur } = ICONE[genreDe(l.diff)]
+          const pastille = PASTILLE[genreDe(l.diff)]
           return (
             <button
               key={l.id}
               onClick={() => onSelect?.(l)}
-              className={`flex w-full items-center gap-2 border-b px-4 py-2 text-left text-sm transition-colors hover:bg-accent ${
+              className={`flex w-full items-center gap-2.5 border-b px-4 py-2 text-left text-sm transition-colors hover:bg-accent ${
                 selectionId === l.id ? 'bg-primary/10' : ''
               }`}
             >
-              <Icon className={`h-4 w-4 shrink-0 ${couleur}`} />
+              <span className={`h-2 w-2 shrink-0 rounded-full ${pastille}`} />
               <span className="max-w-[45%] shrink-0 truncate font-medium">{l.objet}</span>
               <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
                 {l.diff.map((d) => (
