@@ -1,0 +1,107 @@
+{
+  "scenarios": [
+    {
+      "id": "feu-appartement-lilas",
+      "titre": "Feu d'appartement — 12 rue des Lilas, Lyon",
+      "heure_debut": "14:32",
+      "duree_s": 42,
+      "adresse_intervention": "12 rue des Lilas, Lyon",
+      "audio": null,
+      "transcript": [
+        { "t_ms": 0, "locuteur": "operateur", "texte": "Pompiers de Lyon, j'écoute." },
+        { "t_ms": 2200, "locuteur": "appelant", "texte": "Bonjour, ça brûle chez mes voisins, il y a de la fumée partout dans l'immeuble !" },
+        { "t_ms": 7000, "locuteur": "operateur", "texte": "D'accord, restez calme. Donnez-moi l'adresse exacte." },
+        { "t_ms": 10500, "locuteur": "appelant", "texte": "C'est au 12 rue des Lilas, à Lyon, dans le 7e." },
+        { "t_ms": 15000, "locuteur": "operateur", "texte": "12 rue des Lilas, très bien. À quel étage le feu ?" },
+        { "t_ms": 18500, "locuteur": "appelant", "texte": "Au troisième étage, la porte de l'appartement d'en face." },
+        { "t_ms": 24000, "locuteur": "operateur", "texte": "Est-ce qu'il y a des personnes à l'intérieur ?" },
+        { "t_ms": 27000, "locuteur": "appelant", "texte": "Oui ! Une dame âgée est encore dans l'appartement, elle n'arrive pas à sortir." },
+        { "t_ms": 34000, "locuteur": "operateur", "texte": "Les secours arrivent. Mettez-vous en sécurité à l'extérieur." }
+      ],
+      "extractions": [
+        {
+          "t_ms": 5000,
+          "event_type": "APPEL_RECU",
+          "extrait_source": "ça brûle chez mes voisins, il y a de la fumée partout",
+          "fiabilite": "B2"
+        },
+        {
+          "t_ms": 14000,
+          "event_type": "ADRESSE_IDENTIFIEE",
+          "extrait_source": "C'est au 12 rue des Lilas, à Lyon, dans le 7e",
+          "fiabilite": "B2",
+          "geocode": true
+        },
+        {
+          "t_ms": 22000,
+          "event_type": "SINISTRE_LOCALISE",
+          "extrait_source": "Au troisième étage, la porte de l'appartement d'en face",
+          "fiabilite": "B2",
+          "entite": {
+            "ref": "sinistre",
+            "type": "zone",
+            "sous_type": "sinistre",
+            "libelle": "Feu — 3e étage",
+            "adresse": "12 rue des Lilas, Lyon"
+          }
+        },
+        {
+          "t_ms": 31000,
+          "event_type": "VICTIME_SIGNALEE",
+          "extrait_source": "Une dame âgée est encore dans l'appartement, elle n'arrive pas à sortir",
+          "fiabilite": "B2",
+          "entite": {
+            "ref": "victime-1",
+            "type": "acteur",
+            "sous_type": "victime",
+            "libelle": "Victime — personne âgée, 3e étage",
+            "adresse": "12 rue des Lilas, Lyon"
+          }
+        }
+      ]
+    },
+    {
+      "id": "accident-voie-rapide",
+      "titre": "Accident de la route — quai Perrache, Lyon",
+      "heure_debut": "09:07",
+      "duree_s": 36,
+      "adresse_intervention": "Quai Perrache, Lyon",
+      "audio": null,
+      "transcript": [
+        { "t_ms": 0, "locuteur": "operateur", "texte": "Pompiers de Lyon, quelle est votre urgence ?" },
+        { "t_ms": 2500, "locuteur": "appelant", "texte": "Il y a eu un accident, deux voitures se sont percutées sur le quai Perrache." },
+        { "t_ms": 8000, "locuteur": "operateur", "texte": "Sur le quai Perrache à Lyon, d'accord. Y a-t-il des blessés ?" },
+        { "t_ms": 12500, "locuteur": "appelant", "texte": "Oui, un conducteur est coincé dans sa voiture, il saigne à la tête." },
+        { "t_ms": 19000, "locuteur": "operateur", "texte": "On envoie une équipe de désincarcération et un VSAV. Ne le déplacez pas." }
+      ],
+      "extractions": [
+        {
+          "t_ms": 5000,
+          "event_type": "APPEL_RECU",
+          "extrait_source": "un accident, deux voitures se sont percutées sur le quai Perrache",
+          "fiabilite": "B2"
+        },
+        {
+          "t_ms": 10000,
+          "event_type": "ADRESSE_IDENTIFIEE",
+          "extrait_source": "sur le quai Perrache",
+          "fiabilite": "B2",
+          "geocode": true
+        },
+        {
+          "t_ms": 16000,
+          "event_type": "VICTIME_SIGNALEE",
+          "extrait_source": "un conducteur est coincé dans sa voiture, il saigne à la tête",
+          "fiabilite": "B2",
+          "entite": {
+            "ref": "victime-1",
+            "type": "acteur",
+            "sous_type": "victime",
+            "libelle": "Victime — conducteur incarcéré",
+            "adresse": "Quai Perrache, Lyon"
+          }
+        }
+      ]
+    }
+  ]
+}

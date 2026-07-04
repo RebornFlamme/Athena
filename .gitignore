@@ -23,3 +23,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Supabase (artefacts locaux du CLI)
+supabase/.temp/
+supabase/.branches/
