@@ -8,6 +8,7 @@ import { formaterMs } from '../../sim/audioMeta'
 import { useSimulationPlayback } from '../../store/useSimulationPlayback'
 import type { Appel } from '../../typesSimulation'
 import { EnTetePanneau } from '../dashboard/EnTetePanneau'
+import { FeuilleTranscription } from '../dashboard/FeuilleTranscription'
 import { VisualiseurVoix } from './VisualiseurVoix'
 
 /**
@@ -18,6 +19,7 @@ import { VisualiseurVoix } from './VisualiseurVoix'
  */
 export function PanneauFluxAudio({ onFermer }: { onFermer?: () => void }) {
   const [appels, setAppels] = useState<Appel[]>([])
+  const [selection, setSelection] = useState<Appel | null>(null)
   const statut = useSimulationPlayback((s) => s.statut)
   const actifs = useSimulationPlayback((s) => s.actifs)
   const ecoutes = useSimulationPlayback((s) => s.ecoutes)
@@ -34,6 +36,7 @@ export function PanneauFluxAudio({ onFermer }: { onFermer?: () => void }) {
   const fluxLive = actifs.map((id) => parId.get(id)).filter((a): a is Appel => a != null)
 
   return (
+    <>
     <aside className="flex h-full flex-col bg-card">
       <EnTetePanneau
         icon={Radio}
@@ -64,19 +67,35 @@ export function PanneauFluxAudio({ onFermer }: { onFermer?: () => void }) {
           {fluxLive.map((appel) => {
             const ecoute = ecoutes.includes(appel.id)
             return (
-              <button
+              <div
                 key={appel.id}
-                onClick={() => basculerEcoute(appel.id)}
-                className="flex w-full items-center gap-3 border-b bg-primary/5 px-3 py-2.5 text-left transition-colors hover:bg-primary/10"
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelection(appel)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setSelection(appel)
+                  }
+                }}
+                title="Ouvrir la transcription"
+                className="flex w-full cursor-pointer items-center gap-3 border-b bg-primary/5 px-3 py-2.5 text-left transition-colors hover:bg-primary/10 focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
-                <span
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
-                    ecoute ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    basculerEcoute(appel.id)
+                  }}
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors ${
+                    ecoute
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   }`}
                   title={ecoute ? 'Écoute activée — couper' : 'Écouter ce flux'}
                 >
                   {ecoute ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-                </span>
+                </button>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="min-w-0 flex-1 truncate text-sm font-medium">{appel.titre}</span>
@@ -88,11 +107,20 @@ export function PanneauFluxAudio({ onFermer }: { onFermer?: () => void }) {
                     <VisualiseurVoix appelId={appel.id} actif />
                   </div>
                 </div>
-              </button>
+              </div>
             )
           })}
         </ScrollArea>
       )}
     </aside>
+
+    <FeuilleTranscription
+      appel={selection}
+      actif={selection ? actifs.includes(selection.id) : false}
+      ecoute={selection ? ecoutes.includes(selection.id) : false}
+      onToggleEcoute={() => selection && basculerEcoute(selection.id)}
+      onClose={() => setSelection(null)}
+    />
+    </>
   )
 }

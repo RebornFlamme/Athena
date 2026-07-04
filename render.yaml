@@ -1,0 +1,32 @@
+# Render Blueprint — déploiement du backend STT (poc-stt/, FastAPI + Google Chirp 3).
+#
+# Déploiement 1-clic :
+#   https://render.com/deploy?repo=https://github.com/RebornFlamme/Athena
+#
+# Render lit ce fichier, crée le service, puis demande la valeur de
+# GOOGLE_CLOUD_PROJECT (marquée `sync: false`). Ensuite, dans le dashboard du
+# service : Environment → Secret Files → ajouter un fichier `key.json` contenant
+# la clé JSON du compte de service GCP (rôle roles/speech.editor). Le chemin
+# /etc/secrets/key.json est déjà pointé par GOOGLE_APPLICATION_CREDENTIALS.
+#
+# L'URL publique sera https://athena-stt.onrender.com → WebSocket wss://athena-stt.onrender.com/ws
+# À reporter dans Vercel : VITE_STT_WS_URL=wss://athena-stt.onrender.com/ws (+ redeploy).
+services:
+  - type: web
+    name: athena-stt
+    runtime: python
+    rootDir: poc-stt
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.4"
+      - key: GOOGLE_CLOUD_REGION
+        value: us
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/secrets/key.json
+      - key: GOOGLE_CLOUD_PROJECT
+        sync: false

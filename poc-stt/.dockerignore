@@ -1,0 +1,7 @@
+# MP3 de démo du POC (le dossier data/ est recréé au runtime par main.py).
+data/*.mp3
+__pycache__/
+*.pyc
+.env
+.env.local
+.venv/
