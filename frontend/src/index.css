@@ -86,3 +86,25 @@
   display: none;
 }
 
+/* Docking (dockview) accordé au thème zinc dark de shadcn */
+.dv-athena {
+  --dv-background-color: hsl(var(--background));
+  --dv-group-view-background-color: hsl(var(--card));
+  --dv-tabs-and-actions-container-background-color: hsl(var(--muted) / 0.4);
+  --dv-activegroup-visiblepanel-tab-background-color: hsl(var(--card));
+  --dv-activegroup-hiddenpanel-tab-background-color: hsl(var(--muted) / 0.4);
+  --dv-inactivegroup-visiblepanel-tab-background-color: hsl(var(--card) / 0.6);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: hsl(var(--muted) / 0.3);
+  --dv-activegroup-visiblepanel-tab-color: hsl(var(--foreground));
+  --dv-activegroup-hiddenpanel-tab-color: hsl(var(--muted-foreground));
+  --dv-inactivegroup-visiblepanel-tab-color: hsl(var(--muted-foreground));
+  --dv-inactivegroup-hiddenpanel-tab-color: hsl(var(--muted-foreground));
+  --dv-separator-border: hsl(var(--border));
+  --dv-tabs-container-scrollbar-color: hsl(var(--muted-foreground));
+  --dv-icon-hover-background-color: hsl(var(--accent));
+  --dv-active-sash-color: hsl(var(--ring));
+  --dv-paneview-active-outline-color: hsl(var(--ring));
+  --dv-drag-over-background-color: hsl(var(--primary) / 0.15);
+  --dv-drag-over-border-color: hsl(var(--primary));
+}
+

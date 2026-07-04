@@ -1,6 +1,4 @@
-import { Layers } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { EnTetePanneau } from './EnTetePanneau'
 
 export interface DiffChamp {
   champ: string
@@ -74,17 +72,14 @@ const LIGNES: LigneSemantic[] = [
  * ligne ouvre le diff visuel de l'objet modifié (à droite).
  */
 export function PanneauSemanticLayer({
-  onFermer,
   onSelect,
   selectionId,
 }: {
-  onFermer?: () => void
   onSelect?: (ligne: LigneSemantic) => void
   selectionId?: string | null
 }) {
   return (
     <aside className="flex h-full flex-col bg-card">
-      <EnTetePanneau icon={Layers} titre="Semantic Layer Edit" onFermer={onFermer} />
       <ScrollArea className="min-h-0 flex-1">
         {LIGNES.map((l) => (
           <button

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Boxes, ChevronDown, ListFilter, X } from 'lucide-react'
+import { ChevronDown, ListFilter, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,7 +16,6 @@ import { isSupabaseConfigured } from '../../lib/supabase'
 import { listAppels } from '../../data/appelsApi'
 import { loadSchema } from '../../data/schemaApi'
 import { DATA_TYPES, type Attribute, type Entity } from '../../types'
-import { EnTetePanneau } from './EnTetePanneau'
 import { FeuilleObjet } from './FeuilleObjet'
 
 const LABEL_TYPE = new Map(DATA_TYPES.map((t) => [t.value, t.label]))
@@ -26,7 +25,7 @@ const LABEL_TYPE = new Map(DATA_TYPES.map((t) => [t.value, t.label]))
  * EAV). Filtre par menu déroulant à cocher → badges des objets affichés. Cards
  * alignées sur une ligne scrollable horizontalement ; clic → volet de détail.
  */
-export function PanneauObjets({ onFermer }: { onFermer?: () => void }) {
+export function PanneauObjets() {
   const [entities, setEntities] = useState<Entity[]>([])
   const [attributes, setAttributes] = useState<Attribute[]>([])
   const [enregistrements, setEnregistrements] = useState<string[]>([])
@@ -78,17 +77,6 @@ export function PanneauObjets({ onFermer }: { onFermer?: () => void }) {
 
   return (
     <aside className="flex h-full flex-col bg-card">
-      <EnTetePanneau
-        icon={Boxes}
-        titre="Objets"
-        onFermer={onFermer}
-        right={
-          <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-            {objetsVisibles.length}/{entities.length}
-          </Badge>
-        }
-      />
-
       {entities.length === 0 ? (
         <p className="p-4 text-sm italic leading-relaxed text-muted-foreground">
           Aucun objet. Définissez des objets dans l'éditeur de schéma.

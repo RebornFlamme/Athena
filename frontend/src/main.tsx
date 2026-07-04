@@ -8,6 +8,7 @@ import { DashboardPage } from './components/dashboard/DashboardPage'
 import { SimulationPage } from './components/simulation/SimulationPage'
 import '@fontsource-variable/geist'
 import '@xyflow/react/dist/style.css'
+import 'dockview-react/dist/styles/dockview.css'
 import './index.css'
 
 const router = createBrowserRouter([

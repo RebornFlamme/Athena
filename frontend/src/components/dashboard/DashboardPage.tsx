@@ -1,136 +1,123 @@
-import { useState, type ComponentType, type ReactNode } from 'react'
+import { useCallback, useRef, type ComponentType, type FunctionComponent } from 'react'
 import { Boxes, History, Layers, Map as MapIcon, Radio } from 'lucide-react'
+import {
+  DockviewReact,
+  type DockviewApi,
+  type DockviewReadyEvent,
+  type IDockviewPanelProps,
+} from 'dockview-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { isSupabaseConfigured } from '../../lib/supabase'
 import { Carte } from './Carte'
-import { EnTetePanneau } from './EnTetePanneau'
-import { PanneauObjets } from './PanneauObjets'
 import { PanneauDiff } from './PanneauDiff'
+import { PanneauObjets } from './PanneauObjets'
 import { PanneauPastCalls } from './PanneauPastCalls'
 import { PanneauSemanticLayer, type LigneSemantic } from './PanneauSemanticLayer'
 import { PanneauFluxAudio } from '../simulation/PanneauFluxAudio'
 
+// Contenu de chaque panneau (l'onglet + le drag/split sont gérés par dockview).
+const COMPOSANTS: Record<string, FunctionComponent<IDockviewPanelProps>> = {
+  carte: () => (
+    <div className="relative h-full">
+      <Carte />
+    </div>
+  ),
+  objets: () => <PanneauObjets />,
+  live: () => <PanneauFluxAudio />,
+  semantic: (p) => (
+    <PanneauSemanticLayer
+      onSelect={(p.params as { onSelect?: (l: LigneSemantic) => void }).onSelect}
+    />
+  ),
+  past: () => <PanneauPastCalls />,
+  diff: (p) => <PanneauDiff ligne={(p.params as { ligne: LigneSemantic }).ligne} />,
+}
+
 type PanId = 'carte' | 'objets' | 'live' | 'semantic' | 'past'
-const PANS: PanId[] = ['carte', 'objets', 'live', 'semantic', 'past']
-const META: Record<PanId, { titre: string; icon: ComponentType<{ className?: string }> }> = {
-  carte: { titre: 'Carte', icon: MapIcon },
-  objets: { titre: 'Objets', icon: Boxes },
-  live: { titre: 'Live feed', icon: Radio },
-  semantic: { titre: 'Semantic', icon: Layers },
-  past: { titre: 'Past calls', icon: History },
-}
-
-interface Item {
-  id: string
-  order: number
-  node: ReactNode
-  min: number
-}
-
-function GroupeVertical({ items }: { items: Item[] }) {
-  if (items.length === 1) return <div className="h-full">{items[0].node}</div>
-  const enfants: ReactNode[] = []
-  items.forEach((it, i) => {
-    if (i > 0) enfants.push(<ResizableHandle key={`h-${it.id}`} withHandle />)
-    enfants.push(
-      <ResizablePanel key={it.id} id={it.id} order={it.order} minSize={it.min}>
-        {it.node}
-      </ResizablePanel>,
-    )
-  })
-  return <ResizablePanelGroup direction="vertical">{enfants}</ResizablePanelGroup>
-}
+const OUVRABLES: { id: PanId; titre: string; icon: ComponentType<{ className?: string }> }[] = [
+  { id: 'carte', titre: 'Carte', icon: MapIcon },
+  { id: 'objets', titre: 'Objets', icon: Boxes },
+  { id: 'live', titre: 'Live feed', icon: Radio },
+  { id: 'semantic', titre: 'Semantic Layer Edit', icon: Layers },
+  { id: 'past', titre: 'Past calls', icon: History },
+]
 
 /**
- * Le dashboard : une barre en haut pour ouvrir/fermer les panneaux, deux
- * colonnes redimensionnables, et une colonne diff qui s'ouvre à droite au clic
- * d'une action LLM. Chaque panneau est un onglet fermable.
+ * Dashboard en docking (dockview) : on drag les onglets, on drop sur les bords
+ * pour splitter (haut/bas/gauche/droite), on empile des onglets. Une barre en
+ * haut rouvre un panneau ; cliquer une action LLM ouvre le diff à droite.
  */
 export function DashboardPage() {
-  const [ouverts, setOuverts] = useState<Record<PanId, boolean>>({
-    carte: true,
-    objets: true,
-    live: true,
-    semantic: true,
-    past: false,
-  })
-  const [diff, setDiff] = useState<LigneSemantic | null>(null)
+  const apiRef = useRef<DockviewApi | null>(null)
 
-  const fermer = (id: PanId) => setOuverts((o) => ({ ...o, [id]: false }))
-  const basculer = (id: PanId) => setOuverts((o) => ({ ...o, [id]: !o[id] }))
+  const openDiff = useCallback((ligne: LigneSemantic) => {
+    const api = apiRef.current
+    if (!api) return
+    const existant = api.getPanel('diff')
+    if (existant) {
+      existant.api.updateParameters({ ligne })
+      existant.api.setTitle(`Diff — ${ligne.objet}`)
+      existant.api.setActive()
+    } else {
+      api.addPanel({
+        id: 'diff',
+        component: 'diff',
+        title: `Diff — ${ligne.objet}`,
+        params: { ligne },
+        position: { direction: 'right' },
+      })
+    }
+  }, [])
 
-  const carteNode = (
-    <div className="flex h-full flex-col">
-      <EnTetePanneau icon={MapIcon} titre="Carte" onFermer={() => fermer('carte')} />
-      <div className="relative flex-1">
-        <Carte />
-      </div>
-    </div>
+  const ouvrir = useCallback(
+    (id: PanId) => {
+      const api = apiRef.current
+      if (!api) return
+      const existant = api.getPanel(id)
+      if (existant) {
+        existant.api.setActive()
+        return
+      }
+      const titre = OUVRABLES.find((o) => o.id === id)?.titre ?? id
+      api.addPanel({
+        id,
+        component: id,
+        title: titre,
+        params: id === 'semantic' ? { onSelect: openDiff } : undefined,
+      })
+    },
+    [openDiff],
   )
 
-  const gauche: Item[] = [
-    ouverts.carte && { id: 'p-carte', order: 0, node: carteNode, min: 20 },
-    ouverts.objets && {
-      id: 'p-objets',
-      order: 1,
-      node: <PanneauObjets onFermer={() => fermer('objets')} />,
-      min: 12,
+  const onReady = useCallback(
+    (event: DockviewReadyEvent) => {
+      const api = event.api
+      apiRef.current = api
+      api.addPanel({ id: 'carte', component: 'carte', title: 'Carte' })
+      api.addPanel({
+        id: 'objets',
+        component: 'objets',
+        title: 'Objets',
+        position: { referencePanel: 'carte', direction: 'below' },
+      })
+      api.addPanel({
+        id: 'live',
+        component: 'live',
+        title: 'Live feed',
+        position: { referencePanel: 'carte', direction: 'right' },
+      })
+      api.addPanel({
+        id: 'semantic',
+        component: 'semantic',
+        title: 'Semantic Layer Edit',
+        params: { onSelect: openDiff },
+        position: { referencePanel: 'live', direction: 'below' },
+      })
     },
-  ].filter(Boolean) as Item[]
-
-  const milieu: Item[] = [
-    ouverts.live && {
-      id: 'p-live',
-      order: 0,
-      node: <PanneauFluxAudio onFermer={() => fermer('live')} />,
-      min: 12,
-    },
-    ouverts.semantic && {
-      id: 'p-semantic',
-      order: 1,
-      node: (
-        <PanneauSemanticLayer
-          onFermer={() => fermer('semantic')}
-          onSelect={setDiff}
-          selectionId={diff?.id}
-        />
-      ),
-      min: 12,
-    },
-    ouverts.past && {
-      id: 'p-past',
-      order: 2,
-      node: <PanneauPastCalls onFermer={() => fermer('past')} />,
-      min: 12,
-    },
-  ].filter(Boolean) as Item[]
-
-  const colonnes: (Item & { defaut: number })[] = []
-  if (gauche.length)
-    colonnes.push({ id: 'col-gauche', order: 0, min: 30, defaut: 46, node: <GroupeVertical items={gauche} /> })
-  if (milieu.length)
-    colonnes.push({ id: 'col-milieu', order: 1, min: 20, defaut: 30, node: <GroupeVertical items={milieu} /> })
-  if (diff)
-    colonnes.push({
-      id: 'col-diff',
-      order: 2,
-      min: 16,
-      defaut: 24,
-      node: <PanneauDiff ligne={diff} onFermer={() => setDiff(null)} />,
-    })
-
-  const enfantsH: ReactNode[] = []
-  colonnes.forEach((c, i) => {
-    if (i > 0) enfantsH.push(<ResizableHandle key={`h-${c.id}`} withHandle />)
-    enfantsH.push(
-      <ResizablePanel key={c.id} id={c.id} order={c.order} defaultSize={c.defaut} minSize={c.min}>
-        {c.node}
-      </ResizablePanel>,
-    )
-  })
+    [openDiff],
+  )
 
   return (
     <div className="flex h-svh flex-col">
@@ -140,24 +127,19 @@ export function DashboardPage() {
         <h1 className="text-sm font-semibold">Tableau de bord</h1>
       </header>
 
-      {/* Barre des panneaux : clic pour ouvrir/fermer */}
       <div className="flex h-9 shrink-0 items-center gap-1 overflow-x-auto border-b bg-muted/20 px-3">
-        {PANS.map((p) => {
-          const { titre, icon: Icon } = META[p]
-          const actif = ouverts[p]
-          return (
-            <Button
-              key={p}
-              size="sm"
-              variant={actif ? 'secondary' : 'ghost'}
-              className="h-7 shrink-0 gap-1.5 text-xs"
-              onClick={() => basculer(p)}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {titre}
-            </Button>
-          )
-        })}
+        <span className="mr-1 shrink-0 text-[11px] text-muted-foreground">Ouvrir :</span>
+        {OUVRABLES.map(({ id, titre, icon: Icon }) => (
+          <Button
+            key={id}
+            size="sm"
+            variant="ghost"
+            className="h-7 shrink-0 gap-1.5 text-xs"
+            onClick={() => ouvrir(id)}
+          >
+            <Icon className="h-3.5 w-3.5" /> {titre}
+          </Button>
+        ))}
       </div>
 
       {!isSupabaseConfigured && (
@@ -167,15 +149,11 @@ export function DashboardPage() {
         </div>
       )}
 
-      {colonnes.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-          Tous les panneaux sont fermés — rouvrez-en un depuis la barre ci-dessus.
+      <div className="min-h-0 flex-1">
+        <div className="dockview-theme-abyss dv-athena h-full">
+          <DockviewReact components={COMPOSANTS} onReady={onReady} />
         </div>
-      ) : (
-        <ResizablePanelGroup direction="horizontal" className="min-h-0 flex-1">
-          {enfantsH}
-        </ResizablePanelGroup>
-      )}
+      </div>
     </div>
   )
 }

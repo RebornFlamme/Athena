@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { History, Phone } from 'lucide-react'
+import { Phone } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { isSupabaseConfigured } from '../../lib/supabase'
@@ -7,7 +7,6 @@ import { listAppels } from '../../data/appelsApi'
 import { formaterMs } from '../../sim/audioMeta'
 import { useSimulationPlayback } from '../../store/useSimulationPlayback'
 import type { Appel } from '../../typesSimulation'
-import { EnTetePanneau } from './EnTetePanneau'
 
 type StatutAppel = 'a_venir' | 'en_direct' | 'termine'
 
@@ -22,7 +21,7 @@ const LIBELLE: Record<StatutAppel, string> = {
  * (en direct), terminés (passés) ou à venir. Chronologique par instant de
  * déclenchement.
  */
-export function PanneauPastCalls({ onFermer }: { onFermer?: () => void }) {
+export function PanneauPastCalls() {
   const [appels, setAppels] = useState<Appel[]>([])
   const statut = useSimulationPlayback((s) => s.statut)
   const positionMs = useSimulationPlayback((s) => s.positionMs)
@@ -47,16 +46,6 @@ export function PanneauPastCalls({ onFermer }: { onFermer?: () => void }) {
 
   return (
     <aside className="flex h-full flex-col bg-card">
-      <EnTetePanneau
-        icon={History}
-        titre="Past calls"
-        onFermer={onFermer}
-        right={
-          <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-            {visibles.length}
-          </Badge>
-        }
-      />
       {visibles.length === 0 ? (
         <p className="p-4 text-sm italic leading-relaxed text-muted-foreground">
           Aucun appel en cours ou passé. Lancez la démonstration.
