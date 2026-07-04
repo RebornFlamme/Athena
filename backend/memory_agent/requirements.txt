@@ -1,0 +1,9 @@
+# ── Core ────────────────────────────────────────────────────────────────
+google-adk>=1.0.0          # Agent Development Kit (LlmAgent, McpToolset, Runner)
+google-genai>=2.0.0        # OBLIGATOIRE: SDK v2 requis pour Gemini 3.5 Flash
+supabase>=2.0.0            # Client Python Supabase (lectures snapshot + schema)
+pydantic>=2.0.0            # Modèles de données
+pydantic-settings>=2.0.0   # Configuration via variables d'environnement
+
+# ── Utilitaires ──────────────────────────────────────────────────────
+python-dotenv>=1.0.0       # Chargement du fichier .env en développement

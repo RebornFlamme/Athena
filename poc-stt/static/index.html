@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POC STT — Chirp 3 Live Transcription</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            max-width: 860px;
+            margin: 40px auto;
+            padding: 0 24px;
+            background: #0f1117;
+            color: #e1e4e8;
+            line-height: 1.6;
+        }
+
+        h1 {
+            font-size: 1.35rem;
+            margin-bottom: 24px;
+            color: #818cf8;
+            font-weight: 600;
+        }
+
+        /* ---- Controls ---- */
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+
+        button {
+            padding: 10px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, opacity 0.15s;
+        }
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        #startBtn {
+            background: #6366f1;
+            color: #fff;
+        }
+        #startBtn:hover:not(:disabled) { background: #5558e6; }
+
+        #stopBtn {
+            background: #ef4444;
+            color: #fff;
+        }
+        #stopBtn:hover:not(:disabled) { background: #dc2626; }
+
+        /* ---- Status badge ---- */
+        #status {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 0.85rem;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            background: #1f2937;
+            color: #d1d5db;
+        }
+        .status-dot {
+            width: 9px; height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .dot-idle       { background: #6b7280; }
+        .dot-connected  { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+        .dot-speaking   { background: #22c55e; box-shadow: 0 0 14px rgba(34,197,94,0.9); animation: pulse-dot 0.6s ease-in-out infinite; }
+        .dot-error      { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); }
+
+        @keyframes pulse-dot {
+            0%, 100% { box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+            50%      { box-shadow: 0 0 18px rgba(34,197,94,1.0); }
+        }
+
+        /* ---- Language badge ---- */
+        #language-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            background: #1e1b4b;
+            color: #a5b4fc;
+            margin-left: 4px;
+        }
+        #lang { font-weight: 700; }
+
+        /* ---- Language select ---- */
+        #languageSelect {
+            padding: 9px 14px;
+            border: 1px solid #2d3148;
+            border-radius: 8px;
+            background: #1a1d2e;
+            color: #e1e4e8;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        #languageSelect:hover { border-color: #6366f1; }
+        #languageSelect:focus { border-color: #818cf8; }
+
+        /* ---- Transcript boxes ---- */
+        .transcript-box {
+            background: #1a1d2e;
+            border: 1px solid #2d3148;
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin-bottom: 14px;
+            min-height: 68px;
+        }
+        .transcript-box h3 {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 10px;
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        #interim {
+            color: #9ca3af;
+            font-style: italic;
+            font-size: 1.05rem;
+            min-height: 28px;
+            line-height: 1.7;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        #final {
+            color: #f3f4f6;
+            font-size: 1.15rem;
+            min-height: 28px;
+            line-height: 1.7;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        /* ---- Info footer ---- */
+        .info {
+            margin-top: 24px;
+            font-size: 0.75rem;
+            color: #4b5563;
+        }
+        .info code {
+            background: #1f2937;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+
+        /* ---- Mode tabs ---- */
+        .mode-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #2d3148;
+        }
+        .mode-tab {
+            flex: 1;
+            padding: 10px 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #1a1d2e;
+            color: #9ca3af;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border: none;
+            transition: background 0.15s, color 0.15s;
+        }
+        .mode-tab.active { background: #6366f1; color: #fff; }
+        .mode-tab:not(.active):hover { background: #252840; }
+
+        /* ---- Upload section ---- */
+        .upload-section {
+            background: #1a1d2e;
+            border: 2px dashed #2d3148;
+            border-radius: 10px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: border-color 0.15s;
+        }
+        .upload-section.dragover {
+            border-color: #6366f1;
+            background: #1e1b4b;
+        }
+        .upload-status {
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-top: 8px;
+        }
+        .upload-btn {
+            padding: 8px 22px;
+            background: #6366f1;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .upload-btn:hover { background: #5558e6; }
+
+        /* ---- File list ---- */
+        .file-list { margin-bottom: 20px; }
+        .file-list h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+        .file-table { width: 100%; border-collapse: collapse; }
+        .file-table th {
+            text-align: left;
+            font-size: 0.72rem;
+            color: #6b7280;
+            padding: 8px 12px;
+            border-bottom: 1px solid #2d3148;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .file-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #1f2937;
+            font-size: 0.88rem;
+        }
+        .play-btn {
+            padding: 6px 16px;
+            background: #6366f1;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+        .play-btn:hover { background: #5558e6; }
+        .play-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .file-empty {
+            color: #6b7280;
+            font-size: 0.88rem;
+            padding: 24px;
+            text-align: center;
+        }
+
+        /* ---- Audio player controls ---- */
+        .player-controls {
+            background: #1a1d2e;
+            border: 1px solid #2d3148;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .now-playing {
+            font-size: 0.85rem;
+            color: #e1e4e8;
+            font-weight: 600;
+        }
+        .now-playing span { color: #a5b4fc; }
+        .player-buttons { display: flex; gap: 8px; }
+        .player-buttons button {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        #playPauseBtn { background: #6366f1; color: #fff; }
+        #playPauseBtn:hover:not(:disabled) { background: #5558e6; }
+        #stopPlayerBtn { background: #ef4444; color: #fff; }
+        #stopPlayerBtn:hover:not(:disabled) { background: #dc2626; }
+
+        .progress-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        #progressBar {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #2d3148;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+        #progressBar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px; height: 14px;
+            background: #6366f1;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .time-label {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            font-variant-numeric: tabular-nums;
+            min-width: 42px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎤 POC STT — Transcription Live avec Chirp 3 + Diarization</h1>
+
+    <!-- ---- Mode tabs ---- -->
+    <div class="mode-tabs">
+        <button class="mode-tab active" id="micModeTab" onclick="switchMode('mic')">🎤 Microphone</button>
+        <button class="mode-tab" id="fileModeTab" onclick="switchMode('file')">📁 Fichier audio</button>
+    </div>
+
+    <!-- ---- Mic controls (shown in mic mode) ---- -->
+    <div class="controls" id="micControls">
+        <button id="startBtn" onclick="start()">▶ Start</button>
+        <button id="stopBtn" onclick="stop()" disabled>⏹ Stop</button>
+        <select id="languageSelect" onchange="onLanguageChange()" title="Langue attendue (forcer réduit les erreurs de 5-15%)">
+            <option value="auto">🌐 Auto-détection</option>
+            <option value="fr-FR">🇫🇷 Français</option>
+            <option value="en-US">🇺🇸 English</option>
+            <option value="it-IT">🇮🇹 Italiano</option>
+            <option value="es-ES">🇪🇸 Español</option>
+            <option value="de-DE">🇩🇪 Deutsch</option>
+            <option value="ar-SA">🇸🇦 العربية</option>
+        </select>
+        <div id="status">
+            <span class="status-dot dot-idle"></span>Prêt
+        </div>
+        <div id="language-badge">
+            🌐 Détecté&nbsp;: <span id="lang">–</span>
+        </div>
+    </div>
+
+    <!-- ---- File player panel (hidden in mic mode) ---- -->
+    <div id="filePanel" style="display:none">
+        <!-- Upload -->
+        <div class="upload-section" id="uploadArea">
+            <p style="margin-bottom:12px;color:#9ca3af;">Glissez un fichier audio ici ou cliquez pour sélectionner</p>
+            <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac" style="margin-bottom:10px;">
+            <br>
+            <button class="upload-btn" onclick="uploadAudio()">📤 Upload</button>
+            <div class="upload-status" id="uploadStatus"></div>
+        </div>
+
+        <!-- File list -->
+        <div class="file-list">
+            <h3>Fichiers uploadés</h3>
+            <div id="fileListContainer">
+                <div class="file-empty">Aucun fichier pour l'instant.</div>
+            </div>
+        </div>
+
+        <!-- Player -->
+        <div class="player-controls" id="playerControls" style="display:none">
+            <div class="player-header">
+                <div class="now-playing">▶ <span id="currentFileName"></span></div>
+                <div class="player-buttons">
+                    <button id="playPauseBtn" onclick="togglePlayPause()" disabled>▶ Play</button>
+                    <button id="stopPlayerBtn" onclick="stopPlayback()">⏹ Stop</button>
+                </div>
+            </div>
+            <div class="progress-row">
+                <span class="time-label" id="currentTime">0:00</span>
+                <input type="range" id="progressBar" value="0" min="0" max="100" oninput="seekTo(this.value)">
+                <span class="time-label" id="duration">0:00</span>
+            </div>
+        </div>
+
+        <!-- Hidden audio element (for preloading) -->
+        <audio id="playerAudio" style="display:none" preload="auto"></audio>
+    </div>
+
+    <div class="transcript-box">
+        <h3>Texte provisoire (interim)</h3>
+        <div id="interim"></div>
+    </div>
+
+    <div class="transcript-box">
+        <h3>Texte définitif (final)</h3>
+        <div id="final"></div>
+    </div>
+
+    <div class="info">
+        Micro → LINEAR16 16kHz mono → WebSocket → Google Chirp 3 + diarization → texte live.<br>
+        Les locuteurs sont détectés automatiquement. Ouvrir la console (<code>F12</code>) pour voir les logs.
+    </div>
+
+    <script>
+    // =========================================================================
+    // État global
+    // =========================================================================
+    let audioContext = null;
+    let scriptProcessor = null;
+    let mediaStream = null;
+    let ws = null;
+    let currentLanguage = 'auto';  // langue sélectionnée dans le dropdown (levier 1)
+
+    // =========================================================================
+    // Palette de couleurs pour la diarization (6 couleurs contrastées)
+    // speaker_tag: 1–6 → couleur fixe. null/absent → gris neutre.
+    // =========================================================================
+    const SPEAKER_COLORS = [
+        '#60a5fa',  // Speaker 1 — bleu
+        '#fb923c',  // Speaker 2 — orange
+        '#4ade80',  // Speaker 3 — vert
+        '#c084fc',  // Speaker 4 — violet
+        '#f472b6',  // Speaker 5 — rose
+        '#22d3ee',  // Speaker 6 — cyan
+    ];
+    const NEUTRAL_COLOR = '#9ca3af';  // gris — pour speaker_tag null ou absent
+
+    function getSpeakerColor(tag) {
+        if (tag == null || tag < 1) return NEUTRAL_COLOR;
+        const idx = tag - 1;
+        return idx < SPEAKER_COLORS.length ? SPEAKER_COLORS[idx] : NEUTRAL_COLOR;
+    }
+
+    // Dernier speaker_tag détecté (pour colorer l'interim)
+    let lastSpeakerTag = null;
+
+    // =========================================================================
+    // Helpers UI
+    // =========================================================================
+    function updateStatus(state, text) {
+        const el = document.getElementById('status');
+        const dot = el.querySelector('.status-dot');
+        dot.className = 'status-dot';
+        switch (state) {
+            case 'idle':      dot.classList.add('dot-idle');      break;
+            case 'connected': dot.classList.add('dot-connected'); break;
+            case 'speaking':  dot.classList.add('dot-speaking');  break;
+            case 'error':     dot.classList.add('dot-error');     break;
+        }
+        el.childNodes[1].textContent = text;
+    }
+
+    /** Change uniquement l'apparence du dot sans toucher au texte (pour VAD). */
+    function updateStatusDot(state) {
+        const dot = document.querySelector('#status .status-dot');
+        if (!dot) return;
+        dot.className = 'status-dot';
+        switch (state) {
+            case 'idle':      dot.classList.add('dot-idle');      break;
+            case 'connected': dot.classList.add('dot-connected'); break;
+            case 'speaking':  dot.classList.add('dot-speaking');  break;
+            case 'error':     dot.classList.add('dot-error');     break;
+        }
+    }
+
+    /** Appelé quand l'utilisateur change la langue dans le dropdown. */
+    function onLanguageChange() {
+        const sel = document.getElementById('languageSelect');
+        const newLang = sel.value;
+        if (newLang === currentLanguage) return;
+
+        console.log('[LANG] Changement de langue :', currentLanguage, '→', newLang);
+        currentLanguage = newLang;
+
+        // Si une session est active, redémarrer le WebSocket avec la nouvelle langue
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            console.log('[LANG] Redémarrage du stream STT avec la nouvelle langue…');
+            // Fermer l'ancien WebSocket (le stop() classique fermerait tout)
+            ws.close(1000, 'Changement de langue');
+            ws = null;
+            // Rouvrir avec la nouvelle langue — le flux audio continue via scriptProcessor
+            connectWebSocket().catch(err => {
+                console.error('[LANG] Échec reconnexion :', err);
+                updateStatus('error', 'Erreur reconnexion');
+            });
+        }
+    }
+
+    // =========================================================================
+    // Traitement audio — downsampling + conversion Float32 → Int16
+    // =========================================================================
+    function float32ToInt16(float32Array) {
+        const out = new Int16Array(float32Array.length);
+        for (let i = 0; i < float32Array.length; i++) {
+            const s = Math.max(-1, Math.min(1, float32Array[i]));
+            out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+        return out;
+    }
+
+    /**
+     * Downsample d'un buffer Float32 du taux natif vers 16 kHz,
+     * puis conversion en Int16 little-endian.
+     *
+     * Ratio 48k → 16k = 3:1. Moyenne glissante pour anti-aliasing simple.
+     */
+    function downsampleTo16k(float32Buffer, inputSampleRate) {
+        if (inputSampleRate === 16000) {
+            return float32ToInt16(float32Buffer);
+        }
+
+        const ratio = inputSampleRate / 16000;
+        const outLength = Math.floor(float32Buffer.length / ratio);
+        const output = new Int16Array(outLength);
+
+        for (let i = 0; i < outLength; i++) {
+            const start = Math.floor(i * ratio);
+            const end = Math.floor((i + 1) * ratio);
+            let sum = 0;
+            let count = 0;
+            for (let j = start; j < end && j < float32Buffer.length; j++) {
+                sum += float32Buffer[j];
+                count++;
+            }
+            const avg = count > 0 ? sum / count : 0;
+            const clamped = Math.max(-1, Math.min(1, avg));
+            output[i] = clamped < 0 ? clamped * 0x8000 : clamped * 0x7FFF;
+        }
+        return output;
+    }
+
+    // =========================================================================
+    // Gestion WebSocket (endpoint unique /ws — pas de paramètre speaker_id)
+    // =========================================================================
+    function connectWebSocket() {
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const url = `${protocol}//${location.host}/ws?language=${encodeURIComponent(currentLanguage)}`;
+
+        console.log('[WS] Connexion à', url);
+        ws = new WebSocket(url);
+        ws.binaryType = 'arraybuffer';
+
+        // Promise qui se résout quand la connexion est vraiment ouverte
+        const openPromise = new Promise((resolve, reject) => {
+            ws.onopen = () => {
+                console.log('[WS] Connecté');
+                updateStatus('connected', playerMode ? 'STT actif' : 'Connecté — parlez !');
+                resolve();
+            };
+
+            ws.onerror = (err) => {
+                console.error('[WS] Erreur de connexion');
+                updateStatus('error', 'Erreur WebSocket');
+                reject(err);
+            };
+
+            ws.onmessage = (event) => {
+                let data;
+                try {
+                    data = JSON.parse(event.data);
+                } catch (e) {
+                    console.error('[WS] Message non-JSON reçu :', event.data);
+                    return;
+                }
+
+                if (data.type === 'transcript') {
+                    const interimEl = document.getElementById('interim');
+                    const finalEl = document.getElementById('final');
+                    const langEl = document.getElementById('lang');
+
+                    // Récupérer le speaker_tag (int ou null)
+                    const speakerTag = data.speaker_tag;
+                    const color = getSpeakerColor(speakerTag);
+                    const prefix = (speakerTag != null) ? `[Speaker ${speakerTag}] ` : '';
+
+                    if (data.is_final) {
+                        // Ajouter le texte final avec couleur + préfixe speaker
+                        const span = document.createElement('span');
+                        span.textContent = prefix + data.text + ' ';
+                        span.style.color = color;
+                        span.style.fontWeight = '500';
+                        finalEl.appendChild(span);
+                        interimEl.textContent = '';
+                        // Nettoyer les couleurs inline obsolètes de l'interim
+                        interimEl.style.color = '';
+                    } else {
+                        // Texte interim coloré selon le dernier speaker détecté
+                        interimEl.textContent = data.text;
+                        interimEl.style.color = color;
+                        if (speakerTag != null) {
+                            lastSpeakerTag = speakerTag;
+                        }
+                    }
+
+                    if (data.language_code && data.language_code !== 'unknown') {
+                        langEl.textContent = data.language_code;
+                    }
+                } else if (data.type === 'speech_event') {
+                    // --- Événement VAD (levier 2) ---
+                    if (data.event === 'speech_begin') {
+                        console.log('[VAD] 🟢 Début de parole');
+                        updateStatusDot('speaking');
+                    } else if (data.event === 'speech_end') {
+                        console.log('[VAD] 🔴 Fin de parole');
+                        updateStatusDot('connected');
+                    }
+                } else if (data.type === 'utterance') {
+                    // --- Utterance complète (levier 3) — prête pour LLM ---
+                    console.log('[UTTERANCE] ✅ Prête pour LLM :', data.text.substring(0, 100) + '…');
+                    console.log('[UTTERANCE] Langue :', data.language_code);
+                    // TODO(F3): envoyer data.text + contexte glissant → LLM
+                    // Ajouter un séparateur visuel discret dans le final
+                    const finalEl = document.getElementById('final');
+                    const sep = document.createElement('span');
+                    sep.textContent = ' ¶ ';
+                    sep.style.color = '#4b5563';
+                    sep.style.fontSize = '0.7rem';
+                    sep.title = 'Fin d\'utterance — prête pour LLM';
+                    finalEl.appendChild(sep);
+                } else if (data.type === 'error') {
+                    console.error('[WS] Erreur serveur :', data.message);
+                    updateStatus('error', 'Erreur : ' + data.message);
+                }
+            };
+
+            ws.onclose = (event) => {
+                console.log('[WS] Fermé — code:', event.code, 'raison:', event.reason);
+                if (ws) {
+                    updateStatus('idle', 'Déconnecté');
+                    ws = null;
+                }
+            };
+        });
+
+        return openPromise;
+    }
+
+    // =========================================================================
+    // Démarrer / Arrêter
+    // =========================================================================
+    async function start() {
+        if (playerMode) return;
+        // Désactiver immédiatement pour éviter les double-clics
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('stopBtn').disabled = false;
+        lastSpeakerTag = null;
+
+        try {
+            // --- 1. Accès au microphone ---
+            console.log('[AUDIO] Demande accès micro…');
+            mediaStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    channelCount: 1,
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                }
+            });
+            console.log('[AUDIO] Micro obtenu');
+
+            // --- 2. Création de l'AudioContext ---
+            audioContext = new AudioContext();
+            console.log('[AUDIO] AudioContext créé, sample rate natif :', audioContext.sampleRate, 'Hz');
+
+            // Reprendre si l'état est "suspended" (certains navigateurs)
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+                console.log('[AUDIO] AudioContext repris');
+            }
+
+            const source = audioContext.createMediaStreamSource(mediaStream);
+
+            // --- 3. ScriptProcessorNode pour accéder aux samples bruts ---
+            // bufferSize=8192 → ~171 ms à 48 kHz → ~5460 octets/chunk à 16 kHz Int16
+            // Les tailles valides sont des puissances de 2 : 256, 512, 1024, 2048, 4096, 8192, 16384.
+            // Cible 3200–6400 octets/chunk pour un bon compromis latence / stabilité STT.
+            scriptProcessor = audioContext.createScriptProcessor(8192, 1, 1);
+
+            scriptProcessor.onaudioprocess = (event) => {
+                const inputBuffer = event.inputBuffer;
+                const inputData = inputBuffer.getChannelData(0);  // Float32 [-1, 1]
+
+                // Diagnostic gain : log périodique du pic d'amplitude (toutes les ~2s)
+                if (!scriptProcessor._gainLogTick) scriptProcessor._gainLogTick = 0;
+                scriptProcessor._gainLogTick++;
+                if (scriptProcessor._gainLogTick % 30 === 1) {
+                    let peak = 0;
+                    for (let k = 0; k < inputData.length; k++) {
+                        const a = Math.abs(inputData[k]);
+                        if (a > peak) peak = a;
+                    }
+                    console.log('[GAIN] Pic amplitude Float32 :', peak.toFixed(4),
+                                peak < 0.1 ? '⚠ FAIBLE — application gain ×4' : '✅ OK');
+                }
+
+                // Appliquer un gain si le signal est trop faible (max < 0.1)
+                const needsGain = (() => {
+                    let peak = 0;
+                    for (let k = 0; k < inputData.length; k++) {
+                        const a = Math.abs(inputData[k]);
+                        if (a > peak) peak = a;
+                    }
+                    return peak < 0.1;
+                })();
+
+                const GAIN_MULTIPLIER = 4.0;
+                let processedData;
+                if (needsGain) {
+                    // Appliquer gain ×4 avec clamp [-1, 1]
+                    const gained = new Float32Array(inputData.length);
+                    for (let k = 0; k < inputData.length; k++) {
+                        const g = inputData[k] * GAIN_MULTIPLIER;
+                        gained[k] = Math.max(-1, Math.min(1, g));
+                    }
+                    processedData = gained;
+                } else {
+                    processedData = inputData;
+                }
+
+                const int16Data = downsampleTo16k(processedData, audioContext.sampleRate);
+
+                // Envoyer en binaire au backend
+                if (ws && ws.readyState === WebSocket.OPEN && int16Data.length > 0) {
+                    ws.send(int16Data.buffer);
+                }
+            };
+
+            // --- 4. WebSocket (attendre l'ouverture AVANT de connecter l'audio) ---
+            await connectWebSocket();
+
+            // Connexion dans le graphe audio : source → scriptProcessor → destination
+            // On se branche sur destination pour que le navigateur garde le nœud actif.
+            // Le buffer de sortie n'est pas rempli → silence sur les haut-parleurs.
+            source.connect(scriptProcessor);
+            scriptProcessor.connect(audioContext.destination);
+
+            updateStatus('connected', 'Connecté — parlez !');
+
+        } catch (err) {
+            console.error('[START] Échec :', err);
+            updateStatus('error', 'Erreur : ' + (err.message || err));
+            // Nettoyer ce qui a été créé
+            await cleanupAudio();
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+        }
+    }
+
+    function stop() {
+        if (playerMode) { stopPlayback(); return; }
+        console.log('[STOP] Arrêt demandé');
+
+        // Fermer le WebSocket proprement
+        if (ws) {
+            ws.close(1000, 'Arrêt utilisateur');
+            ws = null;
+        }
+
+        cleanupAudio();
+
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('stopBtn').disabled = true;
+        updateStatus('idle', 'Prêt');
+    }
+
+    async function cleanupAudio() {
+        // Déconnecter le processeur audio
+        if (scriptProcessor) {
+            scriptProcessor.disconnect();
+            scriptProcessor = null;
+        }
+
+        // Arrêter les pistes micro
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+            mediaStream = null;
+        }
+
+        // Fermer le contexte audio
+        if (audioContext && audioContext.state !== 'closed') {
+            await audioContext.close();
+            audioContext = null;
+        }
+    }
+
+    // =========================================================================
+    // Mode fichier audio — état
+    // =========================================================================
+    let playerMode = false;
+    let decodedBuffer = null;       // AudioBuffer décodé
+    let bufferSource = null;        // AudioBufferSourceNode pour la lecture audible
+    let playbackSamplePos = 0;      // Position actuelle en samples dans decodedBuffer
+    let isPlayerPlaying = false;
+    let chunkTimer = null;          // setInterval pour l'envoi des chunks STT
+    let progressTimer = null;       // setInterval pour la barre de progression
+
+    // =========================================================================
+    // Changement de mode (Micro / Fichier)
+    // =========================================================================
+    function switchMode(mode) {
+        // Arrêter la session en cours
+        if (playerMode) {
+            stopPlayback();
+        } else {
+            if (ws) { ws.close(1000, 'Mode switch'); ws = null; }
+            cleanupAudio();
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+        }
+
+        playerMode = (mode === 'file');
+        document.getElementById('micModeTab').classList.toggle('active', !playerMode);
+        document.getElementById('fileModeTab').classList.toggle('active', playerMode);
+        document.getElementById('micControls').style.display = playerMode ? 'none' : 'flex';
+        document.getElementById('filePanel').style.display = playerMode ? 'block' : 'none';
+
+        if (playerMode) {
+            updateStatus('idle', 'Mode fichier');
+            loadAudioFiles();
+        } else {
+            updateStatus('idle', 'Prêt');
+        }
+    }
+
+    // =========================================================================
+    // Upload de fichier audio
+    // =========================================================================
+    async function uploadAudio() {
+        const input = document.getElementById('audioFileInput');
+        if (!input.files.length) return;
+
+        const statusEl = document.getElementById('uploadStatus');
+        statusEl.textContent = 'Upload en cours...';
+
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+
+        try {
+            const resp = await fetch('/upload', { method: 'POST', body: formData });
+            const data = await resp.json();
+            if (data.status === 'ok') {
+                statusEl.textContent = `✅ ${data.filename} (${formatSize(data.size)})`;
+                input.value = '';
+                loadAudioFiles();
+            } else {
+                statusEl.textContent = '❌ ' + (data.message || 'Erreur inconnue');
+            }
+        } catch (err) {
+            statusEl.textContent = '❌ Erreur: ' + err.message;
+        }
+    }
+
+    // =========================================================================
+    // Liste des fichiers
+    // =========================================================================
+    async function loadAudioFiles() {
+        try {
+            const resp = await fetch('/audio-files');
+            const data = await resp.json();
+            renderFileList(data.files || []);
+        } catch (err) {
+            console.error('[FILES] Erreur chargement liste:', err);
+        }
+    }
+
+    function renderFileList(files) {
+        const container = document.getElementById('fileListContainer');
+        if (!files.length) {
+            container.innerHTML = '<div class="file-empty">Aucun fichier pour l\'instant.</div>';
+            return;
+        }
+        let html = '<table class="file-table"><thead><tr><th>Fichier</th><th>Taille</th><th></th></tr></thead><tbody>';
+        files.forEach(f => {
+            html += `<tr>
+                <td>${escHtml(f.filename)}</td>
+                <td>${formatSize(f.size)}</td>
+                <td><button class="play-btn" onclick="playFile('${escHtml(f.filename)}')">▶ Play</button></td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function escHtml(str) {
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+
+    // =========================================================================
+    // Lecture du fichier audio + streaming STT
+    // =========================================================================
+    async function playFile(filename) {
+        stopPlayback();  // Nettoyer toute session précédente
+
+        // Reset des zones de transcription
+        document.getElementById('interim').textContent = '';
+        document.getElementById('final').textContent = '';
+        document.getElementById('lang').textContent = '–';
+        lastSpeakerTag = null;
+
+        document.getElementById('playerControls').style.display = 'block';
+        document.getElementById('currentFileName').textContent = filename;
+        document.getElementById('playPauseBtn').textContent = '▶ Play';
+        document.getElementById('playPauseBtn').disabled = true;
+        document.getElementById('progressBar').value = 0;
+        document.getElementById('currentTime').textContent = '0:00';
+        document.getElementById('duration').textContent = '0:00';
+
+        disableAllPlayBtns(true);
+
+        try {
+            // 1. Télécharger le fichier audio
+            const resp = await fetch(`/data/${encodeURIComponent(filename)}`);
+            if (!resp.ok) throw new Error('Fichier introuvable (HTTP ' + resp.status + ')');
+            const arrayBuffer = await resp.arrayBuffer();
+
+            // 2. Créer/réveiller l'AudioContext
+            if (!audioContext || audioContext.state === 'closed') {
+                audioContext = new AudioContext();
+            }
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+
+            // 3. Décoder l'audio
+            decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            playbackSamplePos = 0;
+
+            console.log('[PLAYER] Fichier décodé — durée:', decodedBuffer.duration.toFixed(1), 's, sample rate:', decodedBuffer.sampleRate, 'Hz');
+
+            // 4. Afficher la durée
+            document.getElementById('duration').textContent = formatTime(decodedBuffer.duration);
+
+            // 5. Ouvrir le WebSocket STT (attendre l'ouverture)
+            await connectWebSocket();
+
+            // 6. Lancer la lecture audible
+            startBufferSource(0);
+
+            // 7. Lancer le timer d'envoi des chunks STT
+            const chunkMs = CHUNK_DURATION * 1000;  // ms = s → ms
+            chunkTimer = setInterval(sendAudioChunk, chunkMs);
+            progressTimer = setInterval(updateProgress, 200);
+
+            isPlayerPlaying = true;
+            document.getElementById('playPauseBtn').textContent = '⏸ Pause';
+            document.getElementById('playPauseBtn').disabled = false;
+
+        } catch (err) {
+            console.error('[PLAYER] Erreur:', err);
+            updateStatus('error', 'Erreur lecture: ' + err.message);
+            stopPlayback();
+        }
+    }
+
+    function startBufferSource(offsetSec) {
+        if (bufferSource) {
+            try { bufferSource.stop(); } catch (e) { /* déjà arrêté */ }
+            bufferSource = null;
+        }
+        bufferSource = audioContext.createBufferSource();
+        bufferSource.buffer = decodedBuffer;
+        bufferSource.connect(audioContext.destination);
+        bufferSource.start(0, offsetSec);
+
+        bufferSource.onended = () => {
+            if (isPlayerPlaying) {
+                // Fin naturelle du fichier
+                console.log('[PLAYER] Fin du fichier');
+                stopPlayback();
+                updateStatus('idle', 'Lecture terminée');
+            }
+        };
+    }
+
+    // --- Envoi des chunks audio pour STT ---
+    const CHUNK_DURATION = 0.14;  // 140ms par chunk → ~4480 octets @16kHz (cible 3200-6400)
+
+    function sendAudioChunk() {
+        if (!isPlayerPlaying || !decodedBuffer || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+        const sampleRate = decodedBuffer.sampleRate;
+        const channelData = decodedBuffer.getChannelData(0);  // Float32 mono
+        const totalSamples = channelData.length;
+
+        const chunkSamples = Math.floor(sampleRate * CHUNK_DURATION);
+        const end = Math.min(playbackSamplePos + chunkSamples, totalSamples);
+
+        if (playbackSamplePos >= totalSamples) return;
+
+        // Extraire le chunk et avancer
+        const chunk = channelData.slice(playbackSamplePos, end);
+        playbackSamplePos = end;
+
+        // Downsample 16kHz + conversion Int16 (réutilise la fonction existante)
+        const int16Data = downsampleTo16k(chunk, sampleRate);
+        if (int16Data.length > 0) {
+            ws.send(int16Data.buffer);
+        }
+    }
+
+    function updateProgress() {
+        if (!decodedBuffer || !isPlayerPlaying) return;
+        const currentSec = playbackSamplePos / decodedBuffer.sampleRate;
+        const dur = decodedBuffer.duration;
+        const pct = dur > 0 ? (currentSec / dur) * 100 : 0;
+        document.getElementById('currentTime').textContent = formatTime(currentSec);
+        document.getElementById('progressBar').value = Math.min(pct, 100);
+    }
+
+    // --- Pause / Reprise / Stop ---
+    function togglePlayPause() {
+        if (isPlayerPlaying) {
+            pausePlayback();
+        } else {
+            resumePlayback();
+        }
+    }
+
+    function pausePlayback() {
+        isPlayerPlaying = false;
+        if (chunkTimer) { clearInterval(chunkTimer); chunkTimer = null; }
+        if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
+        if (bufferSource) {
+            try { bufferSource.stop(); } catch (e) {}
+            bufferSource = null;
+        }
+        if (ws) {
+            ws.close(1000, 'Pause');
+            ws = null;
+        }
+        document.getElementById('playPauseBtn').textContent = '▶ Resume';
+        updateStatus('idle', 'En pause');
+    }
+
+    async function resumePlayback() {
+        if (!decodedBuffer) return;
+        if (playbackSamplePos >= decodedBuffer.getChannelData(0).length) {
+            stopPlayback();
+            return;
+        }
+        const offsetSec = playbackSamplePos / decodedBuffer.sampleRate;
+        await connectWebSocket();
+        startBufferSource(offsetSec);
+        chunkTimer = setInterval(sendAudioChunk, CHUNK_DURATION * 1000);
+        progressTimer = setInterval(updateProgress, 200);
+        isPlayerPlaying = true;
+        document.getElementById('playPauseBtn').textContent = '⏸ Pause';
+        updateStatus('connected', 'STT actif');
+    }
+
+    function stopPlayback() {
+        isPlayerPlaying = false;
+        if (chunkTimer) { clearInterval(chunkTimer); chunkTimer = null; }
+        if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
+        if (bufferSource) {
+            try { bufferSource.stop(); } catch (e) {}
+            bufferSource = null;
+        }
+        if (ws) {
+            ws.close(1000, 'Stop');
+            ws = null;
+        }
+        decodedBuffer = null;
+        playbackSamplePos = 0;
+        document.getElementById('playerControls').style.display = 'none';
+        document.getElementById('playPauseBtn').disabled = true;
+        disableAllPlayBtns(false);
+        updateStatus('idle', 'Arrêté');
+    }
+
+    // --- Seek dans la barre de progression ---
+    function seekTo(percent) {
+        if (!decodedBuffer) return;
+        const targetSec = (percent / 100) * decodedBuffer.duration;
+        const targetSample = Math.floor(targetSec * decodedBuffer.sampleRate);
+        playbackSamplePos = Math.max(0, Math.min(targetSample, decodedBuffer.getChannelData(0).length - 1));
+        document.getElementById('currentTime').textContent = formatTime(targetSec);
+
+        if (isPlayerPlaying) {
+            // Redémarrer la lecture depuis la nouvelle position
+            startBufferSource(targetSec);
+        }
+    }
+
+    function disableAllPlayBtns(disable) {
+        document.querySelectorAll('.play-btn').forEach(b => { b.disabled = disable; });
+    }
+
+    function formatTime(seconds) {
+        if (isNaN(seconds) || seconds < 0) return '0:00';
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return m + ':' + s.toString().padStart(2, '0');
+    }
+
+    // =========================================================================
+    // Drag & drop sur la zone d'upload
+    // =========================================================================
+    (function setupDragDrop() {
+        const area = document.getElementById('uploadArea');
+        area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('dragover'); });
+        area.addEventListener('dragleave', () => area.classList.remove('dragover'));
+        area.addEventListener('drop', e => {
+            e.preventDefault();
+            area.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                document.getElementById('audioFileInput').files = e.dataTransfer.files;
+                uploadAudio();
+            }
+        });
+        // Clic sur la zone → ouvrir le sélecteur de fichier
+        area.addEventListener('click', e => {
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+                document.getElementById('audioFileInput').click();
+            }
+        });
+    })();
+
+    // =========================================================================
+    // Vérification au chargement
+    // =========================================================================
+    (function checkSupport() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            updateStatus('error', 'Navigateur non supporté (pas de getUserMedia)');
+            document.getElementById('startBtn').disabled = true;
+            return;
+        }
+        if (!window.AudioContext && !window.webkitAudioContext) {
+            updateStatus('error', 'Navigateur non supporté (pas d\'AudioContext)');
+            document.getElementById('startBtn').disabled = true;
+            return;
+        }
+        if (!window.WebSocket) {
+            updateStatus('error', 'Navigateur non supporté (pas de WebSocket)');
+            document.getElementById('startBtn').disabled = true;
+            return;
+        }
+        console.log('[INIT] Support navigateur OK');
+    })();
+    </script>
+
+</body>
+</html>
