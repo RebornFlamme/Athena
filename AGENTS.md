@@ -34,10 +34,15 @@ Le TechDesign proposait Next.js. **Le code réel utilise Vite + React** (l'édit
 - `CLAUDE.md` — conventions spécifiques de l'éditeur EAV existant
 
 ## État courant
-**Dernière mise à jour :** 2026-07-04 (soir)
-**En cours :** Phase F0 — code terminé et vérifié navigateur ; reste à appliquer la migration `0002` dans Supabase et à rejouer le test de référence temps réel.
-**Récemment terminé :** tout le code F0 — migration `0002_athena_core.sql` (3 tables, journal append-only via RLS), route `/interventions` (liste + création) et `/intervention/:id` (carte MapLibre + fonds IGN vérifié à l'écran, main courante, badges), store + hook realtime filtré par intervention. `npm run build` OK ; éditeur EAV non régressé.
-**Bloqué par :** clés Supabase (URL + anon key) pour créer `frontend/.env.local` + application de la migration — action utilisateur.
+**Dernière mise à jour :** 2026-07-04 (fin de journée)
+**En cours :** Phase F0 v2 — **reconstruite dans le shell shadcn du collègue** (sa refonte avait retiré la v1 au commit `184ff66`). Code terminé, build vert, vérifié navigateur. Reste : appliquer la migration `0002` dans Supabase puis rejouer le test de référence temps réel.
+**Récemment terminé :** dashboard F0 porté en shadcn/Tailwind — routes `/tableau-de-bord` (liste + création, Cards/Input/Badge/Skeleton) et `/tableau-de-bord/:id` (carte MapLibre+IGN, main courante, badges de fiabilité), intégrées au `AppLayout` sidebar. Logique (types, API, store, hook realtime) restaurée telle quelle depuis `f66bf29`. Messages d'erreur pédagogiques (détecte la migration manquante). `frontend/.env.local` créé (git-ignoré). Éditeur EAV non régressé.
+**Bloqué par :** application de la migration `0002` dans le SQL Editor Supabase — action utilisateur (2 min).
+
+## Contexte d'équipe & déploiement
+- **Un collègue** travaille sur le même repo (refonte shadcn/sidebar, éditeur local-first). Coordonner avant toute modification de ses fichiers (`AppLayout`, `AppSidebar`, `SchemaEditorPage`, `Toolbar`, `Canvas`, `nodes/`, `edges/`, `ui/`).
+- **Déploiement Vercel de référence : `athena-khaki.vercel.app`**, sur le compte du collègue, **root directory = `frontend/`**. Ne PAS créer d'autre projet Vercel. Déployer = pousser sur GitHub (l'autosync s'en charge).
+- **Base Supabase partagée** (`ahipiveicrtvpxalbfot`) — prudence sur les migrations : purement additives, coordonnées.
 
 ## Roadmap
 
@@ -46,7 +51,7 @@ Le TechDesign proposait Next.js. **Le code réel utilise Vite + React** (l'édit
 
 ### Phase F0 : Socle dashboard (en cours — code fait, test final en attente)
 - [x] Migration `0002_athena_core.sql` **écrite** : `interventions`, `evenements` (append-only : policies RLS select+insert uniquement), `entites` (projection, lon/lat + geom PostGIS générée) + index + realtime. Pas de table `appels` (décision produit) : la phrase source d'un fait vit dans `payload.extrait_source`. → **À appliquer dans Supabase (SQL Editor ou `supabase db push`).**
-- [x] Route `/intervention/:id` : carte MapLibre plein écran + fonds IGN (style PLAN.IGN vérifié à l'écran) + route `/interventions` (liste + création rapide)
+- [x] Routes (v2, dans le shell sidebar) : `/tableau-de-bord` (liste + création rapide) et `/tableau-de-bord/:id` (carte MapLibre plein écran + fonds IGN + main courante) — design 100 % shadcn/Tailwind
 - [x] Abonnement Realtime (code) : INSERT `evenements`/`entites` filtré par intervention → store → marqueur + ligne main courante
 - [ ] Test de référence : insérer un événement à la main dans Supabase → il apparaît sans recharger (**nécessite `.env.local` + migration appliquée**)
 
