@@ -66,7 +66,7 @@ export function DashboardPage() {
         component: 'diff',
         title: `Diff — ${ligne.objet}`,
         params: { ligne },
-        position: { direction: 'right' },
+        position: { referencePanel: 'semantic', direction: 'right' },
       })
     }
   }, [])
