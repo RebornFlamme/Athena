@@ -1,5 +1,12 @@
 # Code Patterns — Athena
 
+## Règle UI absolue (instruction Oscar, 4 juil. 2026)
+- **AUCUN élément visuel codé à la main** : uniquement des **composants shadcn emboîtés** les uns dans les autres. Pas de div stylée custom, pas de CSS maison (les classes Tailwind utilitaires de mise en page — flex, gap, tailles — restent permises pour *assembler*, jamais pour *dessiner*).
+- Doc d'un composant : `https://ui.shadcn.com/docs/components/base/<nom>.md` (ex. `.../base/accordion.md`) — la consulter (WebFetch) avant d'utiliser un composant non encore présent dans `src/components/ui/`.
+- **Composants disponibles** : Accordion · Alert · Alert Dialog · Aspect Ratio · Attachment · Avatar · Badge · Breadcrumb · Bubble · Button · Button Group · Calendar · Card · Carousel · Chart · Checkbox · Collapsible · Combobox · Command · Context Menu · Data Table · Date Picker · Dialog · Direction · Drawer · Dropdown Menu · Empty · Field · Hover Card · Input · Input Group · Input OTP · Item · Kbd · Label · Marker · Menubar · Message · Message Scroller · Native Select · Navigation Menu · Pagination · Popover · Progress · Radio Group · Resizable · Scroll Area · Select · Separator · Sheet · Sidebar · Skeleton · Slider · Sonner · Spinner · Switch · Table · Tabs · Textarea · Toast · Toggle · Toggle Group · Tooltip · Typography
+- **Correspondances Athena** : transcript live → `Message` + `Message Scroller` · upload d'audio → `Attachment` · appels qui popent → `Sonner` · états vides → `Empty` · chargements → `Spinner`/`Skeleton` · marqueurs carte → `Marker` (à évaluer, sinon composer) · timeline de montage → assemblage `Scroll Area` + `Slider` + `Item` + `Context Menu` + `Tooltip` (mécanique de drag = logique pure, rendu shadcn) · listes d'appels → `Item`/`Data Table` · badges d'état → `Badge`.
+- Dette de conformité connue : les marqueurs MapLibre de `CarteIntervention.tsx` (div custom) → à remplacer lors de F1.
+
 ## Architecture en couches (respecter ce sens de dépendance)
 ```
 types.ts  →  lib/ (logique pure)  →  data/ (accès Supabase)  →  store/ (zustand)  →  hooks/  →  components/
