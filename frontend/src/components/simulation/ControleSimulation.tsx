@@ -1,12 +1,27 @@
-import { FlaskConical, Play, RotateCcw, Square } from 'lucide-react'
+import { useState } from 'react'
+import { FlaskConical, Play, RotateCcw, Square, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { formaterMs } from '../../sim/audioMeta'
 import { useSimulationPlayback } from '../../store/useSimulationPlayback'
 import { useMockData } from '../../store/useMockData'
+import { deleteAllInstances } from '../../data/instancesApi'
+import { deleteAllJournal } from '../../data/journalAgentApi'
 
 /**
  * Contrôle flottant discret (bas-droite) de la simulation active : Lancer,
- * Revenir au début, Couper. N'ouvre aucun panneau — overlay global.
+ * Revenir au début, Couper. N'ouvre aucun panneau — overlay global. Un bouton
+ * dédié vide toutes les instances créées (+ le journal des agents).
  */
 export function ControleSimulation() {
   const statut = useSimulationPlayback((s) => s.statut)
@@ -17,6 +32,21 @@ export function ControleSimulation() {
   const mockActif = useMockData((s) => s.actif)
   const mockOccupe = useMockData((s) => s.occupe)
   const basculerMock = useMockData((s) => s.basculer)
+  const [videEnCours, setVideEnCours] = useState(false)
+
+  // Vide toutes les instances créées + le journal des agents. Les surfaces se
+  // vident en direct via Realtime (useInstancesDB, etc.).
+  async function viderInstances() {
+    setVideEnCours(true)
+    try {
+      await deleteAllInstances()
+      await deleteAllJournal()
+    } catch (_) {
+      // échec réseau/RLS : on laisse l'état ; l'utilisateur peut réessayer.
+    } finally {
+      setVideEnCours(false)
+    }
+  }
 
   return (
     <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2">
@@ -30,6 +60,39 @@ export function ControleSimulation() {
       >
         <FlaskConical className="h-5 w-5" />
       </Button>
+
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-11 w-11 rounded-full text-destructive shadow-lg hover:bg-destructive hover:text-destructive-foreground"
+            disabled={videEnCours}
+            title="Clear all created objects"
+          >
+            <Trash2 className="h-5 w-5" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear all created objects?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes every object instance produced by the
+              agents, along with their reasoning journal. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void viderInstances()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Clear objects
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {statut === 'arret' ? (
         <Button
           size="icon"
