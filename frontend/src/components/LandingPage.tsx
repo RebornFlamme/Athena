@@ -303,7 +303,7 @@ function HeroImage() {
     <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100 shadow-2xl shadow-neutral-300/50 ring-1 ring-black/5">
       {ok ? (
         <img
-          src="/hero-carte.png"
+          src="/hero_image.png"
           alt="Tableau de bord Athena — carte tactique 3D en temps réel"
           className="block w-full"
           onError={() => setOk(false)}
