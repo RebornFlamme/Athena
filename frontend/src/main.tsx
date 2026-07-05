@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
+import { LandingPage } from './components/LandingPage'
 import { SchemaEditorPage } from './components/SchemaEditorPage'
 import { PlaceholderPage } from './components/PlaceholderPage'
 import { DashboardPage } from './components/dashboard/DashboardPage'
@@ -14,6 +15,7 @@ import 'dockview-react/dist/styles/dockview.css'
 import './index.css'
 
 const router = createBrowserRouter([
+  { path: '/accueil', element: <LandingPage /> },
   {
     element: <AppLayout />,
     children: [

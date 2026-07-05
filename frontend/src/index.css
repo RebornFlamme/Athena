@@ -113,3 +113,27 @@
   --dv-drag-over-border-color: hsl(var(--primary)) !important;
 }
 
+/* Barres de forme d'onde audio (landing) — chaque barre pulse en scaleY ;
+   durée/délai fournis en inline style → désynchronisation = effet « live ». */
+@keyframes wave {
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.wave-bar {
+  animation-name: wave;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  transform-origin: bottom;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wave-bar {
+    animation: none;
+    transform: scaleY(0.65);
+  }
+}
+
