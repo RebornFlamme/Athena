@@ -111,29 +111,35 @@ export function FeuilleTranscription({
               )}
             </div>
 
-            {/* Transcript (lecture Realtime de la base) */}
-            <ScrollArea className="min-h-0 flex-1">
-              <div className="space-y-1 p-4 text-sm leading-relaxed">
-                {vide ? (
-                  <p className="italic text-muted-foreground">
-                    {enLecture
-                      ? 'Transcription en cours… les segments apparaîtront ici.'
-                      : 'Lancez la simulation pour générer la transcription.'}
-                  </p>
-                ) : (
-                  segments.map((seg) => (
-                    <span key={seg.id} className="text-foreground">
-                      {seg.texte}{' '}
-                    </span>
-                  ))
-                )}
-                <div ref={bas} />
-              </div>
-            </ScrollArea>
+            {/* Transcript (50%) + Raisonnement (50%) : chacun à hauteur fixe,
+                scrollable indépendamment (ScrollArea shadcn). */}
+            <div className="flex min-h-0 flex-1 flex-col">
+              {/* Transcript (lecture Realtime de la base) — 50% */}
+              <ScrollArea className="min-h-0 flex-1 basis-0">
+                <div className="space-y-1 p-4 text-sm leading-relaxed">
+                  {vide ? (
+                    <p className="italic text-muted-foreground">
+                      {enLecture
+                        ? 'Transcription en cours… les segments apparaîtront ici.'
+                        : 'Lancez la simulation pour générer la transcription.'}
+                    </p>
+                  ) : (
+                    segments.map((seg) => (
+                      <span key={seg.id} className="text-foreground">
+                        {seg.texte}{' '}
+                      </span>
+                    ))
+                  )}
+                  <div ref={bas} />
+                </div>
+              </ScrollArea>
 
-            {/* Raisonnement LLM (journal d'extraction en direct) */}
-            <div className="shrink-0 border-t p-4">
-              <SectionRaisonnement appelId={appel.id} />
+              {/* Raisonnement LLM (journal d'agent en direct) — 50% */}
+              <ScrollArea className="min-h-0 flex-1 basis-0 border-t">
+                <div className="p-4">
+                  <SectionRaisonnement appelId={appel.id} />
+                </div>
+              </ScrollArea>
             </div>
           </>
         )}
