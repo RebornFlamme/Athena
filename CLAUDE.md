@@ -15,7 +15,14 @@ Le reste de ce fichier décrit les conventions de l'existant (éditeur EAV) — 
 
 ## Thème clair/sombre (juil. 2026)
 - Défaut **sombre** (`class="dark"` en dur sur `<html>` d'`index.html`). Un **script inline** dans `<head>` d'`index.html` lit `localStorage.theme` et retire `dark` si `'light'` **avant le paint** (pas de flash).
-- **Toggle discret** `components/ThemeToggle.tsx` (icône Soleil/Lune, `SidebarMenuButton` muted) posé dans un `SidebarFooter` d'`AppSidebar.tsx` : bascule la classe `dark` sur `document.documentElement` + persiste dans `localStorage.theme`. Pas de provider/contexte (le thème vit uniquement dans la classe DOM + localStorage).
+- **Store partagé `store/useTheme.ts`** (zustand) : `sombre` + `basculer()` (toggle la classe `dark` sur `document.documentElement` + persiste `localStorage.theme`). Pas de provider React — le thème vit dans la classe DOM + localStorage, le store sert à faire **réagir** plusieurs surfaces.
+- **Toggle discret** `components/ThemeToggle.tsx` (icône Soleil/Lune, `SidebarMenuButton` muted) dans un `SidebarFooter` d'`AppSidebar.tsx`.
+- ⚠ **Dockview suit le thème** : `DashboardPage` lit `useTheme().sombre` → classe de base **`dockview-theme-abyss` (sombre) / `dockview-theme-light` (clair)** (avant : `abyss` codé en dur → onglets restaient sombres en light mode). `.dv-athena` (index.css) raccorde ensuite les couleurs dockview aux variables shadcn theme-aware par-dessus.
+
+## Données factices (mock) pour travailler l'UI (juil. 2026)
+- **Toggle à côté du bouton Play** (`ControleSimulation.tsx`, icône `FlaskConical`) piloté par `store/useMockData.ts` : activé → insère ~12 objets mock dans `object_instances` ; désactivé → les supprime. Remonte via Realtime dans **toutes** les surfaces (Database, carte, panneau Objets, semantic).
+- `data/mockInstances.ts` : lignes à **ids fixes** (`aaaa00xx-…`) → suppression exacte au dé-toggle + upsert sans doublon au re-toggle. `appel_id = null` (non purgés par les runs de simulation). `cree_le` étalé sur ~14 min (courbe du graphe Database). Insert/delete en anon key OK (RLS `object_instances` permissive : insert/update/delete `using/with check (true)`, migration `0009`).
+- Pas de persistance du toggle : au reload il repart à off (les lignes mock restent en base jusqu'au prochain dé-toggle). Coexiste avec une vraie simulation si activé en même temps.
 
 ## Onglet Database (`/ressources`, juil. 2026)
 - **Page `components/database/DatabasePage.tsx`** (remplace le `PlaceholderPage` — la route reste `/ressources`, libellé de nav « Database »). Vue base de données des instances d'objets produites par les agents LLM : lecteur pur via `useInstancesDB()` (global + Realtime).

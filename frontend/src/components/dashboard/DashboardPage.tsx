@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { isSupabaseConfigured } from '../../lib/supabase'
+import { useTheme } from '../../store/useTheme'
 import { Carte } from './Carte'
 import { PanneauDiff } from './PanneauDiff'
 import { PanneauObjets } from './PanneauObjets'
@@ -54,6 +55,10 @@ const OUVRABLES: { id: PanId; titre: string; icon: ComponentType<{ className?: s
  */
 export function DashboardPage() {
   const apiRef = useRef<DockviewApi | null>(null)
+  // Le thème de base dockview suit le mode clair/sombre ; `.dv-athena` raccorde
+  // ensuite les couleurs aux variables shadcn (theme-aware) par-dessus.
+  const sombre = useTheme((s) => s.sombre)
+  const themeDockview = sombre ? 'dockview-theme-abyss' : 'dockview-theme-light'
 
   const openDiff = useCallback((ligne: LigneSemantic) => {
     const api = apiRef.current
@@ -153,7 +158,7 @@ export function DashboardPage() {
       )}
 
       <div className="min-h-0 flex-1">
-        <div className="dockview-theme-abyss dv-athena h-full">
+        <div className={`${themeDockview} dv-athena h-full`}>
           <DockviewReact components={COMPOSANTS} onReady={onReady} />
         </div>
       </div>

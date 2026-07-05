@@ -1,7 +1,8 @@
-import { Play, RotateCcw, Square } from 'lucide-react'
+import { FlaskConical, Play, RotateCcw, Square } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formaterMs } from '../../sim/audioMeta'
 import { useSimulationPlayback } from '../../store/useSimulationPlayback'
+import { useMockData } from '../../store/useMockData'
 
 /**
  * Contrôle flottant discret (bas-droite) de la simulation active : Lancer,
@@ -13,9 +14,22 @@ export function ControleSimulation() {
   const lancer = useSimulationPlayback((s) => s.lancer)
   const revenirDebut = useSimulationPlayback((s) => s.revenirDebut)
   const couper = useSimulationPlayback((s) => s.couper)
+  const mockActif = useMockData((s) => s.actif)
+  const mockOccupe = useMockData((s) => s.occupe)
+  const basculerMock = useMockData((s) => s.basculer)
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2">
+      <Button
+        size="icon"
+        variant={mockActif ? 'default' : 'outline'}
+        className="h-11 w-11 rounded-full shadow-lg"
+        onClick={() => void basculerMock()}
+        disabled={mockOccupe}
+        title={mockActif ? 'Remove mock objects' : 'Fill with mock objects'}
+      >
+        <FlaskConical className="h-5 w-5" />
+      </Button>
       {statut === 'arret' ? (
         <Button
           size="icon"

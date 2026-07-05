@@ -1,36 +1,20 @@
-import { useState } from 'react'
 import { Moon, Sun } from 'lucide-react'
 import { SidebarMenuButton } from '@/components/ui/sidebar'
+import { useTheme } from '../store/useTheme'
 
 /**
- * Bascule discrète clair/sombre, posée en pied de sidebar. Le thème = présence de
- * la classe `dark` sur `<html>` (variables shadcn) ; le choix est persisté dans
- * `localStorage` et réappliqué avant le paint par le script inline d'index.html.
+ * Bascule discrète clair/sombre, posée en pied de sidebar. Le thème est géré par
+ * le store `useTheme` (classe `dark` sur <html> + localStorage), partagé avec les
+ * surfaces qui doivent réagir (ex. thème dockview du dashboard).
  */
 export function ThemeToggle() {
-  const [sombre, setSombre] = useState(
-    () => document.documentElement.classList.contains('dark'),
-  )
-
-  function basculer() {
-    const prochainSombre = !sombre
-    document.documentElement.classList.toggle('dark', prochainSombre)
-    try {
-      localStorage.setItem('theme', prochainSombre ? 'dark' : 'light')
-    } catch (_) {
-      // localStorage indisponible (mode privé) : bascule non persistée, tant pis.
-    }
-    setSombre(prochainSombre)
-  }
+  const sombre = useTheme((s) => s.sombre)
+  const basculer = useTheme((s) => s.basculer)
 
   const label = sombre ? 'Light mode' : 'Dark mode'
 
   return (
-    <SidebarMenuButton
-      onClick={basculer}
-      tooltip={label}
-      className="text-muted-foreground"
-    >
+    <SidebarMenuButton onClick={basculer} tooltip={label} className="text-muted-foreground">
       {sombre ? <Sun /> : <Moon />}
       <span>{label}</span>
     </SidebarMenuButton>
