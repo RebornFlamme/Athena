@@ -32,6 +32,8 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Teinte de survol d'une tuile du quadrillage de fond (composant Tiles). */
+    --tile: hsl(217 33% 92%);
   }
 
   .dark {
@@ -89,8 +91,10 @@
 /* Docking (dockview) accordé au thème shadcn (variables → suit clair/sombre).
    Cible le `.dv-shell` interne pour l'emporter sur le thème dockview (prop). */
 .dv-athena .dv-shell {
-  --dv-background-color: hsl(var(--background));
-  --dv-group-view-background-color: hsl(var(--card));
+  /* Transparent → le quadrillage de fond du dashboard transparaît derrière les
+     panneaux (chaque panneau pose son propre fond opaque/translucide). */
+  --dv-background-color: transparent;
+  --dv-group-view-background-color: transparent;
   --dv-tabs-and-actions-container-background-color: hsl(var(--muted) / 0.4);
   --dv-activegroup-visiblepanel-tab-background-color: hsl(var(--card));
   --dv-activegroup-hiddenpanel-tab-background-color: hsl(var(--muted) / 0.4);

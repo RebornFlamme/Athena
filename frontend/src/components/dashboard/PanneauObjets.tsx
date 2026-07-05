@@ -52,7 +52,7 @@ export function PanneauObjets() {
   }
 
   return (
-    <aside className="flex h-full flex-col bg-card">
+    <aside className="flex h-full flex-col bg-transparent">
       {instances.length === 0 ? (
         <p className="p-4 text-sm italic leading-relaxed text-muted-foreground">
           Aucun objet pour l'instant. Lancez la simulation : les agents créeront les
@@ -118,7 +118,7 @@ function CarteInstance({ instance }: { instance: ObjectInstance }) {
   const s = STATUTS[instance.statut] ?? STATUTS.presume
   const champs = Object.entries(instance.fields ?? {})
   return (
-    <Card className="w-56 shrink-0">
+    <Card className="w-56 shrink-0 border-white/50 bg-white/70 shadow-lg backdrop-blur-md transition-colors hover:bg-white/80">
       <CardHeader className="p-3 pb-2">
         <CardTitle className="flex items-center gap-2 text-sm">
           <span

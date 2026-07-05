@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
+import { Tiles } from '@/components/ui/tiles'
 import { isSupabaseConfigured } from '../../lib/supabase'
 import { Carte } from './Carte'
 import { PanneauDiff } from './PanneauDiff'
@@ -153,8 +154,12 @@ export function DashboardPage() {
         </div>
       )}
 
-      <div className="min-h-0 flex-1">
-        <div className="dv-athena h-full">
+      <div className="relative min-h-0 flex-1">
+        {/* Fond quadrillage plein cadre (derrière les panneaux transparents). */}
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-background">
+          <Tiles rows={40} cols={22} />
+        </div>
+        <div className="dv-athena relative z-10 h-full">
           <DockviewReact theme={themeLight} components={COMPOSANTS} onReady={onReady} />
         </div>
       </div>

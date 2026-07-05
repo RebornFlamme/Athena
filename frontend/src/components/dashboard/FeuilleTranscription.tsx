@@ -13,7 +13,7 @@ import { formaterMs } from '../../sim/audioMeta'
 import { useTranscriptionDB } from '../../hooks/useTranscriptionDB'
 import { useSimulationPlayback } from '../../store/useSimulationPlayback'
 import type { Appel } from '../../typesSimulation'
-import { VisualiseurVoix } from '../simulation/VisualiseurVoix'
+import { VisualiseurAudioLive } from '../simulation/VisualiseurAudioLive'
 import { EnteteAppel, SectionRaisonnement } from './AppelDetails'
 
 /**
@@ -24,13 +24,12 @@ import { EnteteAppel, SectionRaisonnement } from './AppelDetails'
  */
 export function FeuilleTranscription({
   appel,
-  actif,
   ecoute,
   onToggleEcoute,
   onClose,
 }: {
   appel: Appel | null
-  /** L'appel est-il en cours de diffusion (histogramme piloté par l'analyser). */
+  /** L'appel est-il en cours de diffusion (conservé pour l'appelant). */
   actif: boolean
   ecoute: boolean
   onToggleEcoute: () => void
@@ -80,7 +79,7 @@ export function FeuilleTranscription({
                   </span>
                 </div>
                 <div className="mt-1.5">
-                  <VisualiseurVoix appelId={appel.id} actif={actif} />
+                  <VisualiseurAudioLive appelId={appel.id} />
                 </div>
               </div>
             </div>
