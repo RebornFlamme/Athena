@@ -86,8 +86,9 @@
   display: none;
 }
 
-/* Docking (dockview) accordé au thème zinc dark de shadcn */
-.dv-athena {
+/* Docking (dockview) accordé au thème shadcn (variables → suit clair/sombre).
+   Cible le `.dv-shell` interne pour l'emporter sur le thème dockview (prop). */
+.dv-athena .dv-shell {
   --dv-background-color: hsl(var(--background));
   --dv-group-view-background-color: hsl(var(--card));
   --dv-tabs-and-actions-container-background-color: hsl(var(--muted) / 0.4);

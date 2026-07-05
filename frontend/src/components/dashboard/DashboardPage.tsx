@@ -2,6 +2,7 @@ import { useCallback, useRef, type ComponentType, type FunctionComponent } from 
 import { Boxes, History, Layers, Map as MapIcon, Radio } from 'lucide-react'
 import {
   DockviewReact,
+  themeLight,
   type DockviewApi,
   type DockviewReadyEvent,
   type IDockviewPanelProps,
@@ -153,8 +154,8 @@ export function DashboardPage() {
       )}
 
       <div className="min-h-0 flex-1">
-        <div className="dockview-theme-abyss dv-athena h-full">
-          <DockviewReact components={COMPOSANTS} onReady={onReady} />
+        <div className="dv-athena h-full">
+          <DockviewReact theme={themeLight} components={COMPOSANTS} onReady={onReady} />
         </div>
       </div>
     </div>
