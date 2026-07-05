@@ -10,25 +10,29 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { isSupabaseConfigured } from '../../lib/supabase'
-import { CarteRun } from './CarteRun'
+import { Carte } from './Carte'
 import { PanneauDiff } from './PanneauDiff'
 import { PanneauObjets } from './PanneauObjets'
 import { PanneauPastCalls } from './PanneauPastCalls'
-import { SemanticRun } from './SemanticRun'
-import { type LigneSemantic } from './PanneauSemanticLayer'
+import { PanneauSemanticLayer, type LigneSemantic } from './PanneauSemanticLayer'
 import { PanneauFluxAudio } from '../simulation/PanneauFluxAudio'
 
 // Contenu de chaque panneau (l'onglet + le drag/split sont gérés par dockview).
+// Carte + Semantic Layer sont alimentés par les agents LLM (object_instances /
+// agent_journal) via leurs hooks internes ; les wrappers « run » historiques
+// (CarteRun/SemanticRun, câblés sur entites/evenements) restent dormants.
 const COMPOSANTS: Record<string, FunctionComponent<IDockviewPanelProps>> = {
   carte: () => (
     <div className="relative h-full">
-      <CarteRun />
+      <Carte />
     </div>
   ),
   objets: () => <PanneauObjets />,
   live: () => <PanneauFluxAudio />,
   semantic: (p) => (
-    <SemanticRun onSelect={(p.params as { onSelect?: (l: LigneSemantic) => void }).onSelect} />
+    <PanneauSemanticLayer
+      onSelect={(p.params as { onSelect?: (l: LigneSemantic) => void }).onSelect}
+    />
   ),
   past: () => <PanneauPastCalls />,
   diff: (p) => <PanneauDiff ligne={(p.params as { ligne: LigneSemantic }).ligne} />,
