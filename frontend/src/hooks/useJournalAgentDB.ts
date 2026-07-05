@@ -7,6 +7,7 @@ import {
   type JournalAgent,
 } from '../data/journalAgentApi'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { useSimulationPlayback } from '../store/useSimulationPlayback'
 
 /**
  * Journal (trace de raisonnement) d'un appel, en direct : chargement + Realtime
@@ -14,12 +15,14 @@ import { isSupabaseConfigured } from '../lib/supabase'
  */
 export function useJournalAgentDB(appelId: string | null): JournalAgent[] {
   const [rows, setRows] = useState<JournalAgent[]>([])
+  const resetToken = useSimulationPlayback((s) => s.resetToken)
 
   useEffect(() => {
     if (!appelId || !isSupabaseConfigured) {
       setRows([])
       return
     }
+    setRows([]) // reset immédiat (couper / relancer) avant resynchro
     let annule = false
     listJournal(appelId)
       .then((r) => {
@@ -35,7 +38,7 @@ export function useJournalAgentDB(appelId: string | null): JournalAgent[] {
       annule = true
       unsub()
     }
-  }, [appelId])
+  }, [appelId, resetToken])
 
   return rows
 }
@@ -46,9 +49,11 @@ export function useJournalAgentDB(appelId: string | null): JournalAgent[] {
  */
 export function useSemanticEditsDB(): JournalAgent[] {
   const [rows, setRows] = useState<JournalAgent[]>([])
+  const resetToken = useSimulationPlayback((s) => s.resetToken)
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
+    setRows([]) // reset immédiat (couper / relancer) avant resynchro
     let annule = false
     listSemanticEdits()
       .then((r) => {
@@ -64,7 +69,7 @@ export function useSemanticEditsDB(): JournalAgent[] {
       annule = true
       unsub()
     }
-  }, [])
+  }, [resetToken])
 
   return rows
 }

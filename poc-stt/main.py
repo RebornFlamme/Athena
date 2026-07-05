@@ -290,7 +290,20 @@ async def stop_simulation():
     for timer in _pending_timers:
         timer.cancel()
     _pending_timers.clear()
-    logger.info("Simulation coupée — jobs en cours (transcription + agents) arrêtés")
+
+    # Vide le cache du run : transcriptions + trace/edits de l'agent + instances.
+    # Ainsi la prochaine simulation repart d'une ardoise vierge et l'UI se vide
+    # tout de suite (le front écoute aussi un resetToken). Ces tables ne
+    # contiennent QUE des données de simulation → purge totale (filtre trivial
+    # `cree_le >= epoch` car un delete PostgREST exige un filtre).
+    sb = get_supabase()
+    for table in ("transcriptions", "agent_journal", "object_instances"):
+        try:
+            sb.table(table).delete().gte("cree_le", "1970-01-01T00:00:00Z").execute()
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Purge %s au stop KO : %s", table, exc)
+
+    logger.info("Simulation coupée — jobs arrêtés + cache vidé (3 tables)")
     return {"status": "stopped"}
 
 

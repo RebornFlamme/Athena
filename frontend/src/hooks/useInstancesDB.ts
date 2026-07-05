@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { listInstances, subscribeInstances, type ObjectInstance } from '../data/instancesApi'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { useSimulationPlayback } from '../store/useSimulationPlayback'
 
 /**
  * Lit en direct TOUTES les instances d'objets depuis Supabase : chargement initial
@@ -13,10 +14,12 @@ import { isSupabaseConfigured } from '../lib/supabase'
  */
 export function useInstancesDB(): ObjectInstance[] {
   const [instances, setInstances] = useState<ObjectInstance[]>([])
+  const resetToken = useSimulationPlayback((s) => s.resetToken)
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
 
+    setInstances([]) // reset immédiat (couper / relancer) avant resynchro
     let annule = false
     listInstances()
       .then((i) => {
@@ -36,7 +39,7 @@ export function useInstancesDB(): ObjectInstance[] {
       annule = true
       unsub()
     }
-  }, [])
+  }, [resetToken])
 
   return instances
 }

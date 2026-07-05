@@ -76,6 +76,10 @@ interface PlaybackState {
   actifs: string[]
   /** Appels dont l'écoute est activée (audibles). */
   ecoutes: string[]
+  /** Incrémenté à chaque purge du run (couper / relancer) : les hooks de données
+   *  (transcription, trace agent, couche sémantique, instances) l'écoutent pour se
+   *  resynchroniser sur une base fraîche — sinon les vues INSERT-only accumulent. */
+  resetToken: number
   lancer: () => Promise<void>
   revenirDebut: () => Promise<void>
   couper: () => void
@@ -88,6 +92,7 @@ export const useSimulationPlayback = create<PlaybackState>((set, get) => ({
   positionMs: 0,
   actifs: [],
   ecoutes: [],
+  resetToken: 0,
 
   lancer: async () => {
     nettoyer()
@@ -106,10 +111,15 @@ export const useSimulationPlayback = create<PlaybackState>((set, get) => ({
     t0 = performance.now()
     set({ statut: 'lecture', positionMs: 0, actifs: [], ecoutes: [] })
 
-    // Déclenche le job de transcription serveur (fire-and-forget). Les segments
-    // arrivent dans Supabase et s'affichent via Realtime — indépendant de la
-    // lecture audio du navigateur. N'échoue jamais la lecture si le back est KO.
-    void lancerTranscription(appels.map((a) => a.id)).catch(() => {})
+    // Déclenche le job de transcription + agents serveur (fire-and-forget). Les
+    // segments/instances arrivent dans Supabase et s'affichent via Realtime —
+    // indépendant de la lecture audio. Quand le POST a répondu, la purge serveur
+    // du run précédent est faite → on bump resetToken pour que les hooks se
+    // resynchronisent sur la base fraîche (évite de mélanger l'ancien run et le
+    // nouveau dans les vues à abonnement INSERT-only). N'échoue jamais la lecture.
+    lancerTranscription(appels.map((a) => a.id))
+      .then(() => set((s) => ({ resetToken: s.resetToken + 1 })))
+      .catch(() => {})
 
     for (const a of appels) {
       const audio = new Audio()
@@ -151,13 +161,16 @@ export const useSimulationPlayback = create<PlaybackState>((set, get) => ({
     await get().lancer()
   },
 
-  couper: () => {
+  couper: async () => {
     nettoyer()
     set({ statut: 'arret', positionMs: 0, actifs: [], ecoutes: [] })
-    // Coupe aussi les jobs serveur (transcription + agents) : sans ça ils
-    // continueraient de tourner côté backend après l'arrêt de la lecture.
-    // Fire-and-forget — n'échoue jamais l'arrêt local si le back est KO.
-    void arreterTranscription().catch(() => {})
+    // Coupe les jobs serveur (transcription + agents) ET vide le cache en base
+    // (transcriptions + trace/edits agent + instances). Une fois la purge faite,
+    // on bump resetToken → les hooks se revident (refetch sur base vide). Ainsi
+    // la prochaine simulation régénère tout depuis zéro. N'échoue jamais l'arrêt
+    // local si le back est KO.
+    await arreterTranscription().catch(() => {})
+    set((s) => ({ resetToken: s.resetToken + 1 }))
   },
 
   basculerEcoute: (id) => {

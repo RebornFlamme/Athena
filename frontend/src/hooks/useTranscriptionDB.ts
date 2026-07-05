@@ -5,6 +5,7 @@ import {
   type Transcription,
 } from '../data/transcriptionsApi'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { useSimulationPlayback } from '../store/useSimulationPlayback'
 
 /**
  * Lit en direct les segments de transcription d'un appel depuis Supabase :
@@ -16,6 +17,7 @@ import { isSupabaseConfigured } from '../lib/supabase'
  */
 export function useTranscriptionDB(appelId: string | null): Transcription[] {
   const [segments, setSegments] = useState<Transcription[]>([])
+  const resetToken = useSimulationPlayback((s) => s.resetToken)
 
   useEffect(() => {
     if (!appelId || !isSupabaseConfigured) {
@@ -23,6 +25,7 @@ export function useTranscriptionDB(appelId: string | null): Transcription[] {
       return
     }
 
+    setSegments([]) // reset immédiat (couper / relancer) avant resynchro
     let annule = false
     listTranscriptions(appelId)
       .then((s) => {
@@ -42,7 +45,7 @@ export function useTranscriptionDB(appelId: string | null): Transcription[] {
       annule = true
       unsub()
     }
-  }, [appelId])
+  }, [appelId, resetToken])
 
   return segments
 }
