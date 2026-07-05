@@ -346,10 +346,10 @@ This project is free and open source under MIT. Contributions are welcome in all
 
 ## Further reading
 
-- [Claude agent teams — multi-agent orchestration patterns](docs/claude-agent-teams.md)
-- [Cursor cloud agents — cloud-based Cursor agent setup](docs/cursor-cloud-agents.md)
-- [Freshness policy — how time-sensitive content is maintained](docs/freshness-policy.md)
-- [Golden path checklist — end-to-end workflow validation](docs/golden-path-checklist.md)
+- [Claude agent teams — multi-agent orchestration patterns](Hackathon/RAISE%20Summit/Athena/Athena-carte/vibe-coding-prompt-template-main/docs/claude-agent-teams.md)
+- [Cursor cloud agents — cloud-based Cursor agent setup](Hackathon/RAISE%20Summit/Athena/Athena-carte/vibe-coding-prompt-template-main/docs/cursor-cloud-agents.md)
+- [Freshness policy — how time-sensitive content is maintained](Hackathon/RAISE%20Summit/Athena/Athena-carte/vibe-coding-prompt-template-main/docs/freshness-policy.md)
+- [Golden path checklist — end-to-end workflow validation](Hackathon/RAISE%20Summit/Athena/Athena-carte/vibe-coding-prompt-template-main/docs/golden-path-checklist.md)
 
 ---
 

@@ -7,6 +7,7 @@ import { PlaceholderPage } from './components/PlaceholderPage'
 import { DashboardPage } from './components/dashboard/DashboardPage'
 import { DatabasePage } from './components/database/DatabasePage'
 import { SimulationPage } from './components/simulation/SimulationPage'
+import { CoquillePage } from './components/coquille/CoquillePage'
 import '@fontsource-variable/geist'
 import '@xyflow/react/dist/style.css'
 import 'dockview-react/dist/styles/dockview.css'
@@ -19,6 +20,7 @@ const router = createBrowserRouter([
       { path: '/', element: <SchemaEditorPage /> },
       { path: '/flux', element: <SimulationPage /> },
       { path: '/tableau-de-bord', element: <DashboardPage /> },
+      { path: '/coquille', element: <CoquillePage /> },
       { path: '/ressources', element: <DatabasePage /> },
       { path: '/parametres', element: <PlaceholderPage title="Settings" /> },
     ],
