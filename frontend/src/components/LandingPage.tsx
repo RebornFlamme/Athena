@@ -66,14 +66,14 @@ const CAPACITES = [
 // Appels simultanés, positionnés « au hasard » (valeurs figées → stable + pas de
 // re-layout). Certains masqués en mobile pour ne pas déborder.
 const APPELS = [
-  { top: '2%', left: '1%', rot: -4, w: 176, label: '112 · Incoming', time: '10:39:02', n: 15, mobile: true },
-  { top: '30%', left: '17%', rot: 3, w: 158, label: 'Radio · Unit 4', time: '10:39:05', n: 13, mobile: true },
-  { top: '61%', left: '4%', rot: -2, w: 170, label: 'Call #002', time: '10:39:07', n: 16, mobile: false },
-  { top: '8%', left: '39%', rot: 5, w: 152, label: 'Dispatch', time: '10:39:09', n: 12, mobile: true },
-  { top: '47%', left: '44%', rot: -3, w: 178, label: 'Engine 3', time: '10:39:11', n: 15, mobile: false },
-  { top: '3%', left: '71%', rot: 2, w: 162, label: 'Medical-2', time: '10:39:12', n: 13, mobile: true },
-  { top: '35%', left: '78%', rot: -5, w: 158, label: 'Patrol-6', time: '10:39:14', n: 14, mobile: false },
-  { top: '64%', left: '64%', rot: 4, w: 166, label: '112 · Incoming', time: '10:39:16', n: 13, mobile: true },
+  { top: '2%', left: '1%', rot: -4, w: 240, label: '112 · Incoming', time: '10:39:02', n: 20, mobile: true },
+  { top: '30%', left: '15%', rot: 3, w: 214, label: 'Radio · Unit 4', time: '10:39:05', n: 17, mobile: true },
+  { top: '60%', left: '3%', rot: -2, w: 232, label: 'Call #002', time: '10:39:07', n: 21, mobile: false },
+  { top: '7%', left: '37%', rot: 5, w: 206, label: 'Dispatch', time: '10:39:09', n: 16, mobile: true },
+  { top: '46%', left: '41%', rot: -3, w: 242, label: 'Engine 3', time: '10:39:11', n: 20, mobile: false },
+  { top: '2%', left: '68%', rot: 2, w: 220, label: 'Medical-2', time: '10:39:12', n: 17, mobile: true },
+  { top: '34%', left: '73%', rot: -5, w: 214, label: 'Patrol-6', time: '10:39:14', n: 18, mobile: false },
+  { top: '63%', left: '60%', rot: 4, w: 226, label: '112 · Incoming', time: '10:39:16', n: 17, mobile: true },
 ]
 
 export function LandingPage() {
@@ -160,7 +160,7 @@ export function LandingPage() {
 
             {/* Champ chaotique d'appels simultanés */}
             <Reveal delay={0.1}>
-              <div className="relative mt-12 h-[22rem] overflow-hidden sm:h-[26rem]">
+              <div className="relative mt-12 h-[26rem] overflow-hidden sm:h-[32rem]">
                 {APPELS.map((a, i) => (
                   <AppelWidget key={i} appel={a} />
                 ))}
@@ -412,7 +412,7 @@ function AppelWidget({
 }) {
   return (
     <div
-      className={`absolute rounded-lg border border-neutral-200 bg-white/90 p-2.5 shadow-lg shadow-neutral-300/50 backdrop-blur ${
+      className={`absolute rounded-xl border border-neutral-200 bg-white/90 p-3.5 shadow-lg shadow-neutral-300/50 backdrop-blur ${
         appel.mobile ? '' : 'hidden sm:block'
       }`}
       style={{
@@ -422,10 +422,10 @@ function AppelWidget({
         transform: `rotate(${appel.rot}deg)`,
       }}
     >
-      <div className="flex items-center gap-1.5 text-[10px]">
-        <span className="relative flex h-1.5 w-1.5">
+      <div className="flex items-center gap-2 text-xs">
+        <span className="relative flex h-2 w-2">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-900/50" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-neutral-900" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-neutral-900" />
         </span>
         <span className="font-medium text-neutral-700">{appel.label}</span>
         <span className="ml-auto font-mono text-neutral-400">{appel.time}</span>
@@ -439,11 +439,11 @@ function AppelWidget({
 // durées/délais déterministes → effet « live » sans JS.
 function Waveform({ n }: { n: number }) {
   return (
-    <div className="mt-1.5 flex h-5 items-end justify-center gap-[3px]">
+    <div className="mt-2 flex h-8 items-end justify-center gap-1">
       {Array.from({ length: n }).map((_, i) => (
         <span
           key={i}
-          className="wave-bar w-1 rounded-full bg-neutral-800"
+          className="wave-bar w-1.5 rounded-full bg-neutral-800"
           style={{
             height: `${50 + ((i * 41) % 50)}%`,
             animationDuration: `${640 + ((i * 97) % 520)}ms`,
