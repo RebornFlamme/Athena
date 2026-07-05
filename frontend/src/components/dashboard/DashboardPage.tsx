@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { isSupabaseConfigured } from '../../lib/supabase'
-import { Carte } from './Carte'
+import { CarteLibre } from '../carte/CarteLibre'
 import { PanneauDiff } from './PanneauDiff'
 import { PanneauObjets } from './PanneauObjets'
 import { PanneauPastCalls } from './PanneauPastCalls'
@@ -24,7 +24,7 @@ import { PanneauFluxAudio } from '../simulation/PanneauFluxAudio'
 const COMPOSANTS: Record<string, FunctionComponent<IDockviewPanelProps>> = {
   carte: () => (
     <div className="relative h-full">
-      <Carte />
+      <CarteLibre />
     </div>
   ),
   objets: () => <PanneauObjets />,
