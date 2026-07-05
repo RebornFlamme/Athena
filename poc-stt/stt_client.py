@@ -22,16 +22,25 @@ from google.api_core.client_options import ClientOptions
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Configuration depuis l'environnement
-# ---------------------------------------------------------------------------
-PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-REGION = os.getenv("GOOGLE_CLOUD_REGION", "us")
-
-
-# ---------------------------------------------------------------------------
 # Client Speech (initialisé une fois au premier appel)
 # ---------------------------------------------------------------------------
 _speech_client: SpeechClient | None = None
+
+
+def _get_project_id() -> str:
+    """Lecture lazy de GOOGLE_CLOUD_PROJECT (pour que load_dotenv() ait eu lieu)."""
+    pid = os.getenv("GOOGLE_CLOUD_PROJECT")
+    if not pid:
+        raise ValueError(
+            "GOOGLE_CLOUD_PROJECT n'est pas défini. "
+            "Exportez la variable d'environnement avant de lancer le serveur."
+        )
+    return pid
+
+
+def _get_region() -> str:
+    """Lecture lazy de GOOGLE_CLOUD_REGION."""
+    return os.getenv("GOOGLE_CLOUD_REGION", "us")
 
 
 def get_client() -> SpeechClient:
@@ -45,22 +54,19 @@ def get_client() -> SpeechClient:
     if _speech_client is not None:
         return _speech_client
 
-    if not PROJECT_ID:
-        raise ValueError(
-            "GOOGLE_CLOUD_PROJECT n'est pas défini. "
-            "Exportez la variable d'environnement avant de lancer le serveur."
-        )
+    project_id = _get_project_id()
+    region = _get_region()
 
     _speech_client = SpeechClient(
         client_options=ClientOptions(
-            api_endpoint=f"{REGION}-speech.googleapis.com",
+            api_endpoint=f"{region}-speech.googleapis.com",
         )
     )
     logger.info(
         "SpeechClient initialisé — projet=%s région=%s endpoint=%s-speech.googleapis.com",
-        PROJECT_ID,
-        REGION,
-        REGION,
+        project_id,
+        region,
+        region,
     )
     return _speech_client
 
@@ -106,7 +112,7 @@ def build_stt_config() -> cloud_speech.StreamingRecognizeRequest:
     )
 
     config_request = cloud_speech.StreamingRecognizeRequest(
-        recognizer=f"projects/{PROJECT_ID}/locations/{REGION}/recognizers/_",
+        recognizer=f"projects/{_get_project_id()}/locations/{_get_region()}/recognizers/_",
         streaming_config=streaming_config,
     )
 

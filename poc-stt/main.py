@@ -27,9 +27,6 @@ from stt_client import run_stt_stream
 from supabase_client import get_supabase
 from transcribe_job import transcribe_appel
 
-# Charger .env si présent (pratique en dev local)
-load_dotenv()
-
 # ---------------------------------------------------------------------------
 # Configuration du logging
 # ---------------------------------------------------------------------------
@@ -39,6 +36,16 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 logger = logging.getLogger("poc-stt")
+
+# ---------------------------------------------------------------------------
+# Charger .env si présent (chemin absolu → insensible au CWD)
+# ---------------------------------------------------------------------------
+_ENV_PATH = os.path.join(os.path.dirname(__file__), ".env")
+load_dotenv(_ENV_PATH)
+if os.path.isfile(_ENV_PATH):
+    logger.info("Variables d'environnement chargées depuis %s", _ENV_PATH)
+else:
+    logger.warning("Fichier .env introuvable à %s — les variables doivent être exportées manuellement", _ENV_PATH)
 
 # ---------------------------------------------------------------------------
 # Application FastAPI

@@ -1,12 +1,12 @@
 """Extraction LLM — construit le tableau opérationnel d'un appel dans Supabase.
 
-Job serveur lancé après la transcription d'un appel (`transcribe_job`). Au lieu
-d'un simple appel « texte → JSON », Claude pilote une **boucle d'outils** qui lit
-et écrit le graphe d'entités réel (tables `entites` / `evenements`) :
+Job serveur lancé après la transcription d'un appel (`transcribe_job`). Gemini
+pilote une **boucle d'outils** qui lit et écrit le graphe d'entités réel
+(tables `entites` / `evenements`) :
 
     lister_entites → creer_entite / mettre_a_jour_entite / lier_entites / geocoder
 
-C'est ce qui rend le rattachement INTELLIGENT : Claude voit les objets déjà
+C'est ce qui rend le rattachement INTELLIGENT : Gemini voit les objets déjà
 créés (avec leur `id` stable), décide lui-même si un fait concerne un objet
 existant (coréférence) ou un nouveau, et pose des relations entre objets
 (victime « située dans » zone, moyen « engagé sur » sinistre).
@@ -22,15 +22,16 @@ import json
 import logging
 import os
 
-import anthropic
+from google import genai
+from google.genai import types
 
 import geocodage_ign
 
 logger = logging.getLogger("poc-stt.extraction")
 
-# Modèle configurable ; défaut Haiku 4.5 (rapide/économe) — la boucle d'outils
+# Modèle configurable ; défaut Gemini 2.5 Flash (rapide/économe) — la boucle d'outils
 # fait plusieurs allers-retours par appel.
-EXTRACTION_MODEL = os.getenv("EXTRACTION_MODEL", "claude-haiku-4-5")
+EXTRACTION_MODEL = os.getenv("EXTRACTION_MODEL", "gemini-2.5-flash")
 
 # Intervention « propriétaire » de la simulation (les entités sont ancrées sur
 # une intervention). Id fixe : tous les appels d'un run la partagent.
@@ -39,43 +40,56 @@ SIMULATION_INTERVENTION_ID = "00000000-0000-0000-0000-000000000001"
 # Garde-fou : nombre max de tours de boucle d'outils par appel.
 MAX_TOURS = 16
 
-_client = anthropic.Anthropic()
+# ---------------------------------------------------------------------------
+# Client Gemini (initialisé une fois)
+# ---------------------------------------------------------------------------
+_api_key = os.getenv("GEMINI_API_KEY")
+if not _api_key:
+    logger.warning(
+        "GEMINI_API_KEY n'est pas définie — l'extraction LLM sera désactivée. "
+        "Définissez-la dans l'environnement (Render → Environment)."
+    )
+_client = genai.Client(api_key=_api_key) if _api_key else None
 
-SYSTEME = """Tu es le module d'extraction d'Athena, un dashboard temps réel de gestion \
-de crise pour sapeurs-pompiers. Tu reçois la transcription d'UN appel d'urgence et tu \
-construis, via tes outils, le tableau opérationnel : des OBJETS (entités) posés sur la \
-carte et reliés entre eux.
+# ---------------------------------------------------------------------------
+# Prompt système
+# ---------------------------------------------------------------------------
+SYSTEME = (
+    "Tu es le module d'extraction d'Athena, un dashboard temps réel de gestion "
+    "de crise pour sapeurs-pompiers. Tu reçois la transcription d'UN appel d'urgence et tu "
+    "construis, via tes outils, le tableau opérationnel : des OBJETS (entités) posés sur la "
+    "carte et reliés entre eux.\n\n"
+    "Méthode :\n"
+    "1. Commence TOUJOURS par `lister_entites` pour voir ce qui existe déjà pour cet appel.\n"
+    "2. Pour chaque fait explicite du transcript, décide : est-ce un objet EXISTANT (mets-le "
+    "à jour avec son id) ou un objet NOUVEAU (crée-le) ? Ne crée jamais de doublon.\n"
+    "3. Relie les objets avec `lier_entites` : la ou les victimes sont « situee_dans » la zone "
+    "du sinistre ; chaque moyen engagé est « engage_sur » le sinistre.\n"
+    "4. Si une adresse est donnée, appelle `geocoder`, puis positionne la zone du sinistre "
+    "avec `mettre_a_jour_entite` (lon/lat) — statut \"confirme\" si le géocodage est fiable.\n\n"
+    "Types d'entités : \"zone\" (le sinistre / le lieu), \"acteur\" (victime, témoin), \"moyen\" "
+    "(VSAV, FPT, EPA…). Champs d'`etat` recommandés :\n"
+    "- zone : nature, danger, nb_victimes, adresse\n"
+    "- acteur (victime) : presence, etat, localisation\n"
+    "- moyen : engage\n\n"
+    "Libellés lisibles : \"Sinistre\", \"Victime #1\", \"VSAV 12\". N'extrais QUE ce qui est "
+    "EXPLICITEMENT dit. N'invente rien, surtout pas une adresse. Quand tu as tout traité, "
+    "termine sans appeler d'outil."
+)
 
-Méthode :
-1. Commence TOUJOURS par `lister_entites` pour voir ce qui existe déjà pour cet appel.
-2. Pour chaque fait explicite du transcript, décide : est-ce un objet EXISTANT (mets-le \
-à jour avec son id) ou un objet NOUVEAU (crée-le) ? Ne crée jamais de doublon.
-3. Relie les objets avec `lier_entites` : la ou les victimes sont « situee_dans » la zone \
-du sinistre ; chaque moyen engagé est « engage_sur » le sinistre.
-4. Si une adresse est donnée, appelle `geocoder`, puis positionne la zone du sinistre \
-avec `mettre_a_jour_entite` (lon/lat) — statut "confirme" si le géocodage est fiable.
-
-Types d'entités : "zone" (le sinistre / le lieu), "acteur" (victime, témoin), "moyen" \
-(VSAV, FPT, EPA…). Champs d'`etat` recommandés :
-- zone : nature, danger, nb_victimes, adresse
-- acteur (victime) : presence, etat, localisation
-- moyen : engage
-
-Libellés lisibles : "Sinistre", "Victime #1", "VSAV 12". N'extrais QUE ce qui est \
-EXPLICITEMENT dit. N'invente rien, surtout pas une adresse. Quand tu as tout traité, \
-termine sans appeler d'outil."""
-
-# --- Schémas d'outils (JSON, sans beta) --------------------------------------
+# ---------------------------------------------------------------------------
+# Schémas d'outils (format Gemini = function_declarations avec `parameters`)
+# ---------------------------------------------------------------------------
 OUTILS = [
     {
         "name": "lister_entites",
         "description": "Liste les entités déjà créées pour cet appel (id, type, libellé, état, position).",
-        "input_schema": {"type": "object", "properties": {}, "additionalProperties": False},
+        "parameters": {"type": "object", "properties": {}},
     },
     {
         "name": "creer_entite",
         "description": "Crée une nouvelle entité. Renvoie son id. N'utilise que pour un objet réellement nouveau.",
-        "input_schema": {
+        "parameters": {
             "type": "object",
             "properties": {
                 "type": {"type": "string", "enum": ["zone", "acteur", "moyen"]},
@@ -83,20 +97,19 @@ OUTILS = [
                 "sous_type": {"type": "string", "description": "Optionnel : victime, temoin, vsav, fpt…"},
                 "etat": {
                     "type": "object",
-                    "description": "État initial (paires champ→valeur), ex. {\"nature\": \"incendie\"}.",
+                    "description": "État initial (paires champ→valeur), ex. {'nature': 'incendie'}.",
                     "additionalProperties": True,
                 },
                 "extrait_source": {"type": "string", "description": "Phrase exacte du transcript."},
                 "confiance": {"type": "number"},
             },
             "required": ["type", "libelle", "etat", "extrait_source", "confiance"],
-            "additionalProperties": False,
         },
     },
     {
         "name": "mettre_a_jour_entite",
         "description": "Met à jour une entité existante (fusion d'état, et/ou position lon/lat, et/ou statut).",
-        "input_schema": {
+        "parameters": {
             "type": "object",
             "properties": {
                 "id": {"type": "string"},
@@ -108,13 +121,12 @@ OUTILS = [
                 "confiance": {"type": "number"},
             },
             "required": ["id", "extrait_source"],
-            "additionalProperties": False,
         },
     },
     {
         "name": "lier_entites",
         "description": "Enregistre une relation entre deux entités (ex. victime situee_dans zone).",
-        "input_schema": {
+        "parameters": {
             "type": "object",
             "properties": {
                 "source_id": {"type": "string"},
@@ -123,22 +135,30 @@ OUTILS = [
                 "extrait_source": {"type": "string"},
             },
             "required": ["source_id", "cible_id", "relation"],
-            "additionalProperties": False,
         },
     },
     {
         "name": "geocoder",
         "description": "Géocode une adresse (IGN) → {lon, lat, fiable, label}. Ne modifie rien.",
-        "input_schema": {
+        "parameters": {
             "type": "object",
             "properties": {"adresse": {"type": "string"}},
             "required": ["adresse"],
-            "additionalProperties": False,
         },
     },
 ]
 
+# Configuration Gemini — réutilisée pour chaque appel (read-only, thread-safe)
+_GEMINI_CONFIG = types.GenerateContentConfig(
+    system_instruction=SYSTEME,
+    tools=[types.Tool(function_declarations=OUTILS)],
+    temperature=0.2,  # extraction = tâche structurée → basse température
+)
 
+
+# ============================================================================
+# Code Admiralty
+# ============================================================================
 def _fiabilite(confiance: float | None) -> str:
     """Code Admiralty simplifié depuis la confiance du modèle."""
     return "A2" if (confiance or 0) >= 0.85 else "B3"
@@ -152,6 +172,9 @@ def _intervention_simulation(sb) -> str:
     return SIMULATION_INTERVENTION_ID
 
 
+# ============================================================================
+# Implémentation des outils (liée à un appel — Supabase + périmètre)
+# ============================================================================
 class _Outils:
     """Implémentation des outils, liée à un appel (Supabase + périmètre)."""
 
@@ -252,6 +275,9 @@ class _Outils:
         }).execute()
 
 
+# ============================================================================
+# Helpers
+# ============================================================================
 def _transcript_appel(sb, appel_id: str) -> str:
     res = (
         sb.table("transcriptions")
@@ -263,12 +289,19 @@ def _transcript_appel(sb, appel_id: str) -> str:
     return " ".join(s["texte"] for s in (res.data or []) if s.get("texte"))
 
 
+# ============================================================================
+# Point d'entrée principal
+# ============================================================================
 def extraire_appel(appel: dict, sb) -> None:
     """Extrait le tableau opérationnel d'un appel (boucle d'outils → Supabase).
 
     Idempotent par run : on efface d'abord les faits déjà extraits pour cet appel
     (« à chaque lancement », cohérent avec la transcription).
     """
+    if _client is None:
+        logger.warning("[EXTRACT] Client Gemini non initialisé (GEMINI_API_KEY manquante) — extraction ignorée")
+        return
+
     appel_id = appel["id"]
     logger.info("[EXTRACT %s] ===== DÉBUT EXTRACTION =====", appel_id)
 
@@ -295,54 +328,84 @@ def extraire_appel(appel: dict, sb) -> None:
         # Non bloquant : continue
 
     outils = _Outils(sb, intervention_id, appel_id)
-    messages = [{"role": "user", "content": f"Transcription de l'appel :\n\n{transcript}"}]
+
+    # Conversation initiale (format Gemini : liste de Content)
+    contents = [
+        types.Content(
+            role="user",
+            parts=[types.Part.from_text(text=f"Transcription de l'appel :\n\n{transcript}")],
+        )
+    ]
 
     for tour in range(MAX_TOURS):
         logger.info("[EXTRACT %s] --- Tour %d/%d ---", appel_id, tour + 1, MAX_TOURS)
         try:
-            reponse = _client.messages.create(
+            reponse = _client.models.generate_content(
                 model=EXTRACTION_MODEL,
-                max_tokens=2048,
-                system=SYSTEME,
-                tools=OUTILS,
-                messages=messages,
+                contents=contents,
+                config=_GEMINI_CONFIG,
             )
         except Exception as exc:  # noqa: BLE001
-            logger.error("[EXTRACT %s] ❌ Appel Claude KO au tour %d : %s", appel_id, tour + 1, exc, exc_info=True)
+            logger.error("[EXTRACT %s] ❌ Appel Gemini KO au tour %d : %s", appel_id, tour + 1, exc, exc_info=True)
             break
 
-        logger.info("[EXTRACT %s] Stop reason : %s", appel_id, reponse.stop_reason)
-
-        if reponse.stop_reason != "tool_use":
-            logger.info("[EXTRACT %s] Claude a terminé (stop_reason=%s)", appel_id, reponse.stop_reason)
+        if not reponse.candidates:
+            logger.error("[EXTRACT %s] ❌ Gemini n'a renvoyé aucun candidat", appel_id)
             break
 
-        messages.append({"role": "assistant", "content": reponse.content})
-        resultats = []
-        for bloc in reponse.content:
-            if bloc.type == "text":
-                logger.info("[EXTRACT %s] Claude (texte) : « %.200s »", appel_id, bloc.text)
-                continue
-            if bloc.type != "tool_use":
-                continue
-            logger.info("[EXTRACT %s] 🔧 Outil appelé : %s(%s)", appel_id, bloc.name,
-                        json.dumps(bloc.input, ensure_ascii=False, default=str))
-            fn = getattr(outils, bloc.name, None)
+        candidat = reponse.candidates[0]
+        if not candidat.content or not candidat.content.parts:
+            logger.info("[EXTRACT %s] Réponse vide — fin", appel_id)
+            break
+
+        # Déterminer si le modèle appelle des fonctions
+        function_calls = []
+        text_parts = []
+        for part in candidat.content.parts:
+            fc = getattr(part, "function_call", None)
+            if fc is not None:
+                function_calls.append(fc)
+            txt = getattr(part, "text", None)
+            if txt:
+                text_parts.append(txt)
+
+        # Logger le texte si présent
+        for txt in text_parts:
+            logger.info("[EXTRACT %s] Gemini (texte) : « %.200s »", appel_id, txt)
+
+        if not function_calls:
+            logger.info("[EXTRACT %s] Gemini a terminé (pas d'appel d'outil)", appel_id)
+            break
+
+        # Ajouter la réponse du modèle à l'historique
+        contents.append(
+            types.Content(role="model", parts=list(candidat.content.parts))
+        )
+
+        # Exécuter les outils et construire les function_response
+        function_response_parts = []
+        for fc in function_calls:
+            logger.info("[EXTRACT %s] 🔧 Outil appelé : %s(%s)", appel_id, fc.name,
+                        json.dumps(fc.args, ensure_ascii=False, default=str) if fc.args else "{}")
+            fn = getattr(outils, fc.name, None)
             try:
-                sortie = fn(**bloc.input) if fn else {"erreur": f"outil inconnu {bloc.name}"}
-                logger.info("[EXTRACT %s] ✅ Résultat %s : %s", appel_id, bloc.name,
+                args = dict(fc.args) if fc.args else {}
+                sortie = fn(**args) if fn else {"erreur": f"outil inconnu {fc.name}"}
+                logger.info("[EXTRACT %s] ✅ Résultat %s : %s", appel_id, fc.name,
                             json.dumps(sortie, ensure_ascii=False, default=str)[:200])
             except Exception as exc:  # noqa: BLE001
-                logger.exception("[EXTRACT %s] ❌ Outil %s en échec : %s", appel_id, bloc.name, exc)
+                logger.exception("[EXTRACT %s] ❌ Outil %s en échec : %s", appel_id, fc.name, exc)
                 sortie = {"erreur": str(exc)}
-            resultats.append({
-                "type": "tool_result",
-                "tool_use_id": bloc.id,
-                "content": json.dumps(sortie, ensure_ascii=False, default=str),
-            })
-        messages.append({"role": "user", "content": resultats})
+            function_response_parts.append(
+                types.Part.from_function_response(name=fc.name, response=sortie)
+            )
 
-    if tour + 1 >= MAX_TOURS:
+        # Ajouter les résultats d'outils à l'historique
+        contents.append(
+            types.Content(role="user", parts=function_response_parts)
+        )
+
+    if tour + 1 >= MAX_TOURS and function_calls:
         logger.warning("[EXTRACT %s] ⚠ MAX_TOURS (%d) atteint — boucle interrompue", appel_id, MAX_TOURS)
 
     n = len(outils.lister_entites())
