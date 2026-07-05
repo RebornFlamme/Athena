@@ -3,7 +3,7 @@ import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { STATUTS, type StatutInfo } from '../../typesAthena'
 import { useInstancesDB } from '../../hooks/useInstancesDB'
-import { useTrajetDemo } from '../../hooks/useTrajetDemo'
+import { useTrajetsEngins } from '../../hooks/useTrajetsEngins'
 
 /** Fonds de carte officiel IGN (tuiles vectorielles Géoplateforme, gratuit). */
 const STYLE_IGN =
@@ -106,9 +106,9 @@ export function Carte({
   const marqueursRef = useRef<Map<string, maplibregl.Marker>>(new Map())
   const dejaCentreRef = useRef(false)
 
-  // DÉMO (étape 2) : trajet caserne → intervention animé. À remplacer par le
-  // branchement aux vraies instances « engin » (étape 3).
-  useTrajetDemo(map)
+  // Anime un engin depuis la caserne la plus proche jusqu'à chaque lieu
+  // d'intervention géolocalisé (étape 3, branché aux vraies instances).
+  useTrajetsEngins(map)
 
   useEffect(() => {
     if (!containerRef.current) return

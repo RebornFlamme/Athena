@@ -179,7 +179,12 @@ export class ControleurTrajet {
     this.stopRaf()
     this.marqueur?.remove()
     this.marqueur = null
-    if (this.map.getLayer(this.idLigne)) this.map.removeLayer(this.idLigne)
-    if (this.map.getSource(this.idSource)) this.map.removeSource(this.idSource)
+    // La carte peut déjà être détruite (démontage) → getLayer/removeLayer lèvent.
+    try {
+      if (this.map.getLayer(this.idLigne)) this.map.removeLayer(this.idLigne)
+      if (this.map.getSource(this.idSource)) this.map.removeSource(this.idSource)
+    } catch {
+      /* carte déjà retirée */
+    }
   }
 }
