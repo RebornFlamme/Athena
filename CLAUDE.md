@@ -13,6 +13,10 @@ Le reste de ce fichier décrit les conventions de l'existant (éditeur EAV) — 
 - **Tout le texte visible du front est en anglais** (labels, boutons, titres, placeholders, aria-labels, messages d'erreur affichés, libellés de nav, labels de `DATA_TYPES`/`STATUTS`). Traduction faite en gardant **code, identifiants, noms de fichiers, clés Supabase, valeurs d'enum et commentaires inchangés** (les commentaires restent en français). Toute nouvelle chaîne visible doit être écrite **en anglais**.
 - Points de repère du glossaire : appel→call, caserne→station, opérateur→operator, Lancer→Start / Revenir→Reset / Couper→Stop, flux audio→audio feed, écouter→monitor, Objet→Object / Sous-objet→Sub-object, champ→field, Tableau de bord→Dashboard, Transcription→Transcript, Raisonnement→Reasoning, « Semantic Layer » reste tel quel, statuts Présumé/Confirmé/Corrigé/Périmé→Presumed/Confirmed/Corrected/Stale.
 
+## Thème clair/sombre (juil. 2026)
+- Défaut **sombre** (`class="dark"` en dur sur `<html>` d'`index.html`). Un **script inline** dans `<head>` d'`index.html` lit `localStorage.theme` et retire `dark` si `'light'` **avant le paint** (pas de flash).
+- **Toggle discret** `components/ThemeToggle.tsx` (icône Soleil/Lune, `SidebarMenuButton` muted) posé dans un `SidebarFooter` d'`AppSidebar.tsx` : bascule la classe `dark` sur `document.documentElement` + persiste dans `localStorage.theme`. Pas de provider/contexte (le thème vit uniquement dans la classe DOM + localStorage).
+
 ## Onglet Database (`/ressources`, juil. 2026)
 - **Page `components/database/DatabasePage.tsx`** (remplace le `PlaceholderPage` — la route reste `/ressources`, libellé de nav « Database »). Vue base de données des instances d'objets produites par les agents LLM : lecteur pur via `useInstancesDB()` (global + Realtime).
 - **Data table = shadcn + `@tanstack/react-table`** (`ui/table.tsx` copié à la main) : colonnes Object/Type/Status/Location/Call/Created, tri (Object, Type, Created), filtre texte global (libellé + type), pagination (12/page). Badge de statut coloré via `STATUTS` (`typesAthena.ts`).

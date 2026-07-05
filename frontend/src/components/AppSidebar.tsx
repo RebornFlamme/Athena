@@ -3,6 +3,7 @@ import { Database, LayoutDashboard, Network, Radio, Settings } from 'lucide-reac
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -12,6 +13,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
+import { ThemeToggle } from './ThemeToggle'
 
 const items = [
   { title: 'Dashboard', url: '/tableau-de-bord', icon: LayoutDashboard },
@@ -57,6 +59,14 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <ThemeToggle />
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
 
       <SidebarRail />
     </Sidebar>
