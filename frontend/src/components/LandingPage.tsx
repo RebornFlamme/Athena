@@ -111,7 +111,7 @@ export function LandingPage() {
                 </Badge>
               </Reveal>
               <Reveal delay={0.05}>
-                <h1 className="mt-6 text-4xl font-bold leading-[1.08] tracking-tight text-neutral-900 sm:text-5xl">
+                <h1 className="mt-6 text-4xl font-bold leading-[1.08] tracking-tighter text-neutral-900 sm:text-5xl">
                   AI-powered Intelligence for crisis situations.
                 </h1>
               </Reveal>
@@ -148,7 +148,7 @@ export function LandingPage() {
                 <Badge variant="outline" className="font-medium uppercase tracking-widest">
                   The problem
                 </Badge>
-                <h2 className="mt-5 text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
+                <h2 className="mt-5 text-3xl font-bold tracking-tighter text-neutral-900 sm:text-4xl">
                   In critical moments, miscommunication costs lives and money.
                 </h2>
                 <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-neutral-500">
@@ -170,7 +170,7 @@ export function LandingPage() {
             </Reveal>
 
             <Reveal delay={0.15}>
-              <p className="mx-auto mt-8 max-w-2xl text-center text-2xl font-semibold tracking-tight text-neutral-900">
+              <p className="mx-auto mt-8 max-w-2xl text-center text-2xl font-semibold tracking-tighter text-neutral-900">
                 Our AI never mishears, never mispeaks, and never forgets.
               </p>
             </Reveal>
@@ -188,7 +188,7 @@ export function LandingPage() {
                 <Badge variant="outline" className="font-medium uppercase tracking-widest">
                   The solution
                 </Badge>
-                <h2 className="mt-5 text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
+                <h2 className="mt-5 text-3xl font-bold tracking-tighter text-neutral-900 sm:text-4xl">
                   We make clarity emerge from chaos.
                 </h2>
                 <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-neutral-500">
@@ -210,7 +210,7 @@ export function LandingPage() {
                           </span>
                           <span className="font-mono text-xs text-neutral-400">0{i + 1}</span>
                         </div>
-                        <CardTitle className="pt-3 text-lg">{s.titre}</CardTitle>
+                        <CardTitle className="pt-3 text-lg tracking-tight">{s.titre}</CardTitle>
                         <CardDescription className="leading-relaxed">{s.texte}</CardDescription>
                       </CardHeader>
                     </Card>
@@ -258,7 +258,7 @@ export function LandingPage() {
 
             <Reveal delay={0.08}>
               <div className="mx-auto mt-10 max-w-2xl text-center">
-                <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                <h2 className="text-3xl font-bold tracking-tighter text-white sm:text-4xl">
                   See clarity emerge from chaos.
                 </h2>
                 <p className="mx-auto mt-4 max-w-md text-lg text-neutral-400">
