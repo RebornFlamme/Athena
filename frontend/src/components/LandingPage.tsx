@@ -312,12 +312,12 @@ function HeroBackground() {
   return (
     <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.55]">
       <Comp
-        variant="circle"
-        pixelSize={5}
+        variant="square"
+        pixelSize={9}
         color="#525252"
         patternScale={2.4}
         patternDensity={1}
-        speed={0.4}
+        speed={1}
         edgeFade={0.35}
         enableRipples={false}
         transparent
