@@ -31,6 +31,7 @@
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.23.0",
     "maplibre-gl": "^5.24.0",
+    "ogl": "^1.0.11",
     "postprocessing": "^6.39.2",
     "react": "^18.3.1",
     "react-audio-visualize": "^1.2.0",

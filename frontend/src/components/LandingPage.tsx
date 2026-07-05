@@ -103,7 +103,8 @@ export function LandingPage() {
           <HeroBackground />
           <div className="pointer-events-none absolute -top-24 left-1/3 h-72 w-[46rem] -translate-x-1/2 rounded-full bg-neutral-900/[0.06] blur-[110px]" />
           <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 lg:grid-cols-2 lg:py-24">
-            <div>
+            {/* Carte glassmorphism → le texte ressort au-dessus de la trame animée */}
+            <Card className="border-white/60 bg-white/70 p-8 shadow-xl shadow-neutral-300/40 backdrop-blur-md sm:p-10">
               <Reveal>
                 <Badge variant="secondary" className="rounded-full px-3 py-1 font-medium">
                   AI-powered crisis intelligence
@@ -131,7 +132,7 @@ export function LandingPage() {
                   </Button>
                 </div>
               </Reveal>
-            </div>
+            </Card>
 
             <Reveal delay={0.1}>
               <HeroImage />
@@ -235,13 +236,19 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ───────── Section finale : capacités + CTA ───────── */}
-        <section id="contact" className="border-t border-neutral-200 bg-neutral-50">
-          <div className="mx-auto max-w-6xl px-6 py-24">
+        {/* ───────── Section finale : capacités + CTA (fond radar animé) ───────── */}
+        <section id="contact" className="relative overflow-hidden border-t border-neutral-200 bg-neutral-950">
+          {/* Radar animé (WebGL/ogl) en fond — blanc sur noir (thème N&B) */}
+          <RadarBackground />
+          <div className="relative z-10 mx-auto max-w-6xl px-6 py-24">
             <Reveal>
               <div className="flex flex-wrap items-center justify-center gap-2">
                 {CAPACITES.map((c) => (
-                  <Badge key={c.texte} variant="outline" className="gap-1.5 bg-white font-normal">
+                  <Badge
+                    key={c.texte}
+                    variant="outline"
+                    className="gap-1.5 border-white/15 bg-white/5 font-normal text-neutral-300 backdrop-blur-sm"
+                  >
                     <c.icon className="h-3.5 w-3.5" />
                     {c.texte}
                   </Badge>
@@ -251,19 +258,24 @@ export function LandingPage() {
 
             <Reveal delay={0.08}>
               <div className="mx-auto mt-10 max-w-2xl text-center">
-                <h2 className="text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
+                <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
                   See clarity emerge from chaos.
                 </h2>
-                <p className="mx-auto mt-4 max-w-md text-lg text-neutral-500">
+                <p className="mx-auto mt-4 max-w-md text-lg text-neutral-400">
                   A 20-minute demo on a real scenario is all it takes.
                 </p>
                 <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-                  <Button asChild size="lg">
+                  <Button asChild size="lg" className="bg-white text-neutral-900 hover:bg-neutral-200">
                     <a href="mailto:contact@athena-crise.fr?subject=Athena%20demo%20request">
                       Request a demo <ArrowRight className="h-4 w-4" />
                     </a>
                   </Button>
-                  <Button asChild size="lg" variant="outline">
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                  >
                     <Link to="/tableau-de-bord">Explore the dashboard</Link>
                   </Button>
                 </div>
@@ -322,6 +334,47 @@ function HeroBackground() {
         enableRipples={false}
         transparent
         autoPauseOffscreen
+      />
+    </div>
+  )
+}
+
+// Fond animé de la section finale : radar WebGL (ogl), blanc sur noir.
+// Même approche que HeroBackground (import dynamique après montage → code-split,
+// pas de suspension du rendu ; coupé si prefers-reduced-motion).
+function RadarBackground() {
+  const reduce = useReducedMotion()
+  const [Comp, setComp] = useState<React.ComponentType<any> | null>(null)
+
+  useEffect(() => {
+    if (reduce) return
+    let vivant = true
+    import('@/components/Radar').then((m) => {
+      if (vivant) setComp(() => m.default)
+    })
+    return () => {
+      vivant = false
+    }
+  }, [reduce])
+
+  if (reduce || !Comp) return null
+  return (
+    <div className="pointer-events-none absolute inset-0 z-0 opacity-80">
+      <Comp
+        color="#ffffff"
+        backgroundColor="#000000"
+        speed={1}
+        scale={0.6}
+        ringCount={9}
+        spokeCount={12}
+        ringThickness={0.04}
+        spokeThickness={0.008}
+        sweepSpeed={1}
+        sweepWidth={2.2}
+        sweepLobes={1}
+        falloff={2}
+        brightness={0.65}
+        enableMouseInteraction={false}
       />
     </div>
   )
