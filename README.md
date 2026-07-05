@@ -90,7 +90,7 @@ Pour voir le résultat tout de suite, sans attendre le temps réel :
 | Couche | Technologies |
 |---|---|
 | **Frontend** | Vite · React · TypeScript · Tailwind + shadcn/ui · MapLibre GL + IGN · dockview · React Flow · zustand — déployé sur **Vercel** |
-| **Backend** | FastAPI (Python) sur **Render** — Google Cloud Speech-to-Text V2 (Chirp 3) · agent **Anthropic Claude** (tool-use natif) · PyAV |
+| **Backend** | FastAPI (Python) sur **Render** — Google Cloud Speech-to-Text V2 (Chirp 3) · agent **Gemini et Anthropic** (tool-use natif) · PyAV |
 | **Données** | **Supabase** — PostgreSQL · Realtime · Storage |
 
 ## 📁 Structure du dépôt
