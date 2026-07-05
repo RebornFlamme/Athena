@@ -192,9 +192,11 @@ function etagesInitial(): boolean {
   return new URLSearchParams(window.location.search).get('etages') === '1'
 }
 
-export function CarteLibre() {
+export function CarteLibre({ onCarte }: { onCarte?: (map: maplibregl.Map) => void } = {}) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
+  const onCarteRef = useRef(onCarte)
+  onCarteRef.current = onCarte
   const [is3D, setIs3D] = useState(vueInitiale3D)
   const [couleur, setCouleur] = useState(COULEUR_3D_DEFAUT)
   const [transparence, setTransparence] = useState(TRANSPARENCE_DEFAUT)
@@ -380,6 +382,9 @@ export function CarteLibre() {
 
     // Focus au chargement pour que le clavier réponde sans clic préalable.
     m.once('load', () => m.getCanvas().focus())
+
+    // Expose la carte prête (permet à un parent d'ajouter des couches : engins…).
+    m.once('load', () => onCarteRef.current?.(m))
 
     // Bâtiments réels individuels (dérivés d'OFM). Chargés en asynchrone puis posés
     // comme couche 3D unique ; le fond OFM fusionné est masqué. Le sinistré est
@@ -649,6 +654,20 @@ export function CarteLibre() {
                 type="checkbox"
                 checked={optEtages.aretes}
                 onChange={(e) => setOptEtages((o) => ({ ...o, aretes: e.target.checked }))}
+                className="size-4 cursor-pointer"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="et-clignote" className="text-xs">
+                Clignotement danger
+              </Label>
+              <input
+                id="et-clignote"
+                type="checkbox"
+                checked={optEtages.clignotementDanger}
+                onChange={(e) =>
+                  setOptEtages((o) => ({ ...o, clignotementDanger: e.target.checked }))
+                }
                 className="size-4 cursor-pointer"
               />
             </div>

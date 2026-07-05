@@ -2,7 +2,7 @@
 
 ## Workflow agents — à lire en premier
 
-1. **Plan directeur : [AGENTS.md](AGENTS.md)** — phase courante, roadmap, règles « à ne pas faire ». S'y référer avant toute tâche de build.
+1. **Plan directeur : [AGENTS.md](Hackathon/RAISE%20Summit/Athena/Athena-carte/AGENTS.md)** — phase courante, roadmap, règles « à ne pas faire ». S'y référer avant toute tâche de build.
 2. **Détails à la demande :** `agent_docs/` (brief, stack, patterns, exigences produit, tests).
 3. **Docs stratégiques complets :** `vibe-coding-prompt-template-main/docs/` (recherche, PRD, TechDesign, ARCHITECTURE).
 4. **Méthode :** plan en 5 lignes → accord → implémenter petit → `cd frontend && npm run build` + test manuel avant d'avancer.

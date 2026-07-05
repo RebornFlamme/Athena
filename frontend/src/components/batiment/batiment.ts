@@ -19,6 +19,32 @@
 /** Statut opérationnel d'un local (pièce/zone/étage). */
 export type Statut = 'feu' | 'rouge' | 'jaune' | 'vert' | 'blanc' | 'normal' | 'commerce'
 
+/**
+ * Gravité du danger d'un étage (0 = aucun → 3 = critique). Pilote le
+ * clignotement des contours dans la vue « découpe d'étages » : plus c'est grave,
+ * plus le contour clignote vite et vif.
+ */
+export type Gravite = 0 | 1 | 2 | 3
+
+/** Gravité du danger associée à chaque statut (feu = critique). */
+export const GRAVITE_STATUT: Record<Statut, Gravite> = {
+  feu: 3, // sinistre en cours — critique
+  rouge: 2, // victime urgence absolue — élevé
+  jaune: 1, // victime urgente — modéré
+  vert: 0,
+  blanc: 0,
+  normal: 0,
+  commerce: 0,
+}
+
+/** Libellé des niveaux de gravité (légende). */
+export const LIBELLE_GRAVITE: Record<Gravite, string> = {
+  0: 'Aucun danger',
+  1: 'Danger modéré',
+  2: 'Danger élevé',
+  3: 'Danger critique',
+}
+
 export interface Appartement {
   code: string // ex. "VS5", "Serveurs"
   facade: 'peletier' | 'cour' | 'haussmann' // façade rue / cour intérieure / bd Haussmann
@@ -33,6 +59,7 @@ export interface Etage {
   type: 'rdc' | 'habitation'
   appartements: Appartement[]
   statutEtage: Statut // pire statut de l'étage (pour la vue carte, granularité étage)
+  graviteEtage: Gravite // gravité du danger de l'étage (dérivée du statut)
 }
 
 /**
@@ -172,12 +199,15 @@ function construireEtages(): Etage[] {
       detail: z.detail,
       victimeId: z.victimeId,
     }))
+    const statutEtage: Statut =
+      def.type === 'rdc' ? 'commerce' : pire(appartements.map((a) => a.statut))
     return {
       niveau,
       label: ORDINAL[niveau],
       type: def.type,
       appartements,
-      statutEtage: def.type === 'rdc' ? 'commerce' : pire(appartements.map((a) => a.statut)),
+      statutEtage,
+      graviteEtage: GRAVITE_STATUT[statutEtage],
     }
   })
 }

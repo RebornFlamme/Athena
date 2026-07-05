@@ -28,6 +28,7 @@ export interface OptionsEtages {
   couleurMur: string // couleur des murs latéraux
   opaciteMur: number // transparence des murs latéraux
   aretes: boolean // afficher les arêtes des étages
+  clignotementDanger: boolean // faire clignoter les contours des étages en danger
 }
 
 export const OPTIONS_ETAGES_DEFAUT: OptionsEtages = {
@@ -36,7 +37,14 @@ export const OPTIONS_ETAGES_DEFAUT: OptionsEtages = {
   couleurMur: '#6b7785',
   opaciteMur: 0.05, // 95 % de transparence
   aretes: true,
+  clignotementDanger: true,
 }
+
+/**
+ * Fréquence de clignotement des contours par gravité (Hz) ; index = gravité
+ * (0 = statique/aucun danger, 3 = critique = clignotement le plus rapide).
+ */
+const FREQ_CLIGNOTEMENT = [0, 0.9, 1.5, 2.4]
 
 // Anti z-fighting : on décolle la maquette du sol et on laisse un mince interstice
 // entre étages, pour que le sol du RDC ne soit pas coplanaire avec le plan de la
@@ -84,8 +92,13 @@ export function creerCoucheEtages(id: string, initial = OPTIONS_ETAGES_DEFAUT): 
     matSol: THREE.MeshBasicMaterial
     matMur: THREE.MeshBasicMaterial
     matAretes: THREE.LineBasicMaterial
+    gravite: number // gravité du danger de l'étage (0 = aucun → 3 = critique)
+    couleurAreteBase: THREE.Color // teinte au repos (creux du clignotement)
+    couleurAreteVive: THREE.Color // teinte au pic (crête du clignotement)
   }
   const niveaux: Niveau[] = []
+
+  const BLANC = new THREE.Color('#ffffff')
 
   ETAGES.forEach((etage, i) => {
     const couleur = new THREE.Color(COULEUR_STATUT[etage.statutEtage])
@@ -113,8 +126,12 @@ export function creerCoucheEtages(id: string, initial = OPTIONS_ETAGES_DEFAUT): 
     const vol = new THREE.Mesh(geoVol, [matSol, matMur])
     vol.renderOrder = i
 
+    // Contour : teinte de repos = statut assombri ; teinte de crête = même teinte
+    // ravivée vers le blanc (glow). L'animation lerpe entre les deux (voir render).
+    const couleurAreteBase = couleur.clone().multiplyScalar(0.75)
+    const couleurAreteVive = couleurAreteBase.clone().lerp(BLANC, 0.6)
     const matAretes = new THREE.LineBasicMaterial({
-      color: couleur.clone().multiplyScalar(0.75),
+      color: couleurAreteBase.clone(),
       transparent: true,
       opacity: 0.95,
       depthWrite: false,
@@ -125,7 +142,16 @@ export function creerCoucheEtages(id: string, initial = OPTIONS_ETAGES_DEFAUT): 
 
     scene.add(vol)
     scene.add(aretes)
-    niveaux.push({ vol, aretes, matSol, matMur, matAretes })
+    niveaux.push({
+      vol,
+      aretes,
+      matSol,
+      matMur,
+      matAretes,
+      gravite: etage.graviteEtage,
+      couleurAreteBase,
+      couleurAreteVive,
+    })
   })
 
   function positionner() {
@@ -173,6 +199,22 @@ export function creerCoucheEtages(id: string, initial = OPTIONS_ETAGES_DEFAUT): 
 
     render(_gl: WebGLRenderingContext, options: CustomRenderMethodInput) {
       if (!renderer) return
+
+      // Clignotement des contours selon la gravité du danger de l'étage : on lerpe
+      // la couleur (repos → vif) et l'opacité au rythme `FREQ_CLIGNOTEMENT[gravité]`.
+      // Gravité 0 (aucun danger) ou clignotement désactivé → contour statique.
+      const t = performance.now() / 1000
+      for (const n of niveaux) {
+        if (!opts.clignotementDanger || n.gravite === 0) {
+          n.matAretes.color.copy(n.couleurAreteBase)
+          n.matAretes.opacity = 0.95
+          continue
+        }
+        const s = 0.5 + 0.5 * Math.sin(2 * Math.PI * FREQ_CLIGNOTEMENT[n.gravite] * t)
+        n.matAretes.color.copy(n.couleurAreteBase).lerp(n.couleurAreteVive, s)
+        n.matAretes.opacity = 0.4 + 0.6 * s
+      }
+
       const l = new THREE.Matrix4()
         .makeTranslation(merc.x, merc.y, merc.z)
         .scale(new THREE.Vector3(echelle, -echelle, echelle))
