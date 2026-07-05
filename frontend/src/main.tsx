@@ -5,6 +5,7 @@ import { AppLayout } from './components/AppLayout'
 import { SchemaEditorPage } from './components/SchemaEditorPage'
 import { PlaceholderPage } from './components/PlaceholderPage'
 import { DashboardPage } from './components/dashboard/DashboardPage'
+import { DatabasePage } from './components/database/DatabasePage'
 import { SimulationPage } from './components/simulation/SimulationPage'
 import '@fontsource-variable/geist'
 import '@xyflow/react/dist/style.css'
@@ -18,7 +19,7 @@ const router = createBrowserRouter([
       { path: '/', element: <SchemaEditorPage /> },
       { path: '/flux', element: <SimulationPage /> },
       { path: '/tableau-de-bord', element: <DashboardPage /> },
-      { path: '/ressources', element: <PlaceholderPage title="Resources" /> },
+      { path: '/ressources', element: <DatabasePage /> },
       { path: '/parametres', element: <PlaceholderPage title="Settings" /> },
     ],
   },

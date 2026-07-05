@@ -14,10 +14,10 @@ import {
 } from '@/components/ui/sidebar'
 
 const items = [
-  { title: 'Schema editor', url: '/', icon: Network },
-  { title: 'Simulation', url: '/flux', icon: Radio },
   { title: 'Dashboard', url: '/tableau-de-bord', icon: LayoutDashboard },
-  { title: 'Resources', url: '/ressources', icon: Database },
+  { title: 'Schema editor', url: '/', icon: Network },
+  { title: 'Database', url: '/ressources', icon: Database },
+  { title: 'Simulation', url: '/flux', icon: Radio },
   { title: 'Settings', url: '/parametres', icon: Settings },
 ]
 
