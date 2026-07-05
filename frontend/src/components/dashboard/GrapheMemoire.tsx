@@ -68,7 +68,7 @@ export function GrapheMemoire() {
 
   if (instances.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center bg-transparent p-6 text-center">
+      <div className="flex h-full items-center justify-center bg-background p-6 text-center">
         <p className="max-w-xs text-sm text-muted-foreground">
           No objects in memory yet. Start the simulation: the agents' entities
           will appear here live, with their links.
@@ -78,7 +78,7 @@ export function GrapheMemoire() {
   }
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full bg-background">
       <ReactFlow
         nodes={nodes}
         edges={edges}
