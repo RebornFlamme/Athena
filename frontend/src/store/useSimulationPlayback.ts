@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { listAppels } from '../data/appelsApi'
-import { lancerTranscription } from '../data/transcribeApi'
+import { arreterTranscription, lancerTranscription } from '../data/transcribeApi'
 import type { Appel } from '../typesSimulation'
 
 // Moteur de lecture de la simulation active (Web Audio API).
@@ -154,6 +154,10 @@ export const useSimulationPlayback = create<PlaybackState>((set, get) => ({
   couper: () => {
     nettoyer()
     set({ statut: 'arret', positionMs: 0, actifs: [], ecoutes: [] })
+    // Coupe aussi les jobs serveur (transcription + agents) : sans ça ils
+    // continueraient de tourner côté backend après l'arrêt de la lecture.
+    // Fire-and-forget — n'échoue jamais l'arrêt local si le back est KO.
+    void arreterTranscription().catch(() => {})
   },
 
   basculerEcoute: (id) => {

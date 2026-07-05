@@ -25,3 +25,13 @@ export async function lancerTranscription(appelIds?: string[]): Promise<void> {
   })
   if (!res.ok) throw new Error(`transcribe HTTP ${res.status}`)
 }
+
+/**
+ * Coupe le run serveur en cours (transcription + agents). Appelé quand on coupe
+ * la simulation — sinon les jobs continueraient de tourner côté backend.
+ * Fire-and-forget.
+ */
+export async function arreterTranscription(): Promise<void> {
+  const res = await fetch(`${httpBase()}/stop`, { method: 'POST' })
+  if (!res.ok) throw new Error(`stop HTTP ${res.status}`)
+}

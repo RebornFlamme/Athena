@@ -273,6 +273,28 @@ async def transcribe(payload: dict | None = None):
 
 
 # ---------------------------------------------------------------------------
+# Arrêt de la simulation : coupe les jobs serveur en cours
+# ---------------------------------------------------------------------------
+@app.post("/stop")
+async def stop_simulation():
+    """Coupe le run courant : stoppe les jobs en cours (transcription + agents) et
+    annule les timers encore en attente.
+
+    Appelé quand l'utilisateur coupe la simulation (« Couper »). Sans ça, les jobs
+    serveur continueraient de tourner jusqu'à leur fin naturelle même après l'arrêt
+    de la lecture navigateur. `_stop_event` est vu par les feeders de transcription
+    et par la boucle des agents (`stop_event.is_set()`).
+    """
+    global _stop_event
+    _stop_event.set()
+    for timer in _pending_timers:
+        timer.cancel()
+    _pending_timers.clear()
+    logger.info("Simulation coupée — jobs en cours (transcription + agents) arrêtés")
+    return {"status": "stopped"}
+
+
+# ---------------------------------------------------------------------------
 # Fichiers statiques
 # ---------------------------------------------------------------------------
 # Montés APRÈS les routes pour que /health, /ws et /upload soient prioritaires.
