@@ -1,5 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { useSemanticEditsDB } from '../../hooks/useJournalAgentDB'
+import type { JournalAgent } from '../../data/journalAgentApi'
 
 export interface DiffChamp {
   champ: string
@@ -15,8 +17,20 @@ export interface LigneSemantic {
   diff: DiffChamp[]
 }
 
+/** Convertit une ligne de journal d'agent (edit) en ligne d'affichage. */
+function versLigne(j: JournalAgent): LigneSemantic {
+  return {
+    id: String(j.id),
+    t: new Date(j.cree_le).toLocaleTimeString('fr-FR', { hour12: false }),
+    texte: j.texte ?? '',
+    objet: j.objet ?? '(objet)',
+    diff: (j.diff ?? []).map((d) => ({ champ: d.champ, avant: d.avant, apres: d.apres })),
+  }
+}
+
 /** Genre d'édition : ajout (vert), suppression (rouge), modification (neutre). */
 function genreDe(diff: DiffChamp[]): 'ajout' | 'suppression' | 'modif' {
+  if (diff.length === 0) return 'modif'
   if (diff.every((d) => d.avant == null && d.apres != null)) return 'ajout'
   if (diff.every((d) => d.apres == null && d.avant != null)) return 'suppression'
   return 'modif'
@@ -30,34 +44,33 @@ const PASTILLE = {
 } as const
 
 /**
- * Panneau « Semantic Layer Edit » : le journal des actions du LLM. Cliquer une
- * ligne ouvre le diff visuel de l'objet modifié (à droite). Purement
- * présentationnel — les lignes viennent des `evenements` du run (extraction LLM).
+ * Panneau « Semantic Layer Edit » : le journal des actions de l'agent LLM.
+ * Par défaut alimenté par `useSemanticEditsDB` (journal `agent_journal`, edits
+ * create/modif/suppr avec diff). Accepte aussi des `lignes` en prop (compat.
+ * câblage « run » historique). Cliquer une ligne ouvre le diff visuel à droite.
  */
 export function PanneauSemanticLayer({
   lignes,
   onSelect,
   selectionId,
 }: {
-  lignes: LigneSemantic[]
+  lignes?: LigneSemantic[]
   onSelect?: (ligne: LigneSemantic) => void
   selectionId?: string | null
 }) {
-  if (lignes.length === 0) {
-    return (
-      <aside className="flex h-full flex-col items-center justify-center gap-1 bg-card p-6 text-center">
-        <p className="text-sm font-medium text-muted-foreground">Aucune extraction pour l'instant</p>
-        <p className="text-[11px] text-muted-foreground">
-          Lance une simulation : les faits identifiés par le LLM s'afficheront ici en direct.
-        </p>
-      </aside>
-    )
-  }
+  const auto = useSemanticEditsDB()
+  const source = lignes ?? auto.map(versLigne)
 
   return (
     <aside className="flex h-full flex-col bg-card">
+      {source.length === 0 && (
+        <p className="p-4 text-sm italic leading-relaxed text-muted-foreground">
+          Aucune édition pour l'instant. Les créations et mises à jour d'objets des
+          agents apparaîtront ici au fil de la simulation.
+        </p>
+      )}
       <ScrollArea className="min-h-0 flex-1">
-        {lignes.map((l) => {
+        {source.map((l) => {
           const pastille = PASTILLE[genreDe(l.diff)]
           return (
             <button

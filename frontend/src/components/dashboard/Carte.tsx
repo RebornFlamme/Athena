@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { STATUTS, type Entite } from '../../typesAthena'
+import { STATUTS } from '../../typesAthena'
+import { useInstancesDB } from '../../hooks/useInstancesDB'
+import type { ObjectInstance } from '../../data/instancesApi'
 
 /** Fonds de carte officiel IGN (tuiles vectorielles Géoplateforme, gratuit). */
 const STYLE_IGN =
@@ -10,31 +12,30 @@ const STYLE_IGN =
 /** Centre France par défaut. */
 const CENTRE_FRANCE: [number, number] = [2.42, 46.6]
 
-function creerElementMarqueur(entite: Entite): HTMLDivElement {
+function creerElementMarqueur(instance: ObjectInstance): HTMLDivElement {
   const el = document.createElement('div')
   el.className =
     'h-4 w-4 cursor-pointer rounded-full border-2 border-white shadow-[0_1px_6px_rgba(0,0,0,0.55)]'
-  appliquerStyleMarqueur(el, entite)
+  appliquerStyleMarqueur(el, instance)
   return el
 }
 
-function appliquerStyleMarqueur(el: HTMLElement, entite: Entite) {
-  const s = STATUTS[entite.statut] ?? STATUTS.presume
+function appliquerStyleMarqueur(el: HTMLElement, instance: ObjectInstance) {
+  const s = STATUTS[instance.statut] ?? STATUTS.presume
   el.style.background = s.couleur
-  el.title = `${entite.libelle} — ${s.libelle}`
+  el.title = `${instance.libelle} — ${s.libelle}`
 }
 
 /**
- * Carte MapLibre + fonds IGN. Affiche les entités géolocalisées (marqueurs).
- * Générique : alimentée plus tard par la pipeline de traitement des appels.
+ * Carte MapLibre + fonds IGN. Affiche les instances d'objets géolocalisées
+ * (marqueurs), tous appels confondus — produites en direct par les agents LLM.
  */
 export function Carte({
-  entites = [],
   centre,
 }: {
-  entites?: Entite[]
   centre?: { lon: number | null; lat: number | null } | null
 }) {
+  const instances = useInstancesDB()
   const containerRef = useRef<HTMLDivElement>(null)
   const [map, setMap] = useState<maplibregl.Map | null>(null)
   const marqueursRef = useRef<Map<string, maplibregl.Marker>>(new Map())
@@ -73,22 +74,31 @@ export function Carte({
     const marqueurs = marqueursRef.current
     const idsVus = new Set<string>()
 
-    for (const entite of entites) {
-      if (entite.lon == null || entite.lat == null) continue
-      idsVus.add(entite.id)
-      const existant = marqueurs.get(entite.id)
+    for (const instance of instances) {
+      if (instance.lon == null || instance.lat == null) continue
+      idsVus.add(instance.id)
+      const existant = marqueurs.get(instance.id)
       if (existant) {
-        existant.setLngLat([entite.lon, entite.lat])
-        appliquerStyleMarqueur(existant.getElement(), entite)
-        existant.getPopup()?.setText(entite.libelle)
+        existant.setLngLat([instance.lon, instance.lat])
+        appliquerStyleMarqueur(existant.getElement(), instance)
+        existant.getPopup()?.setText(instance.libelle)
       } else {
-        const marker = new maplibregl.Marker({ element: creerElementMarqueur(entite) })
-          .setLngLat([entite.lon, entite.lat])
+        const marker = new maplibregl.Marker({ element: creerElementMarqueur(instance) })
+          .setLngLat([instance.lon, instance.lat])
           .setPopup(
-            new maplibregl.Popup({ offset: 14, closeButton: false }).setText(entite.libelle),
+            new maplibregl.Popup({ offset: 14, closeButton: false }).setText(instance.libelle),
           )
           .addTo(map)
-        marqueurs.set(entite.id, marker)
+        marqueurs.set(instance.id, marker)
+      }
+    }
+
+    // Recentre automatiquement sur le premier objet géolocalisé qui apparaît.
+    if (!dejaCentreRef.current && idsVus.size > 0) {
+      const premier = instances.find((i) => i.lon != null && i.lat != null)
+      if (premier?.lon != null && premier?.lat != null) {
+        map.jumpTo({ center: [premier.lon, premier.lat], zoom: 13 })
+        dejaCentreRef.current = true
       }
     }
 
@@ -98,7 +108,7 @@ export function Carte({
         marqueurs.delete(id)
       }
     }
-  }, [map, entites])
+  }, [map, instances])
 
   return <div ref={containerRef} className="absolute inset-0" />
 }

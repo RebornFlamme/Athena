@@ -14,7 +14,6 @@ import time
 import urllib.request
 
 from audio_decode import stream_pcm16k_mono
-from extraction import extraire_appel
 from stt_client import run_stt_stream
 from supabase_client import get_supabase
 
@@ -102,14 +101,6 @@ def transcribe_appel(appel: dict, stop_event: threading.Event | None = None) -> 
                 logger.error("Insert transcription KO (appel %s) : %s", appel_id, exc)
 
     logger.info("Appel %s transcrit : %d segments", appel_id, ordinal)
-
-    # Run annulé (relance) : on ne lance pas l'extraction sur un transcript partiel.
-    if stop_event is not None and stop_event.is_set():
-        return
-
-    # Extraction LLM : transcript → entités/événements liés dans Supabase
-    # (→ carte via Realtime). Non bloquant pour la transcription en cas d'échec.
-    try:
-        extraire_appel(appel, sb)
-    except Exception as exc:  # noqa: BLE001
-        logger.error("Extraction KO pour l'appel %s : %s", appel_id, exc)
+    # NB : l'analyse sémantique n'est plus faite ici. Un job agent dédié
+    # (`agent_job.run_agent`, planifié en parallèle par `main`) lit `transcriptions`
+    # au fil de l'eau et construit les `object_instances` pendant l'appel.

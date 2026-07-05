@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Appel } from '../../typesSimulation'
-import { useEvenementsDB } from '../../hooks/useEvenementsDB'
+import { useJournalAgentDB } from '../../hooks/useJournalAgentDB'
 
 function initiales(nom: string): string {
   return (
@@ -33,29 +33,30 @@ export function EnteteOperateur({ appel }: { appel: Appel }) {
   )
 }
 
-/** Libellé lisible d'un type d'événement d'extraction. */
-const LIBELLE_EVENEMENT: Record<string, string> = {
-  ENTITE_CREEE: 'Objet identifié',
-  ENTITE_MAJ: 'Mise à jour',
-  RELATION: 'Relation',
+/** Libellé lisible d'une action de l'agent (kind du journal). */
+const LIBELLE_KIND: Record<string, string> = {
+  creation: 'Création',
+  modification: 'Mise à jour',
+  suppression: 'Suppression',
+  outil: 'Outil',
 }
 
-/** Chaîne de raisonnement du LLM (journal `evenements` en direct via Realtime). */
+/** Chaîne de raisonnement de l'agent LLM (journal `agent_journal` en direct). */
 export function SectionRaisonnement({ appelId }: { appelId?: string | null }) {
-  const evenements = useEvenementsDB(appelId ?? null)
+  const journal = useJournalAgentDB(appelId ?? null)
 
   return (
     <section>
       <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         <Brain className="h-3.5 w-3.5" /> Raisonnement du LLM
-        {evenements.length > 0 && (
+        {journal.length > 0 && (
           <Badge variant="secondary" className="ml-auto h-5 px-1.5 text-[10px]">
-            {evenements.length}
+            {journal.length}
           </Badge>
         )}
       </h3>
       <div className="rounded-lg border border-dashed p-3">
-        {evenements.length === 0 ? (
+        {journal.length === 0 ? (
           <>
             <div className="space-y-2">
               <Skeleton className="h-3 w-4/5" />
@@ -63,31 +64,29 @@ export function SectionRaisonnement({ appelId }: { appelId?: string | null }) {
               <Skeleton className="h-3 w-2/3" />
             </div>
             <p className="mt-2 text-[11px] italic text-muted-foreground">
-              En attente de l'extraction — les faits identifiés s'afficheront ici pendant l'appel.
+              En attente de l'agent — son raisonnement et les objets créés s'afficheront ici pendant l'appel.
             </p>
           </>
         ) : (
           <ul className="space-y-1.5">
-            {evenements.map((ev) => {
-              const p = ev.payload ?? {}
-              const source = typeof p.extrait_source === 'string' ? p.extrait_source : null
-              const detail =
-                ev.event_type === 'RELATION'
-                  ? String(p.relation ?? 'lien')
-                  : source
-              return (
-                <li key={ev.event_id} className="flex items-start gap-2 text-xs">
-                  <Badge variant="outline" className="shrink-0 px-1.5 py-0 text-[10px]">
-                    {LIBELLE_EVENEMENT[ev.event_type] ?? ev.event_type}
-                  </Badge>
-                  {detail && (
-                    <span className="min-w-0 flex-1 text-muted-foreground">
-                      {ev.event_type === 'RELATION' ? detail : `« ${detail} »`}
-                    </span>
-                  )}
+            {journal.map((row) =>
+              row.kind === 'raisonnement' ? (
+                <li key={row.id} className="text-xs italic text-muted-foreground">
+                  {row.texte}
                 </li>
-              )
-            })}
+              ) : (
+                <li key={row.id} className="flex items-start gap-2 text-xs">
+                  <Badge variant="outline" className="shrink-0 px-1.5 py-0 text-[10px]">
+                    {LIBELLE_KIND[row.kind] ?? row.kind}
+                  </Badge>
+                  <span className="min-w-0 flex-1 text-muted-foreground">
+                    {row.objet && <span className="font-medium text-foreground">{row.objet}</span>}
+                    {row.objet && row.texte ? ' — ' : ''}
+                    {row.texte ? `« ${row.texte} »` : ''}
+                  </span>
+                </li>
+              ),
+            )}
           </ul>
         )}
       </div>

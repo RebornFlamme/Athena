@@ -12,5 +12,7 @@ key.json
 # scripts de debug local (jetables)
 debug_stt.py
 debug_job.py
+debug_agent.py
 debug_progressive.mjs
+_check.py
 key.json

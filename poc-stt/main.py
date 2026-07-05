@@ -24,6 +24,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
+from agent_job import run_agent
 from stt_client import run_stt_stream
 from supabase_client import get_supabase
 from transcribe_job import transcribe_appel
@@ -61,6 +62,12 @@ app.add_middleware(
 # transcrits simultanément (alignés sur la timeline de simulation) et non par
 # vagues de 4, on dimensionne large (1 worker par appel + marge).
 _transcribe_pool = ThreadPoolExecutor(max_workers=32)
+
+# Pool SÉPARÉ pour les jobs agent LLM (un par appel). Distinct du pool STT : un job
+# de transcription occupe son worker toute la durée réelle de l'appel (streaming),
+# donc mutualiser les deux affamerait les agents. L'agent sonde `transcriptions` et
+# écrit `object_instances` / `agent_journal` au fil de l'eau.
+_agent_pool = ThreadPoolExecutor(max_workers=16)
 
 # Suivi du run courant pour l'annuler proprement quand la simulation est relancée
 # (« Revenir au début » / re-clic « Lancer ») : on stoppe les jobs en cours et on
@@ -232,8 +239,11 @@ async def transcribe(payload: dict | None = None):
 
     appel_ids = [a["id"] for a in appels]
     if appel_ids:
-        # Recalcul : on repart d'une ardoise vierge pour ces appels.
+        # Recalcul : on repart d'une ardoise vierge pour ces appels (transcriptions
+        # + tout ce que l'agent avait produit : instances d'objets et journal).
         sb.table("transcriptions").delete().in_("appel_id", appel_ids).execute()
+        sb.table("agent_journal").delete().in_("appel_id", appel_ids).execute()
+        sb.table("object_instances").delete().in_("appel_id", appel_ids).execute()
 
     # Planification PROGRESSIVE : chaque appel est transcrit à l'instant où il
     # devient actif sur la timeline (délai = ts_debut_ms normalisé sur le plus
@@ -241,20 +251,24 @@ async def transcribe(payload: dict | None = None):
     # diffère la soumission → le pool ne réserve un worker qu'au démarrage réel du
     # job, et la charge (mémoire/CPU/streams Google) s'étale au lieu d'exploser
     # d'un coup au lancement.
+    # Deux jobs par appel, planifiés au même instant : la transcription (streaming
+    # STT → `transcriptions`) et l'agent sémantique (lit `transcriptions` → écrit
+    # `object_instances`/`agent_journal`). Ils démarrent ensemble → l'agent sonde
+    # les segments dès qu'ils tombent.
+    jobs = ((_transcribe_pool, transcribe_appel), (_agent_pool, run_agent))
     min_ts = min((a.get("ts_debut_ms") or 0) for a in appels) if appels else 0
     for appel in appels:
         delai_s = max(0, (appel.get("ts_debut_ms") or 0) - min_ts) / 1000
-        if delai_s <= 0:
-            _transcribe_pool.submit(transcribe_appel, appel, stop)
-        else:
-            timer = threading.Timer(
-                delai_s, _transcribe_pool.submit, args=(transcribe_appel, appel, stop)
-            )
-            timer.daemon = True
-            _pending_timers.append(timer)
-            timer.start()
+        for pool, fn in jobs:
+            if delai_s <= 0:
+                pool.submit(fn, appel, stop)
+            else:
+                timer = threading.Timer(delai_s, pool.submit, args=(fn, appel, stop))
+                timer.daemon = True
+                _pending_timers.append(timer)
+                timer.start()
 
-    logger.info("Transcription planifiée pour %d appel(s)", len(appels))
+    logger.info("Transcription + agent planifiés pour %d appel(s)", len(appels))
     return {"status": "scheduled", "count": len(appels)}
 
 
