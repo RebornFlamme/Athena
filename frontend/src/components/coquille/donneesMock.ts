@@ -58,7 +58,7 @@ const PRENOMS = ['Marchal', 'Lefèvre', 'Nguyen', 'Da Silva', 'Bonnet', 'Keller'
 /** Construit un équipage nommé (chef d'agrès + conducteur + équipiers). */
 function equipage(enginId: string, type: TypeEngin): PersonnelMock[] {
   const n = EQUIPAGE[type]
-  const roles = ['Chef d’agrès', 'Conducteur', 'Équipier', 'Équipier', 'Équipier', 'Équipier']
+  const roles = ['Crew leader', 'Driver', 'Crew member', 'Crew member', 'Crew member', 'Crew member']
   return Array.from({ length: n }, (_, i) => ({
     id: `${enginId}-P${i + 1}`,
     nom: PRENOMS[(enginId.length + i) % PRENOMS.length],

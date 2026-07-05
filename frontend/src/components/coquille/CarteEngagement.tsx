@@ -31,8 +31,8 @@ const CH_VICTIMES = 'coquille-victimes'
 // Zones tactiques (cercles au sol) centrées sur le sinistre. Démo : un périmètre
 // de sécurité large et une zone d'engagement rapprochée.
 const ZONES_TACTIQUES: ZoneTactique[] = [
-  { id: 'securite', centre: INCIDENT, rayon: 120, couleur: TEINTES_ZONE.securite, libelle: 'Périmètre de sécurité' },
-  { id: 'engagement', centre: INCIDENT, rayon: 55, couleur: TEINTES_ZONE.tactique, libelle: "Zone d'engagement" },
+  { id: 'securite', centre: INCIDENT, rayon: 120, couleur: TEINTES_ZONE.securite, libelle: 'Safety perimeter' },
+  { id: 'engagement', centre: INCIDENT, rayon: 55, couleur: TEINTES_ZONE.tactique, libelle: 'Engagement zone' },
 ]
 
 // Retard de départ par engin (chronologie du scénario compressée). Les engins

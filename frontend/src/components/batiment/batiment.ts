@@ -39,10 +39,10 @@ export const GRAVITE_STATUT: Record<Statut, Gravite> = {
 
 /** Libellé des niveaux de gravité (légende). */
 export const LIBELLE_GRAVITE: Record<Gravite, string> = {
-  0: 'Aucun danger',
-  1: 'Danger modéré',
-  2: 'Danger élevé',
-  3: 'Danger critique',
+  0: 'No danger',
+  1: 'Moderate danger',
+  2: 'High danger',
+  3: 'Critical danger',
 }
 
 export interface Appartement {
@@ -127,7 +127,7 @@ export const NB_ETAGES = 9 // RDC + 8 étages (R+8)
 export const HAUTEUR_ETAGE_M = 3.0 // hauteur d'un niveau (m)
 export const HAUTEUR_TOTALE_M = NB_ETAGES * HAUTEUR_ETAGE_M // 27 m (≈ hauteur réelle R+8)
 
-const ORDINAL = ['RDC', '1er', '2e', '3e', '4e', '5e', '6e', '7e', '8e']
+const ORDINAL = ['GF', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th']
 
 /** Ordre de gravité pour agréger le statut d'un étage. */
 const GRAVITE: Statut[] = ['feu', 'rouge', 'jaune', 'vert', 'blanc', 'normal', 'commerce']
@@ -154,39 +154,39 @@ type DefZone = { code: string; facade: Appartement['facade']; statut: Statut; de
  */
 const NIVEAUX: { type: 'rdc' | 'habitation'; zones: DefZone[] }[] = [
   { type: 'rdc', zones: [
-    { code: 'Banque', facade: 'haussmann', statut: 'commerce', detail: 'Agence bancaire (rez, bd Haussmann) — accueil des impliqués' },
-    { code: 'Café', facade: 'peletier', statut: 'commerce', detail: 'Café + hall d’entrée principal (rue Le Peletier)' },
+    { code: 'Banque', facade: 'haussmann', statut: 'commerce', detail: 'Bank branch (ground floor, bd Haussmann) — reception for those involved' },
+    { code: 'Café', facade: 'peletier', statut: 'commerce', detail: 'Café + main entrance hall (rue Le Peletier)' },
   ] },
   { type: 'habitation', zones: [
-    { code: '1-Acc', facade: 'peletier', statut: 'normal', detail: 'Accueil du hackathon — évacué' },
-    { code: '1-Bur', facade: 'cour', statut: 'normal', detail: 'Bureaux — évacués' },
+    { code: '1-Acc', facade: 'peletier', statut: 'normal', detail: 'Hackathon reception — evacuated' },
+    { code: '1-Bur', facade: 'cour', statut: 'normal', detail: 'Offices — evacuated' },
   ] },
   { type: 'habitation', zones: [
-    { code: 'Serveurs', facade: 'cour', statut: 'feu', detail: 'FOYER — lounge de recharge & baie serveurs (départ de feu ; effondrement partiel du plancher 03:10)' },
-    { code: 'Détente', facade: 'peletier', statut: 'feu', detail: 'Espace détente — embrasement ; cage d’escalier enfumée (puits de lumière = cheminée)' },
+    { code: 'Serveurs', facade: 'cour', statut: 'feu', detail: 'SEAT OF FIRE — charging lounge & server rack (fire origin; partial floor collapse 03:10)' },
+    { code: 'Détente', facade: 'peletier', statut: 'feu', detail: 'Lounge — fully involved; smoke-filled stairwell (light well = chimney)' },
   ] },
   { type: 'habitation', zones: [
-    { code: 'VS1', facade: 'peletier', statut: 'vert', detail: '2 étudiants à la fenêtre — sauvetage échelle #1 (02:52)', victimeId: 'VS1' },
-    { code: 'VS4', facade: 'cour', statut: 'jaune', detail: '2 étudiants breakout, 1 intoxiqué — feu étendu au 3e (03:09), sauvetage #6 pendant le MAYDAY (03:12)', victimeId: 'VS4' },
+    { code: 'VS1', facade: 'peletier', statut: 'vert', detail: '2 students at the window — ladder rescue #1 (02:52)', victimeId: 'VS1' },
+    { code: 'VS4', facade: 'cour', statut: 'jaune', detail: '2 breakout students, 1 with smoke inhalation — fire spread to 3rd floor (03:09), rescue #6 during the MAYDAY (03:12)', victimeId: 'VS4' },
   ] },
   { type: 'habitation', zones: [
-    { code: '4-BkN', facade: 'cour', statut: 'normal', detail: 'Salle breakout nord — évacuée' },
-    { code: '4-BkS', facade: 'haussmann', statut: 'normal', detail: 'Salle breakout sud — évacuée' },
+    { code: '4-BkN', facade: 'cour', statut: 'normal', detail: 'North breakout room — evacuated' },
+    { code: '4-BkS', facade: 'haussmann', statut: 'normal', detail: 'South breakout room — evacuated' },
   ] },
   { type: 'habitation', zones: [
-    { code: 'VS5', facade: 'cour', statut: 'rouge', detail: 'Étudiant en arrêt cardiaque (fumée maximale au sommet) — extrait, CPR, RACS 03:31', victimeId: 'VS5' },
-    { code: 'VS6', facade: 'cour', statut: 'blanc', detail: '~16 étudiants réfugiés dans le loft — escortés par l’escalier dégagé (03:38, cagoules)', victimeId: 'VS6' },
-    { code: 'VS2', facade: 'peletier', statut: 'jaune', detail: '3 étudiants à la verrière du loft (1 jaune) — sauvetage échelle #2 (02:56)', victimeId: 'VS2' },
-    { code: 'VS3', facade: 'haussmann', statut: 'vert', detail: '4 étudiants sur la corniche mansardée (côté Haussmann) — nacelle #4 (03:05)', victimeId: 'VS3' },
+    { code: 'VS5', facade: 'cour', statut: 'rouge', detail: 'Student in cardiac arrest (peak smoke at the top) — extracted, CPR, ROSC 03:31', victimeId: 'VS5' },
+    { code: 'VS6', facade: 'cour', statut: 'blanc', detail: '~16 students sheltering in the loft — escorted down the cleared stairwell (03:38, smoke hoods)', victimeId: 'VS6' },
+    { code: 'VS2', facade: 'peletier', statut: 'jaune', detail: '3 students at the loft skylight (1 yellow) — ladder rescue #2 (02:56)', victimeId: 'VS2' },
+    { code: 'VS3', facade: 'haussmann', statut: 'vert', detail: '4 students on the mansard cornice (Haussmann side) — aerial platform #4 (03:05)', victimeId: 'VS3' },
   ] },
   { type: 'habitation', zones: [
-    { code: '6-Log', facade: 'peletier', statut: 'normal', detail: 'Bureaux / logements — évacués' },
+    { code: '6-Log', facade: 'peletier', statut: 'normal', detail: 'Offices / dwellings — evacuated' },
   ] },
   { type: 'habitation', zones: [
-    { code: '7-Log', facade: 'peletier', statut: 'normal', detail: 'Bureaux / logements — évacués' },
+    { code: '7-Log', facade: 'peletier', statut: 'normal', detail: 'Offices / dwellings — evacuated' },
   ] },
   { type: 'habitation', zones: [
-    { code: '8-Log', facade: 'peletier', statut: 'normal', detail: 'Combles / logements — évacués' },
+    { code: '8-Log', facade: 'peletier', statut: 'normal', detail: 'Attic / dwellings — evacuated' },
   ] },
 ]
 
@@ -226,13 +226,13 @@ export const COULEUR_STATUT: Record<Statut, string> = {
 }
 
 export const LIBELLE_STATUT: Record<Statut, string> = {
-  feu: 'Feu',
-  rouge: 'Victime — urgence absolue',
-  jaune: 'Victime — urgent',
-  vert: 'Victime — relatif',
-  blanc: 'Indemne / impliqué',
-  normal: 'Évacué / RAS',
-  commerce: 'Commerce (RDC)',
+  feu: 'Fire',
+  rouge: 'Victim — absolute emergency',
+  jaune: 'Victim — urgent',
+  vert: 'Victim — relative',
+  blanc: 'Uninjured / involved',
+  normal: 'Evacuated / all clear',
+  commerce: 'Shop (ground floor)',
 }
 
 /** Légende (ordre d'affichage), limitée aux statuts présents dans le bâtiment. */

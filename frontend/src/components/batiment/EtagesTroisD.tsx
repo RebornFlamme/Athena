@@ -209,7 +209,7 @@ export function EtagesTroisD({ bearing = 0 }: { bearing?: number }) {
     <div className="absolute inset-0">
       <div ref={hostRef} className="absolute inset-0" />
       <div className="pointer-events-none absolute left-3 top-3 rounded-md border bg-background/90 px-3 py-2 text-xs text-muted-foreground shadow-sm">
-        Glisser pour tourner · molette pour zoomer · survoler / cliquer un étage
+        Drag to rotate · scroll to zoom · hover / click a floor
       </div>
       {info && (
         <div className="absolute bottom-3 left-3 w-72 rounded-lg border bg-background/95 p-3 shadow-lg">
@@ -219,7 +219,7 @@ export function EtagesTroisD({ bearing = 0 }: { bearing?: number }) {
               style={{ background: COULEUR_STATUT[info.statutEtage] }}
             />
             <span className="text-sm font-semibold">
-              {info.label} {info.type === 'rdc' ? '— rez-de-chaussée' : ''}
+              {info.label} {info.type === 'rdc' ? '— ground floor' : ''}
             </span>
           </div>
           <ul className="space-y-0.5 text-xs">

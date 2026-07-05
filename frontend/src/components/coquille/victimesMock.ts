@@ -15,10 +15,10 @@ export const COULEUR_TRIAGE: Record<Triage, string> = {
 }
 
 export const LIBELLE_TRIAGE: Record<Triage, string> = {
-  rouge: 'Urgence absolue',
+  rouge: 'Immediate',
   jaune: 'Urgent',
-  vert: 'Relatif',
-  blanc: 'Impliqué / indemne',
+  vert: 'Delayed',
+  blanc: 'Involved / unharmed',
 }
 
 export interface VictimeMock {
@@ -31,19 +31,19 @@ export interface VictimeMock {
 }
 
 const DEF: { id: string; x: number; y: number; etage: number; triage: Triage; label: string; persons: number }[] = [
-  { id: 'V01', x: 12, y: 16, etage: 5, triage: 'vert', label: 'Leïla Benali + 2 enfants — 16 Le Peletier (5e)', persons: 3 },
-  { id: 'V02', x: 12, y: 20, etage: 4, triage: 'vert', label: 'Roger Fabre, 82 — 18 Le Peletier (4e)', persons: 1 },
-  { id: 'V03', x: 8, y: 15, etage: 6, triage: 'vert', label: 'Dylan Girard, 24 — 16 Le Peletier (6e)', persons: 1 },
-  { id: 'V04', x: 14, y: 20, etage: 5, triage: 'vert', label: 'Fatima Belkacem, 67 — 18 Le Peletier (5e)', persons: 1 },
-  { id: 'V05', x: 10, y: 13, etage: 3, triage: 'vert', label: 'Théo Marchal + Emma Costa — 16 Le Peletier (3e)', persons: 2 },
-  { id: 'V06', x: 14, y: 22, etage: 5, triage: 'rouge', label: 'Mme Petit-Roux, 84 — 18 Le Peletier (arrêt cardiaque)', persons: 1 },
-  { id: 'V07', x: 12, y: 24, etage: 2, triage: 'blanc', label: 'Bruno Keller, 45 — 18 Le Peletier (auto-évacué)', persons: 1 },
-  { id: 'VS1', x: -4, y: 5, etage: 3, triage: 'vert', label: '2 étudiants — 14, fenêtre 3e', persons: 2 },
-  { id: 'VS2', x: 2, y: 0, etage: 5, triage: 'jaune', label: '3 étudiants — 14, verrière loft 5e (1 jaune)', persons: 3 },
-  { id: 'VS3', x: 8, y: -8, etage: 5, triage: 'vert', label: '4 étudiants — 14, corniche 5e (Haussmann)', persons: 4 },
-  { id: 'VS4', x: -6, y: -2, etage: 3, triage: 'jaune', label: '2 étudiants — 14, breakout 3e (1 intoxiqué)', persons: 2 },
-  { id: 'VS5', x: 6, y: 6, etage: 5, triage: 'rouge', label: 'Étudiant en arrêt cardiaque — 14, loft 5e', persons: 1 },
-  { id: 'VS6', x: 0, y: 9, etage: 5, triage: 'blanc', label: '~16 étudiants réfugiés — 14, loft 5e', persons: 16 },
+  { id: 'V01', x: 12, y: 16, etage: 5, triage: 'vert', label: 'Leïla Benali + 2 children — 16 Le Peletier (5th floor)', persons: 3 },
+  { id: 'V02', x: 12, y: 20, etage: 4, triage: 'vert', label: 'Roger Fabre, 82 — 18 Le Peletier (4th floor)', persons: 1 },
+  { id: 'V03', x: 8, y: 15, etage: 6, triage: 'vert', label: 'Dylan Girard, 24 — 16 Le Peletier (6th floor)', persons: 1 },
+  { id: 'V04', x: 14, y: 20, etage: 5, triage: 'vert', label: 'Fatima Belkacem, 67 — 18 Le Peletier (5th floor)', persons: 1 },
+  { id: 'V05', x: 10, y: 13, etage: 3, triage: 'vert', label: 'Théo Marchal + Emma Costa — 16 Le Peletier (3rd floor)', persons: 2 },
+  { id: 'V06', x: 14, y: 22, etage: 5, triage: 'rouge', label: 'Mrs Petit-Roux, 84 — 18 Le Peletier (cardiac arrest)', persons: 1 },
+  { id: 'V07', x: 12, y: 24, etage: 2, triage: 'blanc', label: 'Bruno Keller, 45 — 18 Le Peletier (self-evacuated)', persons: 1 },
+  { id: 'VS1', x: -4, y: 5, etage: 3, triage: 'vert', label: '2 students — 14, 3rd-floor window', persons: 2 },
+  { id: 'VS2', x: 2, y: 0, etage: 5, triage: 'jaune', label: '3 students — 14, 5th-floor loft skylight (1 yellow)', persons: 3 },
+  { id: 'VS3', x: 8, y: -8, etage: 5, triage: 'vert', label: '4 students — 14, 5th-floor cornice (Haussmann)', persons: 4 },
+  { id: 'VS4', x: -6, y: -2, etage: 3, triage: 'jaune', label: '2 students — 14, 3rd-floor breakout (1 smoke inhalation)', persons: 2 },
+  { id: 'VS5', x: 6, y: 6, etage: 5, triage: 'rouge', label: 'Student in cardiac arrest — 14, 5th-floor loft', persons: 1 },
+  { id: 'VS6', x: 0, y: 9, etage: 5, triage: 'blanc', label: '~16 students sheltering — 14, 5th-floor loft', persons: 16 },
 ]
 
 export const VICTIMES: VictimeMock[] = DEF.map((d) => ({

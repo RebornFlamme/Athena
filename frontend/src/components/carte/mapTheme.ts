@@ -19,9 +19,9 @@ import type { StyleSpecification } from 'maplibre-gl'
 export type ThemeKey = 'tactique' | 'osm' | 'douce'
 
 export const THEMES_UI: { key: ThemeKey; label: string }[] = [
-  { key: 'tactique', label: 'Tactique' },
+  { key: 'tactique', label: 'Tactical' },
   { key: 'osm', label: 'OSM' },
-  { key: 'douce', label: 'Douce' },
+  { key: 'douce', label: 'Soft' },
 ]
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

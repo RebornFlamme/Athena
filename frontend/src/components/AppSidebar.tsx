@@ -20,7 +20,7 @@ const items = [
   { title: 'Schema editor', url: '/', icon: Network },
   { title: 'Database', url: '/ressources', icon: Database },
   { title: 'Simulation', url: '/flux', icon: Radio },
-  { title: 'Coquille', url: '/coquille', icon: Truck },
+  { title: 'Vehicles', url: '/coquille', icon: Truck },
   { title: 'Settings', url: '/parametres', icon: Settings },
 ]
 

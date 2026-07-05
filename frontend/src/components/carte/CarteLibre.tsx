@@ -115,30 +115,30 @@ function Touche({ children }: { children: ReactNode }) {
 /** Panneau des raccourcis, calqué sur ceux de Google Earth. */
 function AideRaccourcis({ onFermer }: { onFermer: () => void }) {
   const lignes: { action: string; touches: ReactNode }[] = [
-    { action: 'Se déplacer', touches: <>Flèches <span className="text-muted-foreground">ou</span> glisser</> },
-    { action: 'Zoomer', touches: <>Molette · <Touche>Page ↑</Touche> · double-clic</> },
-    { action: 'Dézoomer', touches: <><Touche>Page ↓</Touche> · double-clic droit</> },
-    { action: 'Pivoter', touches: <><Touche>Maj</Touche> + <Touche>←</Touche>/<Touche>→</Touche> · clic droit / <Touche>Ctrl</Touche> + glisser</> },
-    { action: 'Incliner', touches: <><Touche>Maj</Touche> + <Touche>↑</Touche>/<Touche>↓</Touche> · clic droit / <Touche>Ctrl</Touche> + glisser</> },
-    { action: 'Vue vers le nord', touches: <Touche>N</Touche> },
-    { action: 'Vue de dessus', touches: <Touche>U</Touche> },
-    { action: 'Réinitialiser la vue', touches: <Touche>R</Touche> },
-    { action: 'Basculer 2D / 3D', touches: <Touche>O</Touche> },
-    { action: 'Centrer sur le bâtiment', touches: <Touche>C</Touche> },
-    { action: 'Vue étages', touches: <Touche>E</Touche> },
-    { action: '3D interactive', touches: <Touche>I</Touche> },
-    { action: 'Stopper le mouvement', touches: <Touche>Espace</Touche> },
-    { action: 'Afficher cette aide', touches: <Touche>?</Touche> },
+    { action: 'Move', touches: <>Arrows <span className="text-muted-foreground">or</span> drag</> },
+    { action: 'Zoom in', touches: <>Wheel · <Touche>Page ↑</Touche> · double-click</> },
+    { action: 'Zoom out', touches: <><Touche>Page ↓</Touche> · right double-click</> },
+    { action: 'Rotate', touches: <><Touche>Shift</Touche> + <Touche>←</Touche>/<Touche>→</Touche> · right-click / <Touche>Ctrl</Touche> + drag</> },
+    { action: 'Tilt', touches: <><Touche>Shift</Touche> + <Touche>↑</Touche>/<Touche>↓</Touche> · right-click / <Touche>Ctrl</Touche> + drag</> },
+    { action: 'Face north', touches: <Touche>N</Touche> },
+    { action: 'Top view', touches: <Touche>U</Touche> },
+    { action: 'Reset view', touches: <Touche>R</Touche> },
+    { action: 'Toggle 2D / 3D', touches: <Touche>O</Touche> },
+    { action: 'Center on building', touches: <Touche>C</Touche> },
+    { action: 'Floors view', touches: <Touche>E</Touche> },
+    { action: 'Interactive 3D', touches: <Touche>I</Touche> },
+    { action: 'Stop movement', touches: <Touche>Space</Touche> },
+    { action: 'Show this help', touches: <Touche>?</Touche> },
   ]
   return (
     <Card className="absolute bottom-10 right-14 w-80 max-w-[calc(100vw-4rem)] p-0 shadow-lg">
       <div className="flex items-center justify-between border-b px-3 py-2">
-        <span className="text-sm font-semibold">Contrôles (façon Google Earth)</span>
+        <span className="text-sm font-semibold">Controls (Google Earth style)</span>
         <button
           type="button"
           onClick={onFermer}
           className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-          aria-label="Fermer"
+          aria-label="Close"
         >
           <X className="size-4" />
         </button>
@@ -161,7 +161,7 @@ function AideRaccourcis({ onFermer }: { onFermer: () => void }) {
 /** Sélecteur de thème de fond de carte (segmenté, laissé visible dans la carte). */
 function SelecteurTheme({ theme, onChange }: { theme: ThemeKey; onChange: (t: ThemeKey) => void }) {
   return (
-    <div className="flex overflow-hidden rounded-md border bg-background/95 shadow-md" role="group" aria-label="Thème de carte">
+    <div className="flex overflow-hidden rounded-md border bg-background/95 shadow-md" role="group" aria-label="Map theme">
       {THEMES_UI.map((t) => (
         <button
           key={t.key}
@@ -544,10 +544,10 @@ export function CarteLibre({ onCarte }: { onCarte?: (map: maplibregl.Map) => voi
               size="sm"
               onClick={() => setIs3D((v) => !v)}
               className="gap-2 shadow-md"
-              title={is3D ? 'Repasser en vue 2D' : 'Passer en vue 3D'}
+              title={is3D ? 'Back to 2D' : 'Switch to 3D'}
             >
               {is3D ? <Square className="size-4" /> : <Box className="size-4" />}
-              {is3D ? 'Vue 2D' : 'Vue 3D'}
+              {is3D ? '2D view' : '3D view'}
             </Button>
 
             <SelecteurTheme theme={theme} onChange={setTheme} />
@@ -562,10 +562,10 @@ export function CarteLibre({ onCarte }: { onCarte?: (map: maplibregl.Map) => voi
               size="sm"
               onClick={() => setEtages((v) => !v)}
               className="gap-2 shadow-md"
-              title="Découpe par étages sur la carte (touche E)"
+              title="Floor slicing on the map (E key)"
             >
               <Building2 className="size-4" />
-              Étages
+              Floors
             </Button>
           )}
           <Button
@@ -574,10 +574,10 @@ export function CarteLibre({ onCarte }: { onCarte?: (map: maplibregl.Map) => voi
             size="sm"
             onClick={() => (interactif3D ? setInteractif3D(false) : ouvrir3DInteractif())}
             className="gap-2 shadow-md"
-            title="Bâtiment éclaté interactif (touche I)"
+            title="Interactive exploded building (I key)"
           >
             <Boxes className="size-4" />
-            {interactif3D ? 'Fermer' : '3D interactive'}
+            {interactif3D ? 'Close' : 'Interactive 3D'}
           </Button>
         </div>
 
@@ -585,7 +585,7 @@ export function CarteLibre({ onCarte }: { onCarte?: (map: maplibregl.Map) => voi
           <Card className="w-60 space-y-2.5 p-3 shadow-md">
             <div className="space-y-1">
               <Label htmlFor="et-eclat" className="text-xs">
-                Éclatement — {optEtages.explosion.toFixed(1)} m
+                Explosion — {optEtages.explosion.toFixed(1)} m
               </Label>
               <input
                 id="et-eclat"
@@ -600,7 +600,7 @@ export function CarteLibre({ onCarte }: { onCarte?: (map: maplibregl.Map) => voi
             </div>
             <div className="space-y-1">
               <Label htmlFor="et-sol" className="text-xs">
-                Transparence des sols — {Math.round((1 - optEtages.opaciteSol) * 100)} %
+                Floor transparency — {Math.round((1 - optEtages.opaciteSol) * 100)} %
               </Label>
               <input
                 id="et-sol"
@@ -616,7 +616,7 @@ export function CarteLibre({ onCarte }: { onCarte?: (map: maplibregl.Map) => voi
 
             <div className="space-y-1 border-t pt-2">
               <Label htmlFor="et-mur-c" className="text-xs">
-                Couleur des murs latéraux
+                Side wall color
               </Label>
               <div className="flex items-center gap-2">
                 <input
@@ -631,7 +631,7 @@ export function CarteLibre({ onCarte }: { onCarte?: (map: maplibregl.Map) => voi
             </div>
             <div className="space-y-1">
               <Label htmlFor="et-mur-o" className="text-xs">
-                Transparence des murs — {Math.round((1 - optEtages.opaciteMur) * 100)} %
+                Wall transparency — {Math.round((1 - optEtages.opaciteMur) * 100)} %
               </Label>
               <input
                 id="et-mur-o"
@@ -647,7 +647,7 @@ export function CarteLibre({ onCarte }: { onCarte?: (map: maplibregl.Map) => voi
 
             <div className="flex items-center justify-between border-t pt-2">
               <Label htmlFor="et-aretes" className="text-xs">
-                Arêtes
+                Edges
               </Label>
               <input
                 id="et-aretes"
@@ -659,7 +659,7 @@ export function CarteLibre({ onCarte }: { onCarte?: (map: maplibregl.Map) => voi
             </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="et-clignote" className="text-xs">
-                Clignotement danger
+                Danger blinking
               </Label>
               <input
                 id="et-clignote"
@@ -687,7 +687,7 @@ export function CarteLibre({ onCarte }: { onCarte?: (map: maplibregl.Map) => voi
           <Card className="w-56 space-y-3 p-3 shadow-md">
             <div className="space-y-1.5">
               <Label htmlFor="couleur-bati" className="text-xs">
-                Couleur des bâtiments
+                Building color
               </Label>
               <div className="flex items-center gap-2">
                 <input
@@ -702,7 +702,7 @@ export function CarteLibre({ onCarte }: { onCarte?: (map: maplibregl.Map) => voi
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="transparence-bati" className="text-xs">
-                Transparence — {Math.round(transparence * 100)} %
+                Transparency — {Math.round(transparence * 100)} %
               </Label>
               <input
                 id="transparence-bati"
@@ -726,8 +726,8 @@ export function CarteLibre({ onCarte }: { onCarte?: (map: maplibregl.Map) => voi
         size="icon"
         onClick={() => setAide((v) => !v)}
         className="absolute bottom-10 right-3 size-9 shadow-md"
-        title="Raccourcis clavier (touche ?)"
-        aria-label="Afficher les raccourcis clavier"
+        title="Keyboard shortcuts (? key)"
+        aria-label="Show keyboard shortcuts"
       >
         <Keyboard className="size-4" />
       </Button>

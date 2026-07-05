@@ -7,10 +7,10 @@ export type ModeEtiquette = 'toit' | 'live' | 'flottante' | 'aucune'
 export type Phase = 'idle' | 'chargement' | 'roule' | 'arrive'
 
 const MODES: { key: ModeEtiquette; label: string; aide: string }[] = [
-  { key: 'toit', label: 'Nom sur le toit', aide: 'Le nom est posé en 3D au-dessus du toit du pavé (reste lisible).' },
-  { key: 'live', label: 'Pointage live', aide: 'Une étiquette qui suit l’engin en direct, au-dessus, face à l’écran.' },
-  { key: 'flottante', label: 'Étiquette flottante', aide: 'Une pastille qui flotte plus haut au-dessus de l’engin.' },
-  { key: 'aucune', label: 'Aucune', aide: 'Pavés seuls, sans nom.' },
+  { key: 'toit', label: 'Roof label', aide: 'The name sits in 3D above the roof of the vehicle (stays readable).' },
+  { key: 'live', label: 'Live tag', aide: 'A label that tracks the vehicle live, above it, facing the screen.' },
+  { key: 'flottante', label: 'Floating label', aide: 'A pill floating higher above the vehicle.' },
+  { key: 'aucune', label: 'None', aide: 'Blocks only, no name.' },
 ]
 
 /** Panneau de contrôle de la coquille (à droite de la carte). */
@@ -43,28 +43,28 @@ export function PanneauEngins({
   return (
     <Card className="absolute right-3 top-3 w-72 space-y-3 p-3 shadow-lg">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold">Engagement des engins</span>
+        <span className="text-sm font-semibold">Vehicle deployment</span>
         <span className="text-[11px] text-muted-foreground">
-          {phase === 'idle' && 'en attente'}
-          {phase === 'chargement' && 'calcul des trajets…'}
+          {phase === 'idle' && 'idle'}
+          {phase === 'chargement' && 'computing routes…'}
           {phase === 'roule' && 'en route'}
-          {phase === 'arrive' && 'sur les lieux'}
+          {phase === 'arrive' && 'on scene'}
         </span>
       </div>
 
       <div className="flex gap-3 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1">
-          <Boxes className="size-3.5" /> {nbEngins} engins
+          <Boxes className="size-3.5" /> {nbEngins} vehicles
         </span>
         <span className="inline-flex items-center gap-1">
-          <Users className="size-3.5" /> {nbPerso} personnels
+          <Users className="size-3.5" /> {nbPerso} personnel
         </span>
       </div>
 
       <div className="flex gap-2">
         <Button size="sm" className="flex-1 gap-1.5" onClick={onDeclencher} disabled={enCours}>
           <Play className="size-4" />
-          {phase === 'arrive' ? 'Rejouer' : "Déclencher l'appel"}
+          {phase === 'arrive' ? 'Replay' : 'Trigger the call'}
         </Button>
         <Button size="sm" variant="secondary" className="gap-1.5" onClick={onReset} disabled={phase === 'idle'}>
           <RotateCcw className="size-4" />
@@ -72,7 +72,7 @@ export function PanneauEngins({
       </div>
 
       <div className="space-y-1.5 border-t pt-2">
-        <span className="text-xs font-medium">Affichage des noms</span>
+        <span className="text-xs font-medium">Name display</span>
         <div className="grid grid-cols-2 gap-1.5">
           {MODES.map((m) => (
             <button
@@ -97,7 +97,7 @@ export function PanneauEngins({
       <div className="space-y-1.5 border-t pt-2">
         <label className="flex cursor-pointer items-center justify-between text-xs font-medium">
           <span className="inline-flex items-center gap-1.5">
-            <HeartPulse className="size-3.5" /> Victimes ({nbVictimes})
+            <HeartPulse className="size-3.5" /> Victims ({nbVictimes})
           </span>
           <input
             type="checkbox"
@@ -109,7 +109,7 @@ export function PanneauEngins({
         {victimes && (
           <p className="flex items-center gap-1.5 text-[11px] leading-snug text-muted-foreground">
             <span className="inline-block size-2.5 shrink-0 rounded-full bg-blue-500 ring-1 ring-white" />
-            Disques bleus à plat — ils s'élèvent à leur étage en vue 3D.
+            Flat blue disks — they rise to their floor in 3D view.
           </p>
         )}
       </div>

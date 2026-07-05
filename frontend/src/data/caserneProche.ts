@@ -24,7 +24,7 @@ function versCaserne(e: ElementOsm): Caserne | null {
   const lat = e.type === 'node' ? e.lat : e.center?.lat
   const lon = e.type === 'node' ? e.lon : e.center?.lon
   if (lat == null || lon == null) return null
-  return { lon, lat, nom: e.tags?.name ?? 'Caserne' }
+  return { lon, lat, nom: e.tags?.name ?? 'Fire station' }
 }
 
 /** Distance approx (m) entre deux points, pour comparer (pas besoin d'exact). */
