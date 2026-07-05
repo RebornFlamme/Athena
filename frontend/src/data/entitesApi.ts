@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase'
 import type { Entite } from '../typesAthena'
 
 // Couche d'accès Supabase des entités extraites (produites par le job LLM
-// serveur : transcript → boucle d'outils Claude → entites/evenements). Le
+// serveur : transcript → boucle d'outils LLM → entites/evenements). Le
 // dashboard est un pur lecteur : select initial + abonnement Realtime.
 //
 // Les entités sont rattachées à l'appel source (`appel_id`, migration 0005) et

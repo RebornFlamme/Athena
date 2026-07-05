@@ -36,9 +36,9 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      # Extraction LLM (job serveur post-transcription) — clé Anthropic, saisie à
-      # la création du service (Environment → renseigner). Modèle surchargeable.
-      - key: ANTHROPIC_API_KEY
+      # Agent sémantique (job serveur) — clé API Gemini, saisie à la création
+      # du service (Environment → renseigner). Modèle surchargeable.
+      - key: GEMINI_API_KEY
         sync: false
-      - key: EXTRACTION_MODEL
-        value: claude-haiku-4-5
+      - key: AGENT_MODEL
+        value: gemini-3.5-flash

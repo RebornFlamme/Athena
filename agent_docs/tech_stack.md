@@ -33,7 +33,7 @@ npm install maplibre-gl @mapbox/mapbox-gl-draw @turf/turf zod
 | Service | Usage | Endpoint / note |
 |---|---|---|
 | Gladia | STT streaming français (~300 ms) | websocket ; clé côté Edge Function uniquement |
-| Claude API | extraction structurée (tool use / structured output) | modèle famille Claude ; schéma JSON à champs optionnels |
+| Gemini API | extraction structurée (function calling) | modèle Gemini Flash ; function declarations OpenAPI |
 | IGN Géoplateforme | fonds de carte (tuiles vectorielles) | `data.geopf.fr` — gratuit, sans clé |
 | IGN Géocodage | validation d'adresse + score | `data.geopf.fr/geocodage` — ⚠ successeur de l'ancienne api-adresse.data.gouv.fr |
 
@@ -42,7 +42,7 @@ npm install maplibre-gl @mapbox/mapbox-gl-draw @turf/turf zod
 |---|---|---|
 | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | `frontend/.env.local` (+ `.env.example` versionné) | non (bridées par RLS) |
 | `GLADIA_API_KEY` | `supabase secrets set` | **oui** |
-| `ANTHROPIC_API_KEY` | `supabase secrets set` | **oui** |
+| `GEMINI_API_KEY` | `supabase secrets set` / Render env | **oui** |
 
 ## Déploiement
 - **Démo :** Vercel ou Netlify (build statique Vite) + Supabase cloud. Données fictives uniquement.

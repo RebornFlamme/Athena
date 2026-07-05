@@ -1,7 +1,7 @@
 """Géocodage via la Géoplateforme IGN (data.geopf.fr) — API publique, sans clé.
 
 Portage serveur de `frontend/src/data/geocodageIgn.ts`. Utilisé comme outil par
-l'extraction LLM : Claude géocode une adresse avant de positionner une entité.
+l'extraction LLM : l'agent géocode une adresse avant de positionner une entité.
 Règle produit : l'IA propose, l'humain valide — un score < SEUIL_FIABLE signale
 une adresse « à confirmer ».
 """

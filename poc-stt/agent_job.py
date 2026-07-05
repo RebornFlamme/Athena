@@ -7,8 +7,8 @@ tourne EN CONTINU pendant l'appel :
 
     1. charge une fois le schéma dessiné (`entities`/`attributes`) dans son prompt ;
     2. sonde `transcriptions` toutes les POLL_SEC ;
-    3. à chaque nouveau lot de segments, lance une boucle d'outils Claude qui
-       interroge les instances existantes (dédup inter-appels), puis crée / met à
+    3. à chaque nouveau lot de segments, lance une boucle de function calling Gemini
+       qui interroge les instances existantes (dédup inter-appels), puis crée / met à
        jour des `object_instances` et journalise `agent_journal` (raisonnement +
        edits) — d'où l'apparition en direct sur la carte, le panneau Objets, la
        couche sémantique et la trace du Sheet.
@@ -19,37 +19,26 @@ contexte. La base est la source de vérité — et c'est ce qui rend la dédup
 inter-appels possible.
 """
 
-import json
 import logging
 import os
 import threading
 import time
 
-import anthropic
+import google.generativeai as genai
+from google.protobuf.json_format import MessageToDict
 
-from agent_tools import OUTILS, OutilsAgent, charger_schema_text
+from agent_tools import GEMINI_TOOLS, OutilsAgent, charger_schema_text
 from supabase_client import get_supabase
 
 logger = logging.getLogger("poc-stt.agent")
 
-# Modèle configurable ; défaut Haiku 4.5 (rapide/économe) — plusieurs allers-retours
-# d'outils par lot de segments.
-AGENT_MODEL = os.getenv("AGENT_MODEL", "claude-haiku-4-5")
+# Modèle configurable ; défaut Gemini 2.5 Flash (rapide/économe) — plusieurs
+# allers-retours de function calling par lot de segments.
+AGENT_MODEL = os.getenv("AGENT_MODEL", "gemini-3.5-flash")
 
-MAX_TOURS = 12       # tours d'outils max par lot de segments
+MAX_TOURS = 12       # tours de function calling max par lot de segments
 POLL_SEC = 4.0       # cadence de sondage de `transcriptions`
 IDLE_LIMIT = 12      # sondages vides consécutifs avant de clore (après ≥ 1 segment)
-
-_client: anthropic.Anthropic | None = None
-
-
-def _get_client() -> anthropic.Anthropic:
-    """Client Anthropic (init paresseuse) — n'impose pas ANTHROPIC_API_KEY à l'import."""
-    global _client
-    if _client is None:
-        _client = anthropic.Anthropic()
-    return _client
-
 
 SYSTEME = """You are Athena's semantic agent, a real-time crisis-management \
 dashboard for firefighters. ONE emergency call is assigned to you: you receive its \
@@ -94,50 +83,71 @@ def _nouveaux_segments(sb, appel_id: str, apres_ordinal: int) -> list[dict]:
     return res.data or []
 
 
-def _tour_outils(outils: OutilsAgent, systeme: str, messages: list, appel_id: str, stop_event) -> None:
-    """Boucle d'outils Claude sur un lot de segments (journalise raisonnement + writes)."""
+def _tour_outils(
+    modele: genai.GenerativeModel,
+    outils: OutilsAgent,
+    messages: list,
+    appel_id: str,
+    stop_event: threading.Event | None,
+) -> None:
+    """Boucle de function calling Gemini sur un lot de segments.
+
+    Chaque tour : envoie l'historique complet (`messages`) au modèle. Si la réponse
+    contient un `function_call`, on exécute l'outil et on ajoute la réponse à
+    l'historique pour le tour suivant. Sinon (pas de function call) → fin.
+    """
     for _ in range(MAX_TOURS):
         if stop_event is not None and stop_event.is_set():
             return
         try:
-            reponse = _get_client().messages.create(
-                model=AGENT_MODEL,
-                max_tokens=2048,
-                system=systeme,
-                tools=OUTILS,
-                messages=messages,
-            )
+            reponse = modele.generate_content(contents=messages)
         except Exception as exc:  # noqa: BLE001
             logger.error("Agent LLM KO (appel %s) : %s", appel_id, exc)
             return
 
-        # Trace de raisonnement (blocs texte) → Sheet d'appel.
-        for bloc in reponse.content:
-            if bloc.type == "text" and bloc.text.strip():
-                outils.journal_raisonnement(bloc.text.strip())
-
-        if reponse.stop_reason != "tool_use":
+        # Convertir la réponse protobuf → dict Python (snake_case).
+        r = MessageToDict(reponse, preserving_proto_field_name=True)
+        candidates = r.get("candidates", [])
+        if not candidates:
             return
 
-        messages.append({"role": "assistant", "content": reponse.content})
-        resultats = []
-        for bloc in reponse.content:
-            if bloc.type != "tool_use":
-                continue
-            fn = getattr(outils, bloc.name, None)
+        parts = candidates[0].get("content", {}).get("parts", [])
+
+        # Trace de raisonnement (blocs texte) → Sheet d'appel.
+        for part in parts:
+            texte = part.get("text", "") or ""
+            if texte.strip():
+                outils.journal_raisonnement(texte.strip())
+
+        # Chercher les appels de fonction.
+        appels_fn: list[tuple[str, dict]] = []
+        for part in parts:
+            fc = part.get("function_call")
+            if fc:
+                nom = fc.get("name", "")
+                args = fc.get("args") or {}
+                if nom:
+                    appels_fn.append((nom, args))
+
+        if not appels_fn:
+            return  # Pas de function call → l'agent a fini pour ce lot.
+
+        # Ajouter la réponse du modèle à l'historique.
+        messages.append({"role": "model", "parts": parts})
+
+        # Exécuter les outils et construire les FunctionResponse.
+        resultats: list[dict] = []
+        for nom, args in appels_fn:
+            fn = getattr(outils, nom, None)
             try:
-                sortie = fn(**bloc.input) if fn else {"erreur": f"outil inconnu {bloc.name}"}
+                sortie = fn(**args) if fn else {"erreur": f"outil inconnu {nom}"}
             except Exception as exc:  # noqa: BLE001
-                logger.exception("Outil %s KO (appel %s)", bloc.name, appel_id)
+                logger.exception("Outil %s KO (appel %s)", nom, appel_id)
                 sortie = {"erreur": str(exc)}
             resultats.append(
-                {
-                    "type": "tool_result",
-                    "tool_use_id": bloc.id,
-                    "content": json.dumps(sortie, ensure_ascii=False, default=str),
-                }
+                {"function_response": {"name": nom, "response": sortie}}
             )
-        messages.append({"role": "user", "content": resultats})
+        messages.append({"role": "function", "parts": resultats})
 
 
 def run_agent(appel: dict, stop_event: threading.Event | None = None) -> None:
@@ -150,15 +160,25 @@ def run_agent(appel: dict, stop_event: threading.Event | None = None) -> None:
     appel_id = appel["id"]
     if stop_event is not None and stop_event.is_set():
         return
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        logger.warning("ANTHROPIC_API_KEY absent — agent non lancé (appel %s)", appel_id)
+    if not os.getenv("GEMINI_API_KEY"):
+        logger.warning("GEMINI_API_KEY absent — agent non lancé (appel %s)", appel_id)
         return
+
+    # Configurer le SDK Gemini une fois (API key globale).
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
     sb = get_supabase()
     logger.info("Agent démarré pour l'appel %s (%s)", appel_id, appel.get("titre"))
 
     systeme = SYSTEME.format(schema=charger_schema_text(sb))
     outils = OutilsAgent(sb, appel_id)
+
+    # Modèle Gemini avec consigne système + outils.
+    modele = genai.GenerativeModel(
+        model_name=AGENT_MODEL,
+        system_instruction=systeme,
+        tools=[GEMINI_TOOLS],
+    )
 
     # Garde-fou d'horloge : on ne tourne pas au-delà de la durée de l'appel + marge
     # (sécurité si la transcription ne produit jamais de segment).
@@ -189,9 +209,18 @@ def run_agent(appel: dict, stop_event: threading.Event | None = None) -> None:
         bloc = " ".join(s["texte"] for s in segments if s.get("texte"))
         # Conversation NEUVE par lot : l'état vient de la base (query_instances).
         messages = [
-            {"role": "user", "content": f"Nouveaux segments de l'appel (traite-les) :\n\n{bloc}"}
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "text": (
+                            "Nouveaux segments de l'appel (traite-les) :\n\n" + bloc
+                        )
+                    }
+                ],
+            }
         ]
-        _tour_outils(outils, systeme, messages, appel_id, stop_event)
+        _tour_outils(modele, outils, messages, appel_id, stop_event)
         time.sleep(POLL_SEC)
 
     logger.info("Agent appel %s terminé", appel_id)

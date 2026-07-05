@@ -1,4 +1,4 @@
-"""Outils de l'agent sémantique (tool-use natif Anthropic — le « MCP » in-process).
+"""Outils de l'agent sémantique (function calling Gemini — le « MCP » in-process).
 
 Donne à l'agent LLM (un par appel, cf. `agent_job`) la capacité de :
 
@@ -93,91 +93,126 @@ def charger_schema_text(sb) -> str:
     return "\n".join(lignes)
 
 
-# --- Schémas d'outils (JSON) -------------------------------------------------
-OUTILS = [
-    {
-        "name": "query_schema",
-        "description": (
-            "Retourne le schéma des TYPES d'objets définis par l'utilisateur "
-            "(nom, schema_entity_id, champs typés). À consulter pour savoir quels "
-            "objets créer et quels champs remplir."
-        ),
-        "input_schema": {"type": "object", "properties": {}, "additionalProperties": False},
-    },
-    {
-        "name": "query_instances",
-        "description": (
-            "Liste les instances d'objets déjà créées, TOUS APPELS CONFONDUS "
-            "(les plus récentes d'abord). Sert à repérer si un objet (une victime, "
-            "un sinistre…) a déjà été créé — par cet appel ou un autre — avant d'en "
-            "créer un nouveau. Filtre optionnel par type."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "type_name": {"type": "string", "description": "Nom du type à filtrer (optionnel)."},
-                "limit": {"type": "integer", "description": "Max d'instances (défaut 30)."},
-            },
-            "additionalProperties": False,
+# --- Déclarations de fonctions Gemini ----------------------------------------
+# Format : dict avec clé `function_declarations` (Gemini SDK). Chaque déclaration
+# suit le sous-ensemble OpenAPI 3.0 supporté par Gemini : types en UPPERCASE,
+# `parameters` (pas `input_schema`), pas de `additionalProperties`.
+GEMINI_TOOLS = {
+    "function_declarations": [
+        {
+            "name": "query_schema",
+            "description": (
+                "Retourne le schéma des TYPES d'objets définis par l'utilisateur "
+                "(nom, schema_entity_id, champs typés). À consulter pour savoir quels "
+                "objets créer et quels champs remplir."
+            ),
+            "parameters": {"type": "OBJECT", "properties": {}},
         },
-    },
-    {
-        "name": "create_instance",
-        "description": (
-            "Crée une nouvelle instance d'objet. N'utilise que pour un objet "
-            "réellement nouveau (sinon update_instance). Renvoie son id."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "type_name": {"type": "string", "description": "Nom exact du type (cf. schéma)."},
-                "schema_entity_id": {"type": "string", "description": "id du type (cf. schéma)."},
-                "libelle": {"type": "string", "description": "Libellé lisible, ex. 'Victime #1'."},
-                "fields": {
-                    "type": "object",
-                    "description": "Valeurs des champs conformes au type, ex. {\"etat\": \"inconscient\"}.",
-                    "additionalProperties": True,
+        {
+            "name": "query_instances",
+            "description": (
+                "Liste les instances d'objets déjà créées, TOUS APPELS CONFONDUS "
+                "(les plus récentes d'abord). Sert à repérer si un objet (une victime, "
+                "un sinistre…) a déjà été créé — par cet appel ou un autre — avant d'en "
+                "créer un nouveau. Filtre optionnel par type."
+            ),
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                    "type_name": {
+                        "type": "STRING",
+                        "description": "Nom du type à filtrer (optionnel).",
+                    },
+                    "limit": {
+                        "type": "INTEGER",
+                        "description": "Max d'instances (défaut 30).",
+                    },
                 },
-                "lon": {"type": "number", "description": "Longitude (si position connue)."},
-                "lat": {"type": "number", "description": "Latitude (si position connue)."},
-                "statut": {"type": "string", "enum": list(STATUTS_OK)},
-                "extrait_source": {"type": "string", "description": "Phrase exacte du transcript."},
             },
-            "required": ["type_name", "libelle", "fields", "extrait_source"],
-            "additionalProperties": False,
         },
-    },
-    {
-        "name": "update_instance",
-        "description": (
-            "Met à jour une instance existante (fusion des champs, et/ou position "
-            "lon/lat, et/ou statut). Utilise l'id renvoyé par query_instances."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "id": {"type": "string"},
-                "patch_fields": {"type": "object", "additionalProperties": True},
-                "lon": {"type": "number"},
-                "lat": {"type": "number"},
-                "statut": {"type": "string", "enum": list(STATUTS_OK)},
-                "extrait_source": {"type": "string"},
+        {
+            "name": "create_instance",
+            "description": (
+                "Crée une nouvelle instance d'objet. N'utilise que pour un objet "
+                "réellement nouveau (sinon update_instance). Renvoie son id."
+            ),
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                    "type_name": {
+                        "type": "STRING",
+                        "description": "Nom exact du type (cf. schéma).",
+                    },
+                    "schema_entity_id": {
+                        "type": "STRING",
+                        "description": "id du type (cf. schéma).",
+                    },
+                    "libelle": {
+                        "type": "STRING",
+                        "description": "Libellé lisible, ex. 'Victime #1'.",
+                    },
+                    "fields": {
+                        "type": "OBJECT",
+                        "description": (
+                            "Valeurs des champs conformes au type, "
+                            'ex. {"etat": "inconscient"}.'
+                        ),
+                    },
+                    "lon": {
+                        "type": "NUMBER",
+                        "description": "Longitude (si position connue).",
+                    },
+                    "lat": {
+                        "type": "NUMBER",
+                        "description": "Latitude (si position connue).",
+                    },
+                    "statut": {
+                        "type": "STRING",
+                        "enum": list(STATUTS_OK),
+                    },
+                    "extrait_source": {
+                        "type": "STRING",
+                        "description": "Phrase exacte du transcript.",
+                    },
+                },
+                "required": ["type_name", "libelle", "fields", "extrait_source"],
             },
-            "required": ["id", "extrait_source"],
-            "additionalProperties": False,
         },
-    },
-    {
-        "name": "geocoder",
-        "description": "Géocode une adresse (IGN) → {lon, lat, fiable, label}. Ne modifie rien.",
-        "input_schema": {
-            "type": "object",
-            "properties": {"adresse": {"type": "string"}},
-            "required": ["adresse"],
-            "additionalProperties": False,
+        {
+            "name": "update_instance",
+            "description": (
+                "Met à jour une instance existante (fusion des champs, et/ou position "
+                "lon/lat, et/ou statut). Utilise l'id renvoyé par query_instances."
+            ),
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                    "id": {"type": "STRING"},
+                    "patch_fields": {
+                        "type": "OBJECT",
+                        "description": "Dictionnaire des champs à fusionner.",
+                    },
+                    "lon": {"type": "NUMBER"},
+                    "lat": {"type": "NUMBER"},
+                    "statut": {"type": "STRING", "enum": list(STATUTS_OK)},
+                    "extrait_source": {"type": "STRING"},
+                },
+                "required": ["id", "extrait_source"],
+            },
         },
-    },
-]
+        {
+            "name": "geocoder",
+            "description": (
+                "Géocode une adresse (IGN) → {lon, lat, fiable, label}. Ne modifie rien."
+            ),
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {"adresse": {"type": "STRING"}},
+                "required": ["adresse"],
+            },
+        },
+    ]
+}
 
 
 class OutilsAgent:

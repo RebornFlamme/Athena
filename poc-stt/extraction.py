@@ -1,12 +1,12 @@
 """Extraction LLM — construit le tableau opérationnel d'un appel dans Supabase.
 
 Job serveur lancé après la transcription d'un appel (`transcribe_job`). Au lieu
-d'un simple appel « texte → JSON », Claude pilote une **boucle d'outils** qui lit
+d'un simple appel « texte → JSON », Gemini pilote une **boucle d'outils** qui lit
 et écrit le graphe d'entités réel (tables `entites` / `evenements`) :
 
     lister_entites → creer_entite / mettre_a_jour_entite / lier_entites / geocoder
 
-C'est ce qui rend le rattachement INTELLIGENT : Claude voit les objets déjà
+C'est ce qui rend le rattachement INTELLIGENT : Gemini voit les objets déjà
 créés (avec leur `id` stable), décide lui-même si un fait concerne un objet
 existant (coréférence) ou un nouveau, et pose des relations entre objets
 (victime « située dans » zone, moyen « engagé sur » sinistre).
@@ -16,21 +16,27 @@ dans le journal append-only `evenements` (avec `payload.extrait_source`).
 
 Périmètre v1 : la résolution d'entités est cadrée PAR APPEL (`appel_id`) — pas de
 liaison inter-appels (à sérialiser plus tard, les jobs tournent en parallèle).
+
+Note : ce module est DORMANT — l'agent sémantique actif est `agent_job.py`
+(qui écrit `object_instances` / `agent_journal`). Ce fichier est conservé
+comme référence pour le pattern d'extraction sur les tables héritées
+`entites` / `evenements`.
 """
 
 import json
 import logging
 import os
 
-import anthropic
+import google.generativeai as genai
+from google.protobuf.json_format import MessageToDict
 
 import geocodage_ign
 
 logger = logging.getLogger("poc-stt.extraction")
 
-# Modèle configurable ; défaut Haiku 4.5 (rapide/économe) — la boucle d'outils
-# fait plusieurs allers-retours par appel.
-EXTRACTION_MODEL = os.getenv("EXTRACTION_MODEL", "claude-haiku-4-5")
+# Modèle configurable ; défaut Gemini 2.5 Flash (rapide/économe) — la boucle
+# d'outils fait plusieurs allers-retours par appel.
+AGENT_MODEL = os.getenv("AGENT_MODEL", "gemini-3.5-flash")
 
 # Intervention « propriétaire » de la simulation (les entités sont ancrées sur
 # une intervention). Id fixe : tous les appels d'un run la partagent.
@@ -38,18 +44,6 @@ SIMULATION_INTERVENTION_ID = "00000000-0000-0000-0000-000000000001"
 
 # Garde-fou : nombre max de tours de boucle d'outils par appel.
 MAX_TOURS = 16
-
-_client: anthropic.Anthropic | None = None
-
-
-def _get_client() -> anthropic.Anthropic:
-    """Client Anthropic (init paresseuse) — n'impose pas ANTHROPIC_API_KEY à
-    l'import du module (sinon la transcription elle-même casserait si la clé
-    d'extraction manque)."""
-    global _client
-    if _client is None:
-        _client = anthropic.Anthropic()
-    return _client
 
 SYSTEME = """Tu es le module d'extraction d'Athena, un dashboard temps réel de gestion \
 de crise pour sapeurs-pompiers. Tu reçois la transcription d'UN appel d'urgence et tu \
@@ -75,78 +69,114 @@ Libellés lisibles : "Sinistre", "Victime #1", "VSAV 12". N'extrais QUE ce qui e
 EXPLICITEMENT dit. N'invente rien, surtout pas une adresse. Quand tu as tout traité, \
 termine sans appeler d'outil."""
 
-# --- Schémas d'outils (JSON, sans beta) --------------------------------------
-OUTILS = [
-    {
-        "name": "lister_entites",
-        "description": "Liste les entités déjà créées pour cet appel (id, type, libellé, état, position).",
-        "input_schema": {"type": "object", "properties": {}, "additionalProperties": False},
-    },
-    {
-        "name": "creer_entite",
-        "description": "Crée une nouvelle entité. Renvoie son id. N'utilise que pour un objet réellement nouveau.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "type": {"type": "string", "enum": ["zone", "acteur", "moyen"]},
-                "libelle": {"type": "string", "description": "Libellé lisible, ex. 'Victime #1'."},
-                "sous_type": {"type": "string", "description": "Optionnel : victime, temoin, vsav, fpt…"},
-                "etat": {
-                    "type": "object",
-                    "description": "État initial (paires champ→valeur), ex. {\"nature\": \"incendie\"}.",
-                    "additionalProperties": True,
+# --- Déclarations de fonctions Gemini ----------------------------------------
+# Format `function_declarations` (Gemini SDK). Chaque déclaration suit le
+# sous-ensemble OpenAPI 3.0 supporté par Gemini : types en UPPERCASE,
+# `parameters` (pas `input_schema`), pas de `additionalProperties`.
+OUTILS = {
+    "function_declarations": [
+        {
+            "name": "lister_entites",
+            "description": (
+                "Liste les entités déjà créées pour cet appel (id, type, libellé, "
+                "état, position)."
+            ),
+            "parameters": {"type": "OBJECT", "properties": {}},
+        },
+        {
+            "name": "creer_entite",
+            "description": (
+                "Crée une nouvelle entité. Renvoie son id. N'utilise que pour un "
+                "objet réellement nouveau."
+            ),
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                    "type": {
+                        "type": "STRING",
+                        "enum": ["zone", "acteur", "moyen"],
+                    },
+                    "libelle": {
+                        "type": "STRING",
+                        "description": "Libellé lisible, ex. 'Victime #1'.",
+                    },
+                    "sous_type": {
+                        "type": "STRING",
+                        "description": "Optionnel : victime, temoin, vsav, fpt…",
+                    },
+                    "etat": {
+                        "type": "OBJECT",
+                        "description": (
+                            "État initial (paires champ→valeur), "
+                            'ex. {"nature": "incendie"}.'
+                        ),
+                    },
+                    "extrait_source": {
+                        "type": "STRING",
+                        "description": "Phrase exacte du transcript.",
+                    },
+                    "confiance": {"type": "NUMBER"},
                 },
-                "extrait_source": {"type": "string", "description": "Phrase exacte du transcript."},
-                "confiance": {"type": "number"},
+                "required": ["type", "libelle", "etat", "extrait_source", "confiance"],
             },
-            "required": ["type", "libelle", "etat", "extrait_source", "confiance"],
-            "additionalProperties": False,
         },
-    },
-    {
-        "name": "mettre_a_jour_entite",
-        "description": "Met à jour une entité existante (fusion d'état, et/ou position lon/lat, et/ou statut).",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "id": {"type": "string"},
-                "etat_patch": {"type": "object", "additionalProperties": True},
-                "lon": {"type": "number"},
-                "lat": {"type": "number"},
-                "statut": {"type": "string", "enum": ["presume", "confirme"]},
-                "extrait_source": {"type": "string"},
-                "confiance": {"type": "number"},
+        {
+            "name": "mettre_a_jour_entite",
+            "description": (
+                "Met à jour une entité existante (fusion d'état, et/ou position "
+                "lon/lat, et/ou statut)."
+            ),
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                    "id": {"type": "STRING"},
+                    "etat_patch": {"type": "OBJECT"},
+                    "lon": {"type": "NUMBER"},
+                    "lat": {"type": "NUMBER"},
+                    "statut": {
+                        "type": "STRING",
+                        "enum": ["presume", "confirme"],
+                    },
+                    "extrait_source": {"type": "STRING"},
+                    "confiance": {"type": "NUMBER"},
+                },
+                "required": ["id", "extrait_source"],
             },
-            "required": ["id", "extrait_source"],
-            "additionalProperties": False,
         },
-    },
-    {
-        "name": "lier_entites",
-        "description": "Enregistre une relation entre deux entités (ex. victime situee_dans zone).",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "source_id": {"type": "string"},
-                "cible_id": {"type": "string"},
-                "relation": {"type": "string", "description": "ex. situee_dans, engage_sur."},
-                "extrait_source": {"type": "string"},
+        {
+            "name": "lier_entites",
+            "description": (
+                "Enregistre une relation entre deux entités "
+                "(ex. victime situee_dans zone)."
+            ),
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                    "source_id": {"type": "STRING"},
+                    "cible_id": {"type": "STRING"},
+                    "relation": {
+                        "type": "STRING",
+                        "description": "ex. situee_dans, engage_sur.",
+                    },
+                    "extrait_source": {"type": "STRING"},
+                },
+                "required": ["source_id", "cible_id", "relation"],
             },
-            "required": ["source_id", "cible_id", "relation"],
-            "additionalProperties": False,
         },
-    },
-    {
-        "name": "geocoder",
-        "description": "Géocode une adresse (IGN) → {lon, lat, fiable, label}. Ne modifie rien.",
-        "input_schema": {
-            "type": "object",
-            "properties": {"adresse": {"type": "string"}},
-            "required": ["adresse"],
-            "additionalProperties": False,
+        {
+            "name": "geocoder",
+            "description": (
+                "Géocode une adresse (IGN) → {lon, lat, fiable, label}. "
+                "Ne modifie rien."
+            ),
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {"adresse": {"type": "STRING"}},
+                "required": ["adresse"],
+            },
         },
-    },
-]
+    ]
+}
 
 
 def _fiabilite(confiance: float | None) -> str:
@@ -285,42 +315,77 @@ def extraire_appel(appel: dict, sb) -> None:
         logger.info("Extraction appel %s : transcript trop court, ignoré", appel_id)
         return
 
+    if not os.getenv("GEMINI_API_KEY"):
+        logger.warning("GEMINI_API_KEY absent — extraction non lancée (appel %s)", appel_id)
+        return
+
+    # Configurer le SDK Gemini une fois (API key globale).
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
     intervention_id = _intervention_simulation(sb)
     # Ardoise vierge pour cet appel (service_role bypass RLS — reset de démo).
     sb.table("evenements").delete().eq("appel_id", appel_id).execute()
     sb.table("entites").delete().eq("appel_id", appel_id).execute()
 
     outils = _Outils(sb, intervention_id, appel_id)
-    messages = [{"role": "user", "content": f"Transcription de l'appel :\n\n{transcript}"}]
+
+    modele = genai.GenerativeModel(
+        model_name=AGENT_MODEL,
+        system_instruction=SYSTEME,
+        tools=[OUTILS],
+    )
+
+    messages = [
+        {
+            "role": "user",
+            "parts": [{"text": f"Transcription de l'appel :\n\n{transcript}"}],
+        }
+    ]
 
     for _ in range(MAX_TOURS):
-        reponse = _get_client().messages.create(
-            model=EXTRACTION_MODEL,
-            max_tokens=2048,
-            system=SYSTEME,
-            tools=OUTILS,
-            messages=messages,
-        )
-        if reponse.stop_reason != "tool_use":
+        try:
+            reponse = modele.generate_content(contents=messages)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Extraction LLM KO (appel %s) : %s", appel_id, exc)
             break
 
-        messages.append({"role": "assistant", "content": reponse.content})
-        resultats = []
-        for bloc in reponse.content:
-            if bloc.type != "tool_use":
-                continue
-            fn = getattr(outils, bloc.name, None)
+        # Convertir la réponse protobuf → dict Python (snake_case).
+        r = MessageToDict(reponse, preserving_proto_field_name=True)
+        candidates = r.get("candidates", [])
+        if not candidates:
+            break
+
+        parts = candidates[0].get("content", {}).get("parts", [])
+
+        # Chercher les appels de fonction.
+        appels_fn: list[tuple[str, dict]] = []
+        for part in parts:
+            fc = part.get("function_call")
+            if fc:
+                nom = fc.get("name", "")
+                args = fc.get("args") or {}
+                if nom:
+                    appels_fn.append((nom, args))
+
+        if not appels_fn:
+            break  # Pas de function call → l'agent a fini.
+
+        # Ajouter la réponse du modèle à l'historique.
+        messages.append({"role": "model", "parts": parts})
+
+        # Exécuter les outils et construire les FunctionResponse.
+        resultats: list[dict] = []
+        for nom, args in appels_fn:
+            fn = getattr(outils, nom, None)
             try:
-                sortie = fn(**bloc.input) if fn else {"erreur": f"outil inconnu {bloc.name}"}
+                sortie = fn(**args) if fn else {"erreur": f"outil inconnu {nom}"}
             except Exception as exc:  # noqa: BLE001
-                logger.exception("Outil %s en échec (appel %s)", bloc.name, appel_id)
+                logger.exception("Outil %s KO (appel %s)", nom, appel_id)
                 sortie = {"erreur": str(exc)}
-            resultats.append({
-                "type": "tool_result",
-                "tool_use_id": bloc.id,
-                "content": json.dumps(sortie, ensure_ascii=False, default=str),
-            })
-        messages.append({"role": "user", "content": resultats})
+            resultats.append(
+                {"function_response": {"name": nom, "response": sortie}}
+            )
+        messages.append({"role": "function", "parts": resultats})
 
     n = len(outils.lister_entites())
     logger.info("Extraction appel %s terminée : %d entité(s)", appel_id, n)
