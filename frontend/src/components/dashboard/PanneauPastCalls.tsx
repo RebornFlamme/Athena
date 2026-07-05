@@ -6,6 +6,7 @@ import { isSupabaseConfigured } from '../../lib/supabase'
 import { listAppels } from '../../data/appelsApi'
 import { formaterMs } from '../../sim/audioMeta'
 import { useSimulationPlayback } from '../../store/useSimulationPlayback'
+import { useSimulationActive } from '../../store/useSimulationActive'
 import type { Appel } from '../../typesSimulation'
 import { FeuillePastCall } from './FeuillePastCall'
 
@@ -27,13 +28,17 @@ export function PanneauPastCalls() {
   const [selection, setSelection] = useState<Appel | null>(null)
   const statut = useSimulationPlayback((s) => s.statut)
   const positionMs = useSimulationPlayback((s) => s.positionMs)
+  const activeId = useSimulationActive((s) => s.activeId)
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return
-    listAppels()
+    if (!isSupabaseConfigured || !activeId) {
+      setAppels([])
+      return
+    }
+    listAppels(activeId)
       .then(setAppels)
       .catch(() => {})
-  }, [])
+  }, [activeId])
 
   function statutDe(a: Appel): StatutAppel {
     if (statut !== 'lecture' || positionMs < a.ts_debut_ms) return 'a_venir'

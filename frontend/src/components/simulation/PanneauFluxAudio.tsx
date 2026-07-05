@@ -5,6 +5,7 @@ import { isSupabaseConfigured } from '../../lib/supabase'
 import { listAppels } from '../../data/appelsApi'
 import { formaterMs } from '../../sim/audioMeta'
 import { useSimulationPlayback } from '../../store/useSimulationPlayback'
+import { useSimulationActive } from '../../store/useSimulationActive'
 import type { Appel } from '../../typesSimulation'
 import { FeuilleTranscription } from '../dashboard/FeuilleTranscription'
 import { VisualiseurAudioLive } from './VisualiseurAudioLive'
@@ -22,13 +23,17 @@ export function PanneauFluxAudio() {
   const actifs = useSimulationPlayback((s) => s.actifs)
   const ecoutes = useSimulationPlayback((s) => s.ecoutes)
   const basculerEcoute = useSimulationPlayback((s) => s.basculerEcoute)
+  const activeId = useSimulationActive((s) => s.activeId)
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return
-    listAppels()
+    if (!isSupabaseConfigured || !activeId) {
+      setAppels([])
+      return
+    }
+    listAppels(activeId)
       .then(setAppels)
       .catch(() => {})
-  }, [])
+  }, [activeId])
 
   const parId = new Map(appels.map((a) => [a.id, a]))
   const fluxLive = actifs.map((id) => parId.get(id)).filter((a): a is Appel => a != null)

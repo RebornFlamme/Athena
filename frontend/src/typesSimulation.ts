@@ -3,8 +3,18 @@
 // timeline = la simulation active. La pipeline de traitement (STT/extraction)
 // consommera ces appels plus tard.
 
+/** Une simulation nommée = un ensemble d'appels sur une timeline. On peut en
+ *  créer plusieurs ; le bouton Play joue la simulation ACTIVE (choisie côté UI). */
+export interface Simulation {
+  id: string
+  nom: string
+  cree_le: string
+}
+
 export interface Appel {
   id: string
+  /** Simulation à laquelle appartient l'appel (null = appels hérités pré-0010). */
+  simulation_id: string | null
   titre: string
   /** URL publique du MP3 (Supabase Storage). */
   audio_url: string

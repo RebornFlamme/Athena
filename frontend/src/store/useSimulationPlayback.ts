@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { listAppels } from '../data/appelsApi'
 import { arreterTranscription, lancerTranscription } from '../data/transcribeApi'
+import { useSimulationActive } from './useSimulationActive'
 import type { Appel } from '../typesSimulation'
 
 // Moteur de lecture de la simulation active (Web Audio API).
@@ -100,7 +101,9 @@ export const useSimulationPlayback = create<PlaybackState>((set, get) => ({
     // sinon la politique autoplay peut bloquer le son.
     ctx = new AudioContext()
     await ctx.resume().catch(() => {})
-    const appels = await listAppels().catch(() => [])
+    // Joue UNIQUEMENT les appels de la simulation active (choisie via /flux).
+    const activeId = useSimulationActive.getState().activeId
+    const appels = activeId ? await listAppels(activeId).catch(() => []) : []
     if (appels.length === 0) {
       nettoyer()
       set({ statut: 'arret', positionMs: 0, actifs: [], ecoutes: [] })

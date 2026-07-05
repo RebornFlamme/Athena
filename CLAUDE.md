@@ -37,6 +37,14 @@ Le reste de ce fichier décrit les conventions de l'existant (éditeur EAV) — 
 - **Graphe = shadcn chart (`ui/chart.tsx`) + `recharts` (⚠ épinglé v2 : `recharts@^2.15`, la v3 casse les types du composant shadcn)** : `AreaChart` du **nombre d'objets cumulé au cours du temps**, regroupé par minute (`cree_le`). Pas de vars `--chart-*` dans `index.css` → couleur passée explicitement dans `chartConfig` (`color: 'hsl(217 91% 60%)'`). + 3 cartes stat (total / types distincts / géolocalisés).
 - Nouvelles deps : `recharts@^2.15`, `@tanstack/react-table`. Nouveaux composants shadcn ajoutés à la main (CLI KO) : `ui/table.tsx`, `ui/chart.tsx`.
 
+## Simulations multiples (migration 0010, juil. 2026)
+- **Modèle** : table `simulations` (`id`, `nom`, `cree_le`) + `appels.simulation_id` (FK `on delete cascade`). Migration **`0010_simulations.sql`** (idempotente, backfill des appels existants dans une « Simulation 1 »). ⚠ **Prérequis runtime : appliquer `0010`** (SQL Editor Supabase) — sinon la page `/flux` remonte une erreur (table/colonne absente).
+- **Data** : `data/simulationsApi.ts` (list/create/rename/delete) ; `appelsApi.listAppels(simulationId?)` filtre par sim ; `insertAppel` exige `simulation_id`.
+- **Simulation ACTIVE découplée de l'édition** : store persisté **`store/useSimulationActive.ts`** (`activeId`, localStorage). Le **bouton Play global** (`useSimulationPlayback.lancer`) joue **uniquement les appels de la sim active** (`listAppels(activeId)`) et n'envoie que leurs ids à `/transcribe` (**backend inchangé** : il filtrait déjà par `appel_ids`).
+- **Page `/flux`** (`SimulationPage.tsx`) refondue : un **Select « Editing »** (quelle sim on édite → sa timeline + dropzone, MP3 uploadés avec son `simulation_id`) + renommer (inline) + supprimer + **« New simulation »** ; un **Select « Active »** SÉPARÉ dans l'en-tête (la sim jouée au ▶). Bandeau indiquant si la sim éditée est l'active.
+- **Panneaux dashboard** `PanneauFluxAudio` (Live feed) et `PanneauPastCalls` filtrent sur `useSimulationActive.activeId`.
+- ⚠ **`scripts/seedScenario.mjs` à mettre à jour** : il insère des `appels` sans `simulation_id` → ils n'apparaîtront dans aucune simulation. À adapter (créer une simulation + poser `simulation_id`) si on veut re-seeder.
+
 ## Dashboard Athena — Créateur de simulation (F2, juil. 2026)
 - **Contrainte UI (non négociable, cf. `plan_base_webapp.md`) : UI = composants shadcn emboîtés uniquement**, aucun visuel codé à la main. NB : une **timeline** implique du positionnement absolu inévitable (clips en px) — assemblé avec `Button`/`Card` faute des composants dédiés (CLI shadcn KO ici, voir plus bas).
 - Domaines séparés du EAV : `typesAthena.ts` (socle F0) et `typesSimulation.ts` (`Appel` : `audio_url`, `ts_debut_ms`, `duree_ms`, `piste`).

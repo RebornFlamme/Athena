@@ -3,16 +3,17 @@ import type { Appel } from '../typesSimulation'
 
 // Couche d'accès Supabase des appels (créateur de simulation).
 
-export async function listAppels(): Promise<Appel[]> {
-  const { data, error } = await supabase
-    .from('appels')
-    .select('*')
-    .order('ts_debut_ms', { ascending: true })
+/** Liste les appels ; restreint à une simulation si `simulationId` est fourni. */
+export async function listAppels(simulationId?: string): Promise<Appel[]> {
+  let query = supabase.from('appels').select('*').order('ts_debut_ms', { ascending: true })
+  if (simulationId) query = query.eq('simulation_id', simulationId)
+  const { data, error } = await query
   if (error) throw error
   return (data ?? []) as Appel[]
 }
 
 export async function insertAppel(input: {
+  simulation_id: string
   titre: string
   audio_url: string
   audio_path?: string | null
