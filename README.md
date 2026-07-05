@@ -76,11 +76,12 @@ Pour voir le résultat tout de suite, sans attendre le temps réel :
 ## ✨ Ce qui nous différencie
 
 - **Zéro saisie manuelle.** L'opérateur ne tape rien : l'IA écoute et documente à sa place.
-- **Temps réel & multi-appels.** Transcription en streaming de plusieurs appels 112 + radios **simultanés** — le vrai chaos d'une crise, pas un fichier propre.
-- **Extraction pilotée par VOTRE schéma.** Vous *dessinez* vos objets métier (Victime, Engin, Lieu…) dans l'éditeur de schéma ; l'agent LLM instancie **exactement ces types**, avec **résolution d'entités entre appels** (une même victime citée deux fois = un seul objet).
+- **Temps réel & multi-appels.** Transcription en streaming de plusieurs appels 112 + radios **simultanés** — le vrai chaos d'une crise, pas un fichier propre. Gestion des conflicts et informations contradictoires par hiérarchisation d'une base de donnée structurée. Integrated mapping and geolocation services provide instant visual context to all voice communications.
+- **Extraction pilotée par VOTRE schéma.** Vous *dessinez* vos objets métier (Victime, Engin, Lieu…) dans l'éditeur de schéma ; l'agent LLM instancie **exactement ces types**, avec **résolution d'entités entre appels** (une même victime citée deux fois = un seul objet). Compliance friendly.
 - **Carte tactique 3D souveraine.** MapLibre + **Géoplateforme IGN** (données publiques françaises) : bâtiments 3D (BD TOPO®), géocodage, itinéraire de l'engin *caserne → intervention*.
 - **Mémoire event-sourcée + rejeu (RETEX).** Tout est horodaté et append-only ; une timeline permet de **re-scruber** l'intervention (avant / après) pour le débriefing.
-- **Explicable — « l'IA propose, l'humain valide ».** La couche sémantique montre le diff de chaque décision de l'IA et sa « stack trace » de raisonnement. Rien n'est écrasé en silence.
+- Advanced AI-powered voice recognition that works in noisy environments and adapts to different accents and speech patterns.
+- **Explicable — « l'IA propose, l'humain valide ».** La couche sémantique montre le diff de chaque décision de l'IA et sa « stack trace » de raisonnement. Rien n'est écrasé en silence. Toutpeut être retracé.
 
 ---
 
