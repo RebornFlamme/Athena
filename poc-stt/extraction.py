@@ -27,16 +27,14 @@ import json
 import logging
 import os
 
-import google.generativeai as genai
-from google.protobuf.json_format import MessageToDict
+from google import genai
+from google.genai import types
+
+from backend.models import GEMINI_MODEL_PRO
 
 import geocodage_ign
 
 logger = logging.getLogger("poc-stt.extraction")
-
-# Modèle configurable ; défaut Gemini 2.5 Flash (rapide/économe) — la boucle
-# d'outils fait plusieurs allers-retours par appel.
-AGENT_MODEL = os.getenv("AGENT_MODEL", "gemini-3.5-flash")
 
 # Intervention « propriétaire » de la simulation (les entités sont ancrées sur
 # une intervention). Id fixe : tous les appels d'un run la partagent.
@@ -70,113 +68,112 @@ EXPLICITEMENT dit. N'invente rien, surtout pas une adresse. Quand tu as tout tra
 termine sans appeler d'outil."""
 
 # --- Déclarations de fonctions Gemini ----------------------------------------
-# Format `function_declarations` (Gemini SDK). Chaque déclaration suit le
-# sous-ensemble OpenAPI 3.0 supporté par Gemini : types en UPPERCASE,
-# `parameters` (pas `input_schema`), pas de `additionalProperties`.
-OUTILS = {
-    "function_declarations": [
-        {
-            "name": "lister_entites",
-            "description": (
-                "Liste les entités déjà créées pour cet appel (id, type, libellé, "
-                "état, position)."
+OUTILS: list[types.Tool] = [
+    types.Tool(
+        function_declarations=[
+            types.FunctionDeclaration(
+                name="lister_entites",
+                description=(
+                    "Liste les entités déjà créées pour cet appel (id, type, libellé, "
+                    "état, position)."
+                ),
+                parameters_json_schema={"type": "object", "properties": {}},
             ),
-            "parameters": {"type": "OBJECT", "properties": {}},
-        },
-        {
-            "name": "creer_entite",
-            "description": (
-                "Crée une nouvelle entité. Renvoie son id. N'utilise que pour un "
-                "objet réellement nouveau."
-            ),
-            "parameters": {
-                "type": "OBJECT",
-                "properties": {
-                    "type": {
-                        "type": "STRING",
-                        "enum": ["zone", "acteur", "moyen"],
+            types.FunctionDeclaration(
+                name="creer_entite",
+                description=(
+                    "Crée une nouvelle entité. Renvoie son id. N'utilise que pour un "
+                    "objet réellement nouveau."
+                ),
+                parameters_json_schema={
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": ["zone", "acteur", "moyen"],
+                        },
+                        "libelle": {
+                            "type": "string",
+                            "description": "Libellé lisible, ex. 'Victime #1'.",
+                        },
+                        "sous_type": {
+                            "type": "string",
+                            "description": "Optionnel : victime, temoin, vsav, fpt…",
+                        },
+                        "etat": {
+                            "type": "object",
+                            "description": (
+                                "État initial (paires champ→valeur), "
+                                'ex. {"nature": "incendie"}.'
+                            ),
+                        },
+                        "extrait_source": {
+                            "type": "string",
+                            "description": "Phrase exacte du transcript.",
+                        },
+                        "confiance": {"type": "number"},
                     },
-                    "libelle": {
-                        "type": "STRING",
-                        "description": "Libellé lisible, ex. 'Victime #1'.",
-                    },
-                    "sous_type": {
-                        "type": "STRING",
-                        "description": "Optionnel : victime, temoin, vsav, fpt…",
-                    },
-                    "etat": {
-                        "type": "OBJECT",
-                        "description": (
-                            "État initial (paires champ→valeur), "
-                            'ex. {"nature": "incendie"}.'
-                        ),
-                    },
-                    "extrait_source": {
-                        "type": "STRING",
-                        "description": "Phrase exacte du transcript.",
-                    },
-                    "confiance": {"type": "NUMBER"},
+                    "required": ["type", "libelle", "etat", "extrait_source", "confiance"],
                 },
-                "required": ["type", "libelle", "etat", "extrait_source", "confiance"],
-            },
-        },
-        {
-            "name": "mettre_a_jour_entite",
-            "description": (
-                "Met à jour une entité existante (fusion d'état, et/ou position "
-                "lon/lat, et/ou statut)."
             ),
-            "parameters": {
-                "type": "OBJECT",
-                "properties": {
-                    "id": {"type": "STRING"},
-                    "etat_patch": {"type": "OBJECT"},
-                    "lon": {"type": "NUMBER"},
-                    "lat": {"type": "NUMBER"},
-                    "statut": {
-                        "type": "STRING",
-                        "enum": ["presume", "confirme"],
+            types.FunctionDeclaration(
+                name="mettre_a_jour_entite",
+                description=(
+                    "Met à jour une entité existante (fusion d'état, et/ou position "
+                    "lon/lat, et/ou statut)."
+                ),
+                parameters_json_schema={
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "etat_patch": {"type": "object"},
+                        "lon": {"type": "number"},
+                        "lat": {"type": "number"},
+                        "statut": {
+                            "type": "string",
+                            "enum": ["presume", "confirme"],
+                        },
+                        "extrait_source": {"type": "string"},
+                        "confiance": {"type": "number"},
                     },
-                    "extrait_source": {"type": "STRING"},
-                    "confiance": {"type": "NUMBER"},
+                    "required": ["id", "extrait_source"],
                 },
-                "required": ["id", "extrait_source"],
-            },
-        },
-        {
-            "name": "lier_entites",
-            "description": (
-                "Enregistre une relation entre deux entités "
-                "(ex. victime situee_dans zone)."
             ),
-            "parameters": {
-                "type": "OBJECT",
-                "properties": {
-                    "source_id": {"type": "STRING"},
-                    "cible_id": {"type": "STRING"},
-                    "relation": {
-                        "type": "STRING",
-                        "description": "ex. situee_dans, engage_sur.",
+            types.FunctionDeclaration(
+                name="lier_entites",
+                description=(
+                    "Enregistre une relation entre deux entités "
+                    "(ex. victime situee_dans zone)."
+                ),
+                parameters_json_schema={
+                    "type": "object",
+                    "properties": {
+                        "source_id": {"type": "string"},
+                        "cible_id": {"type": "string"},
+                        "relation": {
+                            "type": "string",
+                            "description": "ex. situee_dans, engage_sur.",
+                        },
+                        "extrait_source": {"type": "string"},
                     },
-                    "extrait_source": {"type": "STRING"},
+                    "required": ["source_id", "cible_id", "relation"],
                 },
-                "required": ["source_id", "cible_id", "relation"],
-            },
-        },
-        {
-            "name": "geocoder",
-            "description": (
-                "Géocode une adresse (IGN) → {lon, lat, fiable, label}. "
-                "Ne modifie rien."
             ),
-            "parameters": {
-                "type": "OBJECT",
-                "properties": {"adresse": {"type": "STRING"}},
-                "required": ["adresse"],
-            },
-        },
-    ]
-}
+            types.FunctionDeclaration(
+                name="geocoder",
+                description=(
+                    "Géocode une adresse (IGN) → {lon, lat, fiable, label}. "
+                    "Ne modifie rien."
+                ),
+                parameters_json_schema={
+                    "type": "object",
+                    "properties": {"adresse": {"type": "string"}},
+                    "required": ["adresse"],
+                },
+            ),
+        ]
+    ),
+]
 
 
 def _fiabilite(confiance: float | None) -> str:
@@ -315,12 +312,13 @@ def extraire_appel(appel: dict, sb) -> None:
         logger.info("Extraction appel %s : transcript trop court, ignoré", appel_id)
         return
 
-    if not os.getenv("GEMINI_API_KEY"):
+    api_key = os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
+    if not api_key:
         logger.warning("GEMINI_API_KEY absent — extraction non lancée (appel %s)", appel_id)
         return
 
-    # Configurer le SDK Gemini une fois (API key globale).
-    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+    # Client Gemini (nouveau SDK google-genai, supporte les clés AQ. et AIza).
+    client = genai.Client(api_key=api_key)
 
     intervention_id = _intervention_simulation(sb)
     # Ardoise vierge pour cet appel (service_role bypass RLS — reset de démo).
@@ -329,63 +327,54 @@ def extraire_appel(appel: dict, sb) -> None:
 
     outils = _Outils(sb, intervention_id, appel_id)
 
-    modele = genai.GenerativeModel(
-        model_name=AGENT_MODEL,
+    config = types.GenerateContentConfig(
         system_instruction=SYSTEME,
-        tools=[OUTILS],
+        tools=OUTILS,
+        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
     )
 
-    messages = [
-        {
-            "role": "user",
-            "parts": [{"text": f"Transcription de l'appel :\n\n{transcript}"}],
-        }
+    history: list[types.Content] = [
+        types.Content(
+            role="user",
+            parts=[types.Part.from_text(text=f"Transcription de l'appel :\n\n{transcript}")],
+        ),
     ]
 
     for _ in range(MAX_TOURS):
         try:
-            reponse = modele.generate_content(contents=messages)
+            response = client.models.generate_content(
+                model=GEMINI_MODEL_PRO,
+                contents=history,
+                config=config,
+            )
         except Exception as exc:  # noqa: BLE001
             logger.error("Extraction LLM KO (appel %s) : %s", appel_id, exc)
             break
 
-        # Convertir la réponse protobuf → dict Python (snake_case).
-        r = MessageToDict(reponse, preserving_proto_field_name=True)
-        candidates = r.get("candidates", [])
-        if not candidates:
+        if not response.candidates or not response.candidates[0].content:
             break
 
-        parts = candidates[0].get("content", {}).get("parts", [])
+        # 1. Ajouter la réponse du modèle à l'historique TELLE QUELLE.
+        history.append(response.candidates[0].content)
 
-        # Chercher les appels de fonction.
-        appels_fn: list[tuple[str, dict]] = []
-        for part in parts:
-            fc = part.get("function_call")
-            if fc:
-                nom = fc.get("name", "")
-                args = fc.get("args") or {}
-                if nom:
-                    appels_fn.append((nom, args))
+        # 2. Extraire les function_calls.
+        fcs = response.function_calls or []
+        if not fcs:
+            break  # Pas de function call → fin.
 
-        if not appels_fn:
-            break  # Pas de function call → l'agent a fini.
-
-        # Ajouter la réponse du modèle à l'historique.
-        messages.append({"role": "model", "parts": parts})
-
-        # Exécuter les outils et construire les FunctionResponse.
-        resultats: list[dict] = []
-        for nom, args in appels_fn:
-            fn = getattr(outils, nom, None)
+        # 3. Exécuter les outils et construire un Content role="tool".
+        tool_parts: list[types.Part] = []
+        for fc in fcs:
+            fn = getattr(outils, fc.name, None)
             try:
-                sortie = fn(**args) if fn else {"erreur": f"outil inconnu {nom}"}
+                result = fn(**dict(fc.args)) if fn else {"erreur": f"outil inconnu {fc.name}"}
             except Exception as exc:  # noqa: BLE001
-                logger.exception("Outil %s KO (appel %s)", nom, appel_id)
-                sortie = {"erreur": str(exc)}
-            resultats.append(
-                {"function_response": {"name": nom, "response": sortie}}
+                logger.exception("Outil %s KO (appel %s)", fc.name, appel_id)
+                result = {"erreur": str(exc)}
+            tool_parts.append(
+                types.Part.from_function_response(name=fc.name, response=result)
             )
-        messages.append({"role": "function", "parts": resultats})
+        history.append(types.Content(role="tool", parts=tool_parts))
 
     n = len(outils.lister_entites())
     logger.info("Extraction appel %s terminée : %d entité(s)", appel_id, n)

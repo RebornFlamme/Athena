@@ -37,8 +37,12 @@ services:
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       # Agent sémantique (job serveur) — clé API Gemini, saisie à la création
-      # du service (Environment → renseigner). Modèle surchargeable.
+      # du service (Environment → renseigner).
       - key: GEMINI_API_KEY
         sync: false
-      - key: AGENT_MODEL
+      # Modèle Flash : agent temps réel (agent_job.py). Défaut : gemini-3.5-flash.
+      - key: GEMINI_MODEL_FLASH
         value: gemini-3.5-flash
+      # Modèle Pro Preview : extraction ponctuelle (extraction.py). Défaut : gemini-3.1-pro-preview.
+      - key: GEMINI_MODEL_PRO
+        value: gemini-3.1-pro-preview
