@@ -26,6 +26,10 @@ export interface JournalAgent {
 
 const KINDS_EDIT = ['creation', 'modification', 'suppression']
 
+// Compteur → nom de canal unique par abonnement (évite « cannot add
+// postgres_changes callbacks after subscribe » au remount / StrictMode).
+let compteurCanal = 0
+
 /** Journal complet d'un appel (trace de raisonnement), dans l'ordre. */
 export async function listJournal(appelId: string): Promise<JournalAgent[]> {
   const { data, error } = await supabase
@@ -43,7 +47,7 @@ export function subscribeJournal(
   onInsert: (j: JournalAgent) => void,
 ): () => void {
   const channel = supabase
-    .channel(`agent_journal:${appelId}`)
+    .channel(`agent_journal:${appelId}:${++compteurCanal}`)
     .on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'agent_journal', filter: `appel_id=eq.${appelId}` },
@@ -70,7 +74,7 @@ export async function listSemanticEdits(limite = 200): Promise<JournalAgent[]> {
 /** S'abonne à TOUS les edits sémantiques (Realtime INSERT, filtré client-side sur kind). */
 export function subscribeSemanticEdits(onInsert: (j: JournalAgent) => void): () => void {
   const channel = supabase
-    .channel('agent_journal:semantic')
+    .channel(`agent_journal:semantic:${++compteurCanal}`)
     .on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'agent_journal' },

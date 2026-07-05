@@ -34,10 +34,15 @@ type ChangementInstance =
   | { type: 'upsert'; instance: ObjectInstance }
   | { type: 'delete'; id: string }
 
+// Compteur → nom de canal unique par abonnement. Sinon `supabase.channel(nom)`
+// renvoie un canal déjà souscrit (StrictMode / remount) et rappeler `.on()`
+// après `subscribe()` lève « cannot add postgres_changes callbacks after subscribe ».
+let compteurCanal = 0
+
 /** S'abonne à toutes les instances (Realtime : INSERT/UPDATE/DELETE). */
 export function subscribeInstances(onChange: (c: ChangementInstance) => void): () => void {
   const channel = supabase
-    .channel('object_instances:all')
+    .channel(`object_instances:all:${++compteurCanal}`)
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'object_instances' },
