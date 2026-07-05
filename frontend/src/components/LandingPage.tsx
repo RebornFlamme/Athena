@@ -1,19 +1,26 @@
 import { Link } from 'react-router-dom'
 import { MotionConfig, motion } from 'framer-motion'
 import {
+  Activity,
   ArrowRight,
-  Brain,
+  AudioLines,
+  Bot,
+  Building2,
   CheckCircle2,
+  Database,
   History,
-  MapPin,
+  Layers,
+  MonitorPlay,
   Radio,
   ShieldCheck,
   Siren,
+  Truck,
+  Waypoints,
 } from 'lucide-react'
 
-// Landing page Athena — thème CLAIR, minimaliste et concis (esprit « laconique /
-// tactique »). Une seule couleur d'accent : le rouge urgence. Style explicite
-// (bg-white, text-slate-…) → indépendant du thème de l'app.
+// Landing page Athena — thème clair, angle TECHNIQUE : décrit la pipeline réelle
+// telle qu'implémentée (Chirp 3 → agent Claude schema-driven → PostgreSQL
+// event-sourcing → dashboard temps réel IGN). Style explicite (indépendant du thème).
 
 function Reveal({
   children,
@@ -37,29 +44,38 @@ function Reveal({
   )
 }
 
-const ETAPES = [
-  { icon: Radio, titre: 'Écoute', texte: "L'appel 18/112 est transcrit en direct, en français." },
-  { icon: Brain, titre: 'Comprend', texte: "Un LLM extrait adresse, nature, victimes, moyens." },
-  { icon: MapPin, titre: 'Cartographie', texte: "Géocodage IGN → l'entité apparaît sur la carte, < 2 s." },
-  { icon: History, titre: 'Rejoue', texte: 'Main courante horodatée. RETEX rembobinable en un clic.' },
+const PIPELINE = [
+  {
+    icon: AudioLines,
+    titre: 'Transcription',
+    texte: 'Google Speech-to-Text Chirp 3, en streaming. Le MP3 est décodé (PyAV) et poussé au rythme réel ; chaque segment final est écrit en base.',
+  },
+  {
+    icon: Bot,
+    titre: 'Agent LLM',
+    texte: "Un agent Claude (tool-use natif) tourne par appel. Il lit ton schéma, crée/met à jour des objets, pose les liens et géocode les adresses (IGN).",
+  },
+  {
+    icon: Database,
+    titre: 'Event-sourcing',
+    texte: 'PostgreSQL : un journal append-only (la vérité) + une projection d’objets. Chaque écriture est tracée, datée, jamais écrasée.',
+  },
+  {
+    icon: MonitorPlay,
+    titre: 'Temps réel',
+    texte: 'Supabase Realtime pousse tout au dashboard — carte, graphe mémoire, couche sémantique, timeline — en moins de 2 secondes.',
+  },
 ]
 
-const POINTS = [
-  {
-    icon: Siren,
-    titre: 'La seule à écouter',
-    texte: "NexSIS et Crimson dessinent la SITAC — à la main. Athena la remplit toute seule, depuis la voix.",
-  },
-  {
-    icon: ShieldCheck,
-    titre: 'Souveraine',
-    texte: 'Cartographie IGN, PostgreSQL, hébergement français, RGPD. Vos données restent en France.',
-  },
-  {
-    icon: CheckCircle2,
-    titre: 'Fiable',
-    texte: "L'IA propose, l'humain valide. Journal horodaté, niveau de fiabilité sur chaque info.",
-  },
+const OUTILS = ['query_schema', 'query_instances', 'create_instance', 'update_instance', 'geocoder']
+
+const FEATURES = [
+  { icon: Building2, titre: 'Carte 3D IGN', texte: 'MapLibre + fonds IGN, bâtiments en volume (BD TOPO fill-extrusion), géocodage souverain.' },
+  { icon: Truck, titre: 'Engins routés', texte: "Caserne la plus proche (OSM) → itinéraire routier IGN → l'engin roule sur la carte." },
+  { icon: Waypoints, titre: 'Graphe mémoire', texte: 'Les objets et leurs liens (dérivés du schéma) en direct, façon React Flow. Apparition/modif animées.' },
+  { icon: History, titre: 'Rejeu RETEX', texte: 'Un curseur rembobine la chronologie — gratuit grâce au journal d’événements. On revoit tout instant T.' },
+  { icon: Layers, titre: 'Couche sémantique', texte: 'Chaque écriture de l’agent est journalisée avec son diff avant/après. Une « stack trace » du raisonnement.' },
+  { icon: Activity, titre: 'Schema-driven', texte: 'Tu dessines tes types dans l’éditeur ; l’agent lit ce schéma et n’instancie que ça. Zéro modèle figé.' },
 ]
 
 export function LandingPage() {
@@ -74,8 +90,8 @@ export function LandingPage() {
               <span className="text-lg font-semibold tracking-tight text-slate-900">Athena</span>
             </div>
             <nav className="hidden items-center gap-8 text-sm text-slate-500 md:flex">
-              <a href="#demarche" className="transition-colors hover:text-slate-900">Comment ça marche</a>
-              <a href="#pourquoi" className="transition-colors hover:text-slate-900">Pourquoi Athena</a>
+              <a href="#pipeline" className="transition-colors hover:text-slate-900">La pipeline</a>
+              <a href="#features" className="transition-colors hover:text-slate-900">Ce qui tourne</a>
             </nav>
             <a
               href="#contact"
@@ -94,7 +110,7 @@ export function LandingPage() {
               <Reveal>
                 <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
                   <Siren className="h-3.5 w-3.5 text-red-600" />
-                  Dashboard de crise · IA pour les SDIS
+                  Pipeline temps réel · STT → LLM → PostGIS
                 </span>
               </Reveal>
               <Reveal delay={0.05}>
@@ -105,8 +121,9 @@ export function LandingPage() {
               </Reveal>
               <Reveal delay={0.1}>
                 <p className="mt-5 max-w-md text-lg leading-relaxed text-slate-500">
-                  Athena écoute les appels, comprend la situation et dessine la carte
-                  tactique en temps réel. <span className="text-slate-800">Zéro saisie.</span>
+                  Transcription <span className="text-slate-800">Chirp 3</span>, agent{' '}
+                  <span className="text-slate-800">LLM piloté par ton schéma</span>, PostgreSQL
+                  temps réel, carte IGN. La voix devient une SITAC — sans une frappe.
                 </p>
               </Reveal>
               <Reveal delay={0.15}>
@@ -127,7 +144,7 @@ export function LandingPage() {
               </Reveal>
               <Reveal delay={0.2}>
                 <p className="mt-6 text-xs text-slate-400">
-                  IGN souverain · RGPD · L'IA propose, l'humain valide
+                  Carto IGN souveraine · PostgreSQL · Journal append-only (RETEX gratuit)
                 </p>
               </Reveal>
             </div>
@@ -142,8 +159,8 @@ export function LandingPage() {
             <div className="grid grid-cols-3 divide-x divide-slate-200 rounded-2xl border border-slate-200 bg-slate-50/60">
               {[
                 ['0', 'champ tapé au clavier'],
-                ['< 2 s', 'carte à jour'],
-                ['≥ 90 %', "d'infos clés extraites"],
+                ['< 2 s', 'de l’audio à la carte (Realtime)'],
+                ['1', 'agent LLM par appel'],
               ].map(([c, l]) => (
                 <div key={l} className="px-4 py-6 text-center">
                   <div className="text-2xl font-bold text-slate-900 sm:text-3xl">{c}</div>
@@ -154,17 +171,17 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ───────── Comment ça marche ───────── */}
-        <section id="demarche" className="border-y border-slate-200 bg-slate-50">
+        {/* ───────── La pipeline ───────── */}
+        <section id="pipeline" className="border-y border-slate-200 bg-slate-50">
           <div className="mx-auto max-w-5xl px-6 py-20">
             <Reveal>
-              <p className="text-sm font-semibold uppercase tracking-widest text-red-600">Comment ça marche</p>
+              <p className="text-sm font-semibold uppercase tracking-widest text-red-600">La pipeline</p>
               <h2 className="mt-3 max-w-xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-                De la voix à la carte, sans clavier.
+                Un flux « produce → store → display ».
               </h2>
             </Reveal>
             <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {ETAPES.map((e, i) => (
+              {PIPELINE.map((e, i) => (
                 <Reveal key={e.titre} delay={i * 0.07}>
                   <div className="h-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                     <div className="flex items-center gap-3">
@@ -182,55 +199,100 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ───────── Pourquoi Athena ───────── */}
-        <section id="pourquoi" className="mx-auto max-w-5xl px-6 py-20">
-          <Reveal>
-            <h2 className="max-w-xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-              Les autres attendent qu'on les nourrisse.
-            </h2>
-            <p className="mt-3 max-w-lg text-lg text-slate-500">Athena se nourrit toute seule.</p>
-          </Reveal>
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {POINTS.map((p, i) => (
-              <Reveal key={p.titre} delay={i * 0.07}>
-                <div className="h-full rounded-2xl border border-slate-200 bg-white p-6">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600">
-                    <p.icon className="h-5 w-5" />
-                  </span>
-                  <h3 className="mt-4 text-lg font-semibold text-slate-900">{p.titre}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{p.texte}</p>
+        {/* ───────── Schema-driven ───────── */}
+        <section className="mx-auto max-w-5xl px-6 py-20">
+          <div className="grid items-center gap-10 lg:grid-cols-2">
+            <Reveal>
+              <p className="text-sm font-semibold uppercase tracking-widest text-red-600">Schema-driven</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                Tu dessines ton modèle. L'IA l'instancie.
+              </h2>
+              <p className="mt-4 max-w-md leading-relaxed text-slate-500">
+                Pas de schéma figé. Dans l'éditeur, tu dessines tes types (Victime, Engin,
+                Lieu…) et leurs relations. L'agent lit ce schéma via ses outils et n'extrait
+                que ça — les mêmes objets, reliés, sur la carte et dans le graphe mémoire.
+              </p>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <div className="rounded-2xl border border-slate-200 bg-slate-900 p-5 font-mono text-[13px] leading-relaxed text-slate-300 shadow-xl shadow-slate-300/40">
+                <p className="text-slate-500"># la boucle d'outils de l'agent (Claude)</p>
+                <div className="mt-3 space-y-1.5">
+                  {OUTILS.map((o) => (
+                    <div key={o} className="flex items-center gap-2">
+                      <span className="text-red-400">›</span>
+                      <span className="text-emerald-300">{o}</span>
+                      <span className="text-slate-600">()</span>
+                    </div>
+                  ))}
                 </div>
-              </Reveal>
-            ))}
+                <p className="mt-4 border-t border-white/10 pt-3 text-slate-500">
+                  → écrit dans <span className="text-slate-300">object_instances</span> +{' '}
+                  <span className="text-slate-300">agent_journal</span>
+                </p>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ───────── Ce qui tourne déjà ───────── */}
+        <section id="features" className="border-y border-slate-200 bg-slate-50">
+          <div className="mx-auto max-w-5xl px-6 py-20">
+            <Reveal>
+              <p className="text-sm font-semibold uppercase tracking-widest text-red-600">Déjà implémenté</p>
+              <h2 className="mt-3 max-w-xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                Pas une roadmap. Ce qui tourne.
+              </h2>
+            </Reveal>
+            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {FEATURES.map((f, i) => (
+                <Reveal key={f.titre} delay={i * 0.05}>
+                  <div className="h-full rounded-2xl border border-slate-200 bg-white p-6">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 text-red-600">
+                      <f.icon className="h-4 w-4" />
+                    </span>
+                    <h3 className="mt-4 font-semibold text-slate-900">{f.titre}</h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{f.texte}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+            <Reveal delay={0.1}>
+              <div className="mt-8 flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
+                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                <p>
+                  <span className="font-medium text-slate-800">Souverain là où ça compte</span> —
+                  cartographie IGN et base PostgreSQL, hébergeables en France. STT et LLM sont
+                  des briques interchangeables (Chirp 3 / Claude aujourd'hui, modèles FR demain).
+                </p>
+              </div>
+            </Reveal>
           </div>
         </section>
 
         {/* ───────── CTA ───────── */}
-        <section id="contact" className="border-t border-slate-200 bg-slate-50">
-          <div className="mx-auto max-w-5xl px-6 py-20 text-center">
-            <Reveal>
-              <h2 className="mx-auto max-w-xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-                Voyez la carte se construire toute seule.
-              </h2>
-              <p className="mx-auto mt-4 max-w-md text-slate-500">
-                Une démo de 20 minutes. Pilote via l'achat innovant (&lt; 140 k€, sans appel d'offres).
-              </p>
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-                <a
-                  href="mailto:contact@athena-crise.fr?subject=Demande%20de%20d%C3%A9mo%20Athena"
-                  className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-500"
-                >
-                  Demander une démo <ArrowRight className="h-4 w-4" />
-                </a>
-                <Link
-                  to="/tableau-de-bord"
-                  className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50"
-                >
-                  Explorer le tableau de bord
-                </Link>
-              </div>
-            </Reveal>
-          </div>
+        <section id="contact" className="mx-auto max-w-5xl px-6 py-20 text-center">
+          <Reveal>
+            <h2 className="mx-auto max-w-xl text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              Voyez la carte se construire toute seule.
+            </h2>
+            <p className="mx-auto mt-4 max-w-md text-slate-500">
+              Une démo de 20 minutes sur un scénario réel. Pilote via l'achat innovant (&lt; 140 k€).
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <a
+                href="mailto:contact@athena-crise.fr?subject=Demande%20de%20d%C3%A9mo%20Athena"
+                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-500"
+              >
+                Demander une démo <ArrowRight className="h-4 w-4" />
+              </a>
+              <Link
+                to="/tableau-de-bord"
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50"
+              >
+                Explorer le tableau de bord
+              </Link>
+            </div>
+          </Reveal>
         </section>
 
         {/* ───────── Footer ───────── */}
