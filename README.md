@@ -1,122 +1,122 @@
 # 🚨 Athena
 
-**Copilote IA de gestion de crise pour les sapeurs-pompiers.**
-Athena écoute les appels d'urgence et les communications radio et construit **en temps réel, sans aucune saisie manuelle**, la situation tactique — victimes, engins, adresses, dangers — sur une carte 3D.
+**AI copilot for firefighter crisis management.**
+Athena listens to emergency calls and radio communications and builds the tactical picture — victims, vehicles, addresses, hazards — on a 3D map, **in real time, with zero manual data entry**.
 
-### 🔗 Démo en ligne
+### 🔗 Live demo
 **https://athena-khaki.vercel.app/accueil**
 
 ---
 
-## Le problème
+## The problem
 
-Pendant une crise (incendie, accident majeur, afflux de victimes), le centre de traitement de l'alerte est submergé : plusieurs appels 112 et canaux radio arrivent **en même temps**. Les informations vitales — *où, combien de victimes, quels dangers, quels moyens engagés* — sont **mal entendues, oubliées, ou noyées dans le bruit**. La prise de notes manuelle ne suit pas.
+During a crisis (fire, major accident, mass-casualty event), the emergency call center is overwhelmed: several 112 calls and radio channels come in **at the same time**. Vital information — *where, how many victims, what hazards, which units are engaged* — gets **misheard, forgotten, or lost in the noise**. Manual note-taking can't keep up.
 
-Les ordres sont mal compris, des messages radio passent à la trappe, des détails cruciaux disparaissent — et chaque information perdue coûte du temps, de l'argent, parfois des vies.
+Orders are misunderstood, radio messages slip through the cracks, crucial details disappear — and every piece of lost information costs time, money, and sometimes lives.
 
-## La solution
+## The solution
 
-Athena **écoute tout** et fait **émerger la clarté du chaos**. Une seule chaîne transforme la voix brute en une image tactique vivante et partagée — **sans clavier, sans saisie**. L'IA ne se trompe jamais d'écoute, ne se contredit jamais, et n'oublie rien.
+Athena **listens to everything** and makes **clarity emerge from chaos**. A single pipeline turns raw voice into a living, shared tactical picture — **no keyboard, no data entry**. The AI never mishears, never contradicts itself, and never forgets.
 
 ```
-   Appels 112 + radio  (audio, simultanés)
-              │
-   ┌──────────▼───────────────────────────────────────────┐
-   │ 1. ÉCOUTE   Transcription en streaming, mot à mot     │  Google Chirp 3
-   │             (plusieurs appels en parallèle)           │
-   ├───────────────────────────────────────────────────────┤
-   │ 2. COMPREND Un agent LLM lit VOTRE modèle de données  │  Agent Claude
-   │             et en extrait entités, liens et positions │  (tool-use)
-   │             — avec résolution d'entités entre appels  │
-   ├───────────────────────────────────────────────────────┤
-   │ 3. MÉMORISE Chaque fait est écrit dans un journal     │  Supabase
-   │             horodaté, append-only. Rien n'est écrasé. │  (event sourcing)
-   ├───────────────────────────────────────────────────────┤
-   │ 4. AFFICHE  Carte 3D, graphe mémoire, couche          │  Realtime
-   │             sémantique et timeline — en direct.       │
-   └───────────────────────────────────────────────────────┘
+   112 calls + radio   (audio, all at once)
+                    │
+   ┌────────────────▼───────────────────────────────────────┐
+   │ 1 · LISTEN      Streaming word-by-word transcription   │  Google Chirp 3
+   │                 of several simultaneous calls          │
+   ├────────────────────────────────────────────────────────┤
+   │ 2 · UNDERSTAND  An LLM agent reads YOUR data model     │  Gemini / Claude
+   │                 and extracts entities, links and       │  (tool-use)
+   │                 positions — cross-call resolution      │
+   ├────────────────────────────────────────────────────────┤
+   │ 3 · REMEMBER    Every fact appended to a timestamped,  │  Supabase
+   │                 append-only log — never overwritten    │  (event sourcing)
+   ├────────────────────────────────────────────────────────┤
+   │ 4 · SEE         3D map, memory graph, semantic layer   │  Realtime
+   │                 and timeline — all live                │
+   └────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🧪 Tester la démo (pour le jury)
+## 🧪 Try the demo (for the jury)
 
-> ⏱️ **Cold start** : le backend (transcription + IA) tourne sur un hébergement gratuit. Le **tout premier lancement peut mettre 30–60 s à se « réveiller »**. C'est normal, patiente un peu.
+> ⏱️ **Cold start**: the backend (transcription + AI) runs on free-tier hosting. The **very first launch can take 30–60 s to "wake up."** That's normal — please be patient.
 
-**Entrer dans l'application :** ouvre **https://athena-khaki.vercel.app/accueil** et clique **« See the dashboard »**. Tu arrives sur le tableau de bord — barre latérale à gauche, contrôles flottants en bas à droite. Ensuite, au choix :
+**Enter the app:** open **https://athena-khaki.vercel.app/accueil** and click **"See the dashboard."** You land on the dashboard — sidebar on the left, floating controls at the bottom right. Then take your pick:
 
-### Option A — Aperçu instantané (30 secondes, le plus simple)
+### Option A — Instant preview (30 seconds, easiest)
 
-Pour voir le résultat tout de suite, sans attendre le temps réel :
+To see the result right away, without waiting for real time:
 
-1. Sur le **Dashboard**, en **bas à droite** de l'écran, clique sur le bouton **🧪 (fiole)** — *« Fill with mock objects »*.
-   → La carte 3D et les panneaux se remplissent instantanément d'une situation type (victimes, engins, lieux). Re-clique pour vider.
+1. On the **Dashboard**, at the **bottom right** of the screen, click the **🧪 (flask)** button — *"Fill with mock objects."*
+   → The 3D map and the panels instantly fill with a sample situation (victims, vehicles, locations). Click again to clear.
 
-### Option B — La vraie simulation temps réel (l'expérience complète) ⭐
+### Option B — The real real-time simulation (the full experience) ⭐
 
-1. Barre latérale → **« Simulation »**.
-2. En haut à droite, dans le menu **« Active: »**, sélectionne le **scénario de démonstration**.
-3. Barre latérale → **« Dashboard »**.
-4. En bas à droite, clique sur **▶ (Play)** — *« Start the demo »*.
-5. **Regarde faire** 👀 : les appels d'urgence se jouent en temps réel, la transcription défile dans le panneau **« Live feed »**, et l'IA fait apparaître **toute seule** les victimes, engins et adresses sur la carte 3D — pendant que le graphe mémoire, la couche sémantique et la timeline de rejeu se remplissent.
-   - **↺** revient au début · **■** coupe.
+1. Sidebar → **"Simulation."**
+2. Top right, in the **"Active:"** menu, select the **demo scenario**.
+3. Sidebar → **"Dashboard."**
+4. Bottom right, click **▶ (Play)** — *"Start the demo."*
+5. **Watch it happen** 👀: the emergency calls play in real time, the transcription scrolls in the **"Live feed"** panel, and the AI makes victims, vehicles and addresses **appear on their own** on the 3D map — while the memory graph, the semantic layer and the replay timeline fill up.
+   - **↺** back to start · **■** stop.
 
-**Les panneaux du Dashboard** (déplaçables, comme un poste de commandement) :
+**The Dashboard panels** (draggable, like a command post):
 
-| Panneau | Contenu |
+| Panel | Contents |
 |---|---|
-| **Map** | Carte 3D IGN, bâtiments en relief, entités géolocalisées, animation de l'engin depuis sa caserne |
-| **Objects** | Les objets extraits par l'IA, groupés par type |
-| **Live memory** | La mémoire de l'IA visualisée en graphe, qui grandit en direct |
-| **Semantic Layer Edit** | Ce que l'IA a compris, avec le diff avant/après (clic → détail) |
-| **Live feed** / **Past calls** | Les flux audio en direct et les appels passés avec leur transcription |
+| **Map** | 3D IGN map, extruded buildings, geolocated entities, vehicle animation from its station |
+| **Objects** | The objects extracted by the AI, grouped by type |
+| **Live memory** | The AI's memory as a graph, growing live |
+| **Semantic Layer Edit** | What the AI understood, with the before/after diff (click → detail) |
+| **Live feed** / **Past calls** | The live audio feeds and the past calls with their transcription |
 
 ---
 
-## ✨ Ce qui nous différencie
+## ✨ What sets us apart
 
-- **Zéro saisie manuelle.** L'opérateur ne tape rien : l'IA écoute et documente à sa place.
-- **Temps réel & multi-appels.** Transcription en streaming de plusieurs appels 112 + radios **simultanés** — le vrai chaos d'une crise, pas un fichier propre. Gestion des conflicts et informations contradictoires par hiérarchisation d'une base de donnée structurée. Integrated mapping and geolocation services provide instant visual context to all voice communications.
-- **Extraction pilotée par VOTRE schéma.** Vous *dessinez* vos objets métier (Victime, Engin, Lieu…) dans l'éditeur de schéma ; l'agent LLM instancie **exactement ces types**, avec **résolution d'entités entre appels** (une même victime citée deux fois = un seul objet). Compliance friendly.
-- **Carte tactique 3D souveraine.** MapLibre + **Géoplateforme IGN** (données publiques françaises) : bâtiments 3D (BD TOPO®), géocodage, itinéraire de l'engin *caserne → intervention*.
-- **Mémoire event-sourcée + rejeu (RETEX).** Tout est horodaté et append-only ; une timeline permet de **re-scruber** l'intervention (avant / après) pour le débriefing.
-- Advanced AI-powered voice recognition that works in noisy environments and adapts to different accents and speech patterns.
-- **Explicable — « l'IA propose, l'humain valide ».** La couche sémantique montre le diff de chaque décision de l'IA et sa « stack trace » de raisonnement. Rien n'est écrasé en silence. Toutpeut être retracé.
+- **Zero manual data entry.** The operator types nothing: the AI listens and documents in their place.
+- **Real time & multi-call.** Streaming transcription of several **simultaneous** 112 calls + radio channels — the real chaos of a crisis, not a clean file. Conflicts and contradictory information are resolved by prioritization within a structured database. Integrated mapping and geolocation give instant visual context to every voice communication.
+- **Extraction driven by YOUR schema.** You *draw* your domain objects (Victim, Vehicle, Location…) in the schema editor; the LLM agent instantiates **exactly those types**, with **cross-call entity resolution** (the same victim mentioned twice = a single object). Compliance-friendly.
+- **Sovereign 3D tactical map.** MapLibre + **IGN Géoplateforme** (French public data): 3D buildings (BD TOPO®), geocoding, vehicle routing *station → incident*.
+- **Event-sourced memory + replay (after-action review).** Everything is timestamped and append-only; a timeline lets you **scrub back and forth** through the intervention (before / after) for debriefing.
+- **Advanced AI-powered voice recognition** that works in noisy environments and adapts to different accents and speech patterns.
+- **Explainable — "the AI proposes, the human validates."** The semantic layer shows the diff of every AI decision and its reasoning "stack trace." Nothing is silently overwritten — everything can be traced back.
 
 ---
 
-## 🏗️ Stack technique
+## 🏗️ Tech stack
 
-| Couche | Technologies |
+| Layer | Technologies |
 |---|---|
-| **Frontend** | Vite · React · TypeScript · Tailwind + shadcn/ui · MapLibre GL + IGN · dockview · React Flow · zustand — déployé sur **Vercel** |
-| **Backend** | FastAPI (Python) sur **Render** — Google Cloud Speech-to-Text V2 (Chirp 3) · agent **Gemini et Anthropic** (tool-use natif) · PyAV |
-| **Données** | **Supabase** — PostgreSQL · Realtime · Storage |
+| **Frontend** | Vite · React · TypeScript · Tailwind + shadcn/ui · MapLibre GL + IGN · dockview · React Flow · zustand — deployed on **Vercel** |
+| **Backend** | FastAPI (Python) on **Render** — Google Cloud Speech-to-Text V2 (Chirp 3) · **Gemini & Anthropic** LLM agents (native tool-use) · PyAV |
+| **Data** | **Supabase** — PostgreSQL · Realtime · Storage |
 
-## 📁 Structure du dépôt
+## 📁 Repository structure
 
-- `frontend/` — l'application React : éditeur de schéma, créateur de simulation, dashboard temps réel
-- `poc-stt/` — le backend Python : transcription en streaming + agent LLM d'extraction
-- `supabase/` — migrations SQL (schéma versionné)
-- `Ressources/` — modèle de données de référence Athena
+- `frontend/` — the React app: schema editor, simulation builder, real-time dashboard
+- `poc-stt/` — the Python backend: streaming transcription + LLM extraction agent
+- `supabase/` — SQL migrations (versioned schema)
+- `Ressources/` — Athena reference data model
 
-## 💻 Lancer en local
+## 💻 Run locally
 
-**Frontend :**
+**Frontend:**
 
 ```bash
 cd frontend
-cp .env.example .env.local     # renseigne VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY
+cp .env.example .env.local     # set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
 npm install
 npm run dev                    # http://localhost:5173
 ```
 
-**Backend (transcription + IA), optionnel :**
+**Backend (transcription + AI), optional:**
 
 ```bash
 cd poc-stt
-# .env : SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, identifiants Google Cloud, ANTHROPIC_API_KEY
+# .env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, Google Cloud credentials, ANTHROPIC_API_KEY
 uv run uvicorn main:app
 ```
 
-> L'accès est **ouvert** (clé Supabase `anon` + RLS permissive, pas d'authentification) — à durcir avant une vraie mise en production.
+> Access is **open** (Supabase `anon` key + permissive RLS, no authentication) — to be hardened before any real production use.
