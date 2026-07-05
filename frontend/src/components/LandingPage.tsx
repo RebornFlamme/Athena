@@ -1,6 +1,6 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MotionConfig, motion } from 'framer-motion'
+import { MotionConfig, motion, useReducedMotion } from 'framer-motion'
 import {
   ArrowRight,
   AudioLines,
@@ -99,8 +99,10 @@ export function LandingPage() {
 
         {/* ───────── Hero (deux colonnes) ───────── */}
         <section className="relative overflow-hidden">
+          {/* Fond animé PixelBlast (WebGL, three.js) — tramage monochrome */}
+          <HeroBackground />
           <div className="pointer-events-none absolute -top-24 left-1/3 h-72 w-[46rem] -translate-x-1/2 rounded-full bg-neutral-900/[0.06] blur-[110px]" />
-          <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 lg:grid-cols-2 lg:py-24">
+          <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 lg:grid-cols-2 lg:py-24">
             <div>
               <Reveal>
                 <Badge variant="secondary" className="rounded-full px-3 py-1 font-medium">
@@ -282,6 +284,46 @@ export function LandingPage() {
         </footer>
       </div>
     </MotionConfig>
+  )
+}
+
+// Fond animé du hero : tramage (dithering) monochrome piloté par WebGL.
+// Décoratif → pointer-events-none (les boutons du hero restent cliquables).
+// Coupé si l'utilisateur préfère réduire les animations (prefers-reduced-motion).
+// three.js + postprocessing (~lourd) sont importés à la demande APRÈS le montage
+// (import dynamique dans un effet → code-splitting sans jamais suspendre le rendu,
+// donc pas d'erreur « suspended while responding to synchronous input »).
+function HeroBackground() {
+  const reduce = useReducedMotion()
+  const [Comp, setComp] = useState<React.ComponentType<any> | null>(null)
+
+  useEffect(() => {
+    if (reduce) return
+    let vivant = true
+    import('@/components/PixelBlast').then((m) => {
+      if (vivant) setComp(() => m.default)
+    })
+    return () => {
+      vivant = false
+    }
+  }, [reduce])
+
+  if (reduce || !Comp) return null
+  return (
+    <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.55]">
+      <Comp
+        variant="circle"
+        pixelSize={5}
+        color="#525252"
+        patternScale={2.4}
+        patternDensity={1}
+        speed={0.4}
+        edgeFade={0.35}
+        enableRipples={false}
+        transparent
+        autoPauseOffscreen
+      />
+    </div>
   )
 }
 
