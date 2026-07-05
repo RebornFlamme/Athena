@@ -26,7 +26,7 @@ export function EnteteOperateur({ appel }: { appel: Appel }) {
         </AvatarFallback>
       </Avatar>
       <div className="min-w-0">
-        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Opérateur</div>
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Operator</div>
         <div className="truncate text-sm font-medium">{appel.operateur ?? '—'}</div>
       </div>
     </div>
@@ -35,10 +35,10 @@ export function EnteteOperateur({ appel }: { appel: Appel }) {
 
 /** Libellé lisible d'une action de l'agent (kind du journal). */
 const LIBELLE_KIND: Record<string, string> = {
-  creation: 'Création',
-  modification: 'Mise à jour',
-  suppression: 'Suppression',
-  outil: 'Outil',
+  creation: 'Creation',
+  modification: 'Update',
+  suppression: 'Deletion',
+  outil: 'Tool',
 }
 
 /** Chaîne de raisonnement de l'agent LLM (journal `agent_journal` en direct). */
@@ -48,7 +48,7 @@ export function SectionRaisonnement({ appelId }: { appelId?: string | null }) {
   return (
     <section>
       <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        <Brain className="h-3.5 w-3.5" /> Raisonnement du LLM
+        <Brain className="h-3.5 w-3.5" /> LLM reasoning
         {journal.length > 0 && (
           <Badge variant="secondary" className="ml-auto h-5 px-1.5 text-[10px]">
             {journal.length}
@@ -64,7 +64,7 @@ export function SectionRaisonnement({ appelId }: { appelId?: string | null }) {
               <Skeleton className="h-3 w-2/3" />
             </div>
             <p className="mt-2 text-[11px] italic text-muted-foreground">
-              En attente de l'agent — son raisonnement et les objets créés s'afficheront ici pendant l'appel.
+              Waiting for the agent — its reasoning and the objects it creates will appear here during the call.
             </p>
           </>
         ) : (
@@ -112,14 +112,14 @@ export function DetailsLieu({ appel }: { appel: Appel }) {
     <section className="grid gap-2">
       <div className="flex items-center gap-2 text-sm">
         <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Localisation</span>
+        <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Location</span>
         <span className="ml-auto min-w-0 truncate text-right font-medium">
           {appel.localisation ?? '—'}
         </span>
       </div>
       <div className="flex items-center gap-2 text-sm">
         <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Caserne</span>
+        <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Station</span>
         <span className="ml-auto min-w-0 truncate text-right font-medium">{appel.caserne ?? '—'}</span>
       </div>
     </section>

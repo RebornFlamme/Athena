@@ -39,8 +39,8 @@ export function PanneauFluxAudio() {
       {fluxLive.length === 0 ? (
         <p className="p-4 text-sm italic leading-relaxed text-muted-foreground">
           {statut === 'lecture'
-            ? 'Aucun appel en cours.'
-            : 'Lancez la démonstration pour voir les appels arriver en direct.'}
+            ? 'No active call.'
+            : 'Start the demo to see calls come in live.'}
         </p>
       ) : (
         <ScrollArea className="min-h-0 flex-1">
@@ -58,7 +58,7 @@ export function PanneauFluxAudio() {
                     setSelection(appel)
                   }
                 }}
-                title="Ouvrir la transcription"
+                title="Open transcript"
                 className="flex w-full cursor-pointer items-center gap-3 border-b bg-primary/5 px-3 py-2.5 text-left transition-colors hover:bg-primary/10 focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <button
@@ -72,7 +72,7 @@ export function PanneauFluxAudio() {
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   }`}
-                  title={ecoute ? 'Écoute activée — couper' : 'Écouter ce flux'}
+                  title={ecoute ? 'Monitoring on — mute' : 'Listen to this feed'}
                 >
                   {ecoute ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
                 </button>

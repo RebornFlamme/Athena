@@ -72,7 +72,7 @@ function FieldRow({ attr, reorder }: { attr: Attribute; reorder: ReorderApi }) {
       <div className="relative flex items-center gap-1">
         <button
           type="button"
-          title="Glisser pour réordonner"
+          title="Drag to reorder"
           className="nodrag flex h-7 w-4 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground active:cursor-grabbing"
           onPointerDown={(e) => reorder.onGripDown(attr.id, e)}
           onPointerMove={reorder.onGripMove}
@@ -83,7 +83,7 @@ function FieldRow({ attr, reorder }: { attr: Attribute; reorder: ReorderApi }) {
         <Input
           className="nodrag h-7 flex-1 text-xs"
           value={name}
-          placeholder="nom"
+          placeholder="name"
           onChange={(e) => setName(e.target.value)}
           onBlur={() => {
             const v = name.trim()
@@ -119,7 +119,7 @@ function FieldRow({ attr, reorder }: { attr: Attribute; reorder: ReorderApi }) {
           type="button"
           variant={attr.is_list ? 'secondary' : 'ghost'}
           size="icon"
-          title="Liste"
+          title="List"
           className="nodrag h-7 w-7 shrink-0 font-mono text-[11px]"
           onClick={() => editAttribute(attr.id, { is_list: !attr.is_list })}
         >
@@ -129,7 +129,7 @@ function FieldRow({ attr, reorder }: { attr: Attribute; reorder: ReorderApi }) {
           type="button"
           variant="ghost"
           size="icon"
-          title="Supprimer le champ"
+          title="Delete field"
           className="nodrag h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
           onClick={() => removeAttribute(attr.id)}
         >
@@ -148,7 +148,7 @@ function FieldRow({ attr, reorder }: { attr: Attribute; reorder: ReorderApi }) {
       {attr.data_type === 'enum' && (
         <Input
           className="nodrag ml-5 h-7 text-xs"
-          placeholder="valeurs : vert, jaune, rouge…"
+          placeholder="values: green, yellow, red…"
           value={enumText}
           onChange={(e) => setEnumText(e.target.value)}
           onBlur={() =>
@@ -329,7 +329,7 @@ export function EntityNode({ id }: NodeProps) {
         <Input
           className="nodrag h-7 flex-1 border-transparent bg-transparent px-1 text-sm font-semibold shadow-none focus-visible:border-input"
           value={name}
-          placeholder="Nom de l'objet"
+          placeholder="Object name"
           onChange={(e) => setName(e.target.value)}
           onBlur={() => {
             const v = name.trim()
@@ -340,7 +340,7 @@ export function EntityNode({ id }: NodeProps) {
         />
         {entity.is_subobject && (
           <Badge variant="secondary" className="shrink-0 text-[10px]">
-            sous-objet
+            sub-object
           </Badge>
         )}
         <AlertDialog>
@@ -349,7 +349,7 @@ export function EntityNode({ id }: NodeProps) {
               type="button"
               variant="ghost"
               size="icon"
-              title="Supprimer l'objet"
+              title="Delete object"
               className="nodrag h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -357,19 +357,19 @@ export function EntityNode({ id }: NodeProps) {
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Supprimer « {entity.name} » ?</AlertDialogTitle>
+              <AlertDialogTitle>Delete “{entity.name}”?</AlertDialogTitle>
               <AlertDialogDescription>
-                Cet objet et ses {attributes.length} champ{attributes.length > 1 ? 's' : ''} seront
-                retirés du schéma. La suppression devient définitive après « Écraser Supabase ».
+                This object and its {attributes.length} field{attributes.length > 1 ? 's' : ''} will
+                be removed from the schema. The deletion becomes permanent after “Overwrite Supabase”.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 onClick={() => removeEntity(entity.id)}
               >
-                Supprimer
+                Delete
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -388,14 +388,14 @@ export function EntityNode({ id }: NodeProps) {
           className="nodrag h-7 w-full justify-center gap-1 text-xs"
           onClick={() => addAttribute(entity.id, { name: 'champ', data_type: 'string' })}
         >
-          <Plus className="h-3.5 w-3.5" /> Ajouter un champ
+          <Plus className="h-3.5 w-3.5" /> Add field
         </Button>
       </CardContent>
 
       {/* Poignées de redimensionnement invisibles : bord droit (largeur), bord
           bas (hauteur), coin bas-droit (les deux). Aucune chrome visible. */}
       <div
-        title="Redimensionner (largeur)"
+        title="Resize (width)"
         className="nodrag absolute top-0 z-10 h-full w-1.5 cursor-ew-resize touch-none"
         style={{ right: -3 }}
         onPointerDown={startResize('x')}
@@ -403,7 +403,7 @@ export function EntityNode({ id }: NodeProps) {
         onPointerUp={onResizeUp}
       />
       <div
-        title="Redimensionner (hauteur)"
+        title="Resize (height)"
         className="nodrag absolute left-0 z-10 h-1.5 w-full cursor-ns-resize touch-none"
         style={{ bottom: -3 }}
         onPointerDown={startResize('y')}
@@ -411,7 +411,7 @@ export function EntityNode({ id }: NodeProps) {
         onPointerUp={onResizeUp}
       />
       <div
-        title="Redimensionner"
+        title="Resize"
         className="nodrag absolute z-10 h-3.5 w-3.5 cursor-nwse-resize touch-none"
         style={{ right: -3, bottom: -3 }}
         onPointerDown={startResize('xy')}

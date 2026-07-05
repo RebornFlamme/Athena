@@ -120,13 +120,13 @@ export function TimelineMontage({
   return (
     <div ref={containerRef} className="space-y-2">
       <div className="flex items-center gap-1">
-        <span className="mr-1 text-xs text-muted-foreground">Échelle</span>
+        <span className="mr-1 text-xs text-muted-foreground">Scale</span>
         <Button
           size="icon"
           variant="outline"
           className="h-7 w-7"
           onClick={() => setPxPerSec((p) => clamp(p / 1.5, PX_PER_SEC_MIN, PX_PER_SEC_MAX))}
-          title="Dézoomer"
+          title="Zoom out"
         >
           <ZoomOut className="h-4 w-4" />
         </Button>
@@ -135,7 +135,7 @@ export function TimelineMontage({
           variant="outline"
           className="h-7 w-7"
           onClick={() => setPxPerSec((p) => clamp(p * 1.5, PX_PER_SEC_MIN, PX_PER_SEC_MAX))}
-          title="Zoomer"
+          title="Zoom in"
         >
           <ZoomIn className="h-4 w-4" />
         </Button>
@@ -144,9 +144,9 @@ export function TimelineMontage({
           variant="outline"
           className="h-7 gap-1.5"
           onClick={toutAfficher}
-          title="Ajuster l'échelle pour tout voir"
+          title="Adjust the scale to fit everything"
         >
-          <Maximize2 className="h-3.5 w-3.5" /> Tout afficher
+          <Maximize2 className="h-3.5 w-3.5" /> Fit all
         </Button>
       </div>
 

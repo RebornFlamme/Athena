@@ -16,7 +16,7 @@ import { EnteteAppel, SectionRaisonnement } from './AppelDetails'
 
 // Objets créés — placeholder illustratif tant que la pipeline d'extraction
 // (transcription → LLM → entités) n'est pas branchée.
-const OBJETS_POOL = ['Sinistre', 'Victime #1', 'Victime #2', 'Moyen — VSAV 12', 'Périmètre de sécurité']
+const OBJETS_POOL = ['Fire', 'Victim #1', 'Victim #2', 'Resource — VSAV 12', 'Safety perimeter']
 
 function hash(s: string): number {
   let h = 0
@@ -44,7 +44,7 @@ export function FeuillePastCall({ appel, onClose }: { appel: Appel | null; onClo
                 <span className="min-w-0 flex-1 truncate">{appel.titre}</span>
               </SheetTitle>
               <SheetDescription>
-                déclenché à {formaterMs(appel.ts_debut_ms)} · durée {formaterMs(appel.duree_ms)}
+                triggered at {formaterMs(appel.ts_debut_ms)} · duration {formaterMs(appel.duree_ms)}
               </SheetDescription>
             </SheetHeader>
 
@@ -55,11 +55,11 @@ export function FeuillePastCall({ appel, onClose }: { appel: Appel | null; onClo
 
                 <section>
                   <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Transcription
+                    Transcript
                   </h3>
                   {vide ? (
                     <p className="text-sm italic text-muted-foreground">
-                      Aucune transcription pour cet appel. Lancez la simulation pour la générer.
+                      No transcript for this call. Start the simulation to generate it.
                     </p>
                   ) : (
                     <p className="text-sm leading-relaxed">
@@ -74,10 +74,10 @@ export function FeuillePastCall({ appel, onClose }: { appel: Appel | null; onClo
 
                 <section>
                   <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    <Boxes className="h-3.5 w-3.5" /> Objets créés
+                    <Boxes className="h-3.5 w-3.5" /> Objects created
                   </h3>
                   {objets.length === 0 ? (
-                    <p className="text-sm italic text-muted-foreground">Aucun objet.</p>
+                    <p className="text-sm italic text-muted-foreground">No objects.</p>
                   ) : (
                     <div className="flex flex-wrap gap-1.5">
                       {objets.map((o) => (
@@ -88,7 +88,7 @@ export function FeuillePastCall({ appel, onClose }: { appel: Appel | null; onClo
                     </div>
                   )}
                   <p className="mt-2 text-[11px] italic text-muted-foreground">
-                    Exemples — renseignés par la pipeline d'extraction (à venir).
+                    Samples — populated by the extraction pipeline (coming soon).
                   </p>
                 </section>
               </div>

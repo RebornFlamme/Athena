@@ -28,7 +28,7 @@ export function EnTetePanneau({
           <button
             onClick={onFermer}
             className="flex h-4 w-4 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            title="Fermer"
+            title="Close"
           >
             <X className="h-3 w-3" />
           </button>

@@ -54,8 +54,8 @@ export interface Entite {
 
 /** Libellé + couleur de chaque statut (badges de la main courante, marqueurs carte). */
 export const STATUTS: Record<StatutInfo, { libelle: string; couleur: string }> = {
-  presume: { libelle: 'Présumé', couleur: '#d8973c' },
-  confirme: { libelle: 'Confirmé', couleur: '#22c55e' },
-  corrige: { libelle: 'Corrigé', couleur: '#9aa0ae' },
-  perime: { libelle: 'Périmé', couleur: '#6b7280' },
+  presume: { libelle: 'Presumed', couleur: '#d8973c' },
+  confirme: { libelle: 'Confirmed', couleur: '#22c55e' },
+  corrige: { libelle: 'Corrected', couleur: '#9aa0ae' },
+  perime: { libelle: 'Stale', couleur: '#6b7280' },
 }

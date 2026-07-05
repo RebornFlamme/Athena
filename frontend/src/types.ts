@@ -12,15 +12,15 @@ export type DataType =
   | 'object' // sous-objet (edge pointillé)
 
 export const DATA_TYPES: { value: DataType; label: string }[] = [
-  { value: 'string', label: 'Chaîne (courte)' },
-  { value: 'text', label: 'Texte (long)' },
-  { value: 'boolean', label: 'Booléen' },
-  { value: 'integer', label: 'Entier' },
-  { value: 'number', label: 'Nombre' },
-  { value: 'datetime', label: 'Date / heure' },
-  { value: 'enum', label: 'Énumération' },
-  { value: 'reference', label: 'Référence → objet' },
-  { value: 'object', label: 'Sous-objet' },
+  { value: 'string', label: 'String (short)' },
+  { value: 'text', label: 'Text (long)' },
+  { value: 'boolean', label: 'Boolean' },
+  { value: 'integer', label: 'Integer' },
+  { value: 'number', label: 'Number' },
+  { value: 'datetime', label: 'Date / time' },
+  { value: 'enum', label: 'Enumeration' },
+  { value: 'reference', label: 'Reference → object' },
+  { value: 'object', label: 'Sub-object' },
 ]
 
 /**

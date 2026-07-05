@@ -24,7 +24,7 @@ import { TimelineMontage } from './TimelineMontage'
 
 function messageErreur(error: string): string {
   if (error.includes('Could not find the table') || error.includes('appels-audio') || error.includes('Bucket not found')) {
-    return "Le stockage n'est pas prêt : applique la migration supabase/migrations/0003_simulation_appels.sql dans le SQL Editor de Supabase (crée la table + le bucket)."
+    return 'Storage is not ready: apply the migration supabase/migrations/0003_simulation_appels.sql in the Supabase SQL Editor (creates the table + the bucket).'
   }
   return error
 }
@@ -134,7 +134,7 @@ export function SimulationPage() {
         <h1 className="text-sm font-semibold">
           Simulation
           <span className="ml-2 text-xs font-normal text-muted-foreground">
-            {appels.length} appel{appels.length > 1 ? 's' : ''}
+            {appels.length} call{appels.length > 1 ? 's' : ''}
           </span>
         </h1>
         <div className="flex-1" />
@@ -156,14 +156,14 @@ export function SimulationPage() {
           disabled={!isSupabaseConfigured}
           onClick={() => inputRef.current?.click()}
         >
-          <Upload className="h-4 w-4" /> Ajouter un MP3
+          <Upload className="h-4 w-4" /> Add an MP3
         </Button>
       </header>
 
       {!isSupabaseConfigured && (
         <div className="border-b bg-amber-500/10 px-4 py-2 text-sm text-amber-600 dark:text-amber-400">
-          Supabase n'est pas configuré : copie <code>frontend/.env.example</code> en{' '}
-          <code>.env.local</code> puis relance <code>npm run dev</code>.
+          Supabase is not configured: copy <code>frontend/.env.example</code> to{' '}
+          <code>.env.local</code> then restart <code>npm run dev</code>.
         </div>
       )}
       {erreur && (
@@ -185,15 +185,15 @@ export function SimulationPage() {
             }`}
           >
             <Upload className="h-6 w-6 text-muted-foreground" />
-            <div className="text-sm font-medium">Glissez des MP3 ici</div>
+            <div className="text-sm font-medium">Drop MP3 files here</div>
             <div className="text-xs text-muted-foreground">
-              Chaque fichier devient un appel. Vous pourrez les placer dans le temps ensuite.
+              Each file becomes a call. You can place them in time afterwards.
             </div>
           </div>
 
           {envoiEnCours > 0 && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Téléversement de {envoiEnCours} fichier
+              <Loader2 className="h-4 w-4 animate-spin" /> Uploading {envoiEnCours} file
               {envoiEnCours > 1 ? 's' : ''}…
             </div>
           )}
@@ -202,12 +202,12 @@ export function SimulationPage() {
             <Skeleton className="h-40 w-full" />
           ) : appels.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Aucun appel. Glissez des MP3 ci-dessus pour composer la simulation.
+              No calls. Drop MP3 files above to compose the simulation.
             </p>
           ) : (
             <div className="space-y-2">
               <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Montage — glissez les appels pour fixer leur instant de déclenchement
+                Timeline — drag the calls to set their trigger time
               </div>
               <TimelineMontage
                 appels={appels}
@@ -223,25 +223,25 @@ export function SimulationPage() {
       <Dialog open={fileQueue.length > 0} onOpenChange={(o) => !o && setFileQueue([])}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Nouvel appel</DialogTitle>
+            <DialogTitle>New call</DialogTitle>
             <DialogDescription className="truncate">
               {fileQueue[0]?.name}
-              {fileQueue.length > 1 ? ` · +${fileQueue.length - 1} en attente` : ''}
+              {fileQueue.length > 1 ? ` · +${fileQueue.length - 1} pending` : ''}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label htmlFor="titre">Titre</Label>
+              <Label htmlFor="titre">Title</Label>
               <Input
                 id="titre"
                 value={meta.titre}
                 onChange={(e) => setMeta((m) => ({ ...m, titre: e.target.value }))}
-                placeholder="Feu d'appartement — rue des Lilas"
+                placeholder="Apartment fire — rue des Lilas"
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="operateur">Opérateur au téléphone</Label>
+              <Label htmlFor="operateur">Operator on the line</Label>
               <Input
                 id="operateur"
                 value={meta.operateur}
@@ -250,7 +250,7 @@ export function SimulationPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="localisation">Localisation de l'appel</Label>
+              <Label htmlFor="localisation">Call location</Label>
               <Input
                 id="localisation"
                 value={meta.localisation}
@@ -259,7 +259,7 @@ export function SimulationPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="caserne">Caserne qui reçoit</Label>
+              <Label htmlFor="caserne">Receiving station</Label>
               <Input
                 id="caserne"
                 value={meta.caserne}
@@ -271,10 +271,10 @@ export function SimulationPage() {
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setFileQueue([])}>
-              Annuler
+              Cancel
             </Button>
             <Button onClick={() => void confirmerAppel()} disabled={envoiEnCours > 0}>
-              {envoiEnCours > 0 ? 'Ajout…' : 'Ajouter'}
+              {envoiEnCours > 0 ? 'Adding…' : 'Add'}
             </Button>
           </DialogFooter>
         </DialogContent>

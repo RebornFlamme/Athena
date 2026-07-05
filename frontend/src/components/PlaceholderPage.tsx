@@ -11,7 +11,7 @@ export function PlaceholderPage({ title }: { title: string }) {
         <h1 className="text-sm font-semibold">{title}</h1>
       </header>
       <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-        Bientôt disponible.
+        Coming soon.
       </div>
     </div>
   )

@@ -38,12 +38,12 @@ export function Toolbar() {
   }
 
   const statusText = error
-    ? 'Erreur'
+    ? 'Error'
     : saving
-      ? 'Enregistrement…'
+      ? 'Saving…'
       : dirty
-        ? 'Modifications non enregistrées'
-        : 'Schéma enregistré'
+        ? 'Unsaved changes'
+        : 'Schema saved'
   const dot = error
     ? 'bg-destructive'
     : dirty || saving
@@ -55,9 +55,9 @@ export function Toolbar() {
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="h-5" />
       <div className="text-sm font-semibold">
-        Éditeur de schéma EAV
+        EAV schema editor
         <span className="ml-2 text-xs font-normal text-muted-foreground">
-          {count} objet{count > 1 ? 's' : ''}
+          {count} object{count > 1 ? 's' : ''}
         </span>
       </div>
       <div className="flex-1" />
@@ -66,7 +66,7 @@ export function Toolbar() {
         {statusText}
       </span>
       <Button size="sm" variant="outline" className="gap-1" onClick={handleAdd}>
-        <Plus className="h-4 w-4" /> Nouvel objet
+        <Plus className="h-4 w-4" /> New object
       </Button>
       <SchemaHistorySheet />
       <AlertDialog>
@@ -76,26 +76,26 @@ export function Toolbar() {
             variant="outline"
             className="gap-1 text-muted-foreground hover:text-destructive"
             disabled={saving}
-            title="Vider tout le schéma dans Supabase"
+            title="Clear the entire schema in Supabase"
           >
-            <RotateCcw className="h-4 w-4" /> Réinitialiser
+            <RotateCcw className="h-4 w-4" /> Reset
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Réinitialiser tout le schéma ?</AlertDialogTitle>
+            <AlertDialogTitle>Reset the entire schema?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tous les objets et leurs champs seront <strong>définitivement supprimés</strong> de
-              Supabase, ainsi que du canvas. Cette action est irréversible.
+              All objects and their fields will be <strong>permanently deleted</strong> from
+              Supabase, as well as from the canvas. This action is irreversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => void resetSchema()}
             >
-              Tout réinitialiser
+              Reset everything
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -106,19 +106,19 @@ export function Toolbar() {
         variant="outline"
         className="gap-1"
         disabled={savingVersion || count === 0}
-        title="Enregistrer un instantané du schéma dans l'historique"
+        title="Save a snapshot of the schema in the history"
         onClick={() => void saveVersion()}
       >
-        <Save className="h-4 w-4" /> Enregistrer la version
+        <Save className="h-4 w-4" /> Save version
       </Button>
       <Button
         size="sm"
         className="gap-1"
         disabled={!dirty || saving}
-        title="Remplacer le schéma live dans Supabase par le canvas actuel"
+        title="Replace the live schema in Supabase with the current canvas"
         onClick={() => void saveAll()}
       >
-        <DatabaseZap className="h-4 w-4" /> Écraser Supabase
+        <DatabaseZap className="h-4 w-4" /> Overwrite Supabase
       </Button>
     </header>
   )

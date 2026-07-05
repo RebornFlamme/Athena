@@ -40,7 +40,7 @@ export function PanneauDiff({ ligne }: { ligne: LigneSemantic }) {
           </div>
 
           <p className="text-[11px] italic text-muted-foreground">
-            Diff produit par l'extraction LLM à partir de la transcription de l'appel.
+            Diff produced by the LLM extraction from the call transcript.
           </p>
         </div>
       </ScrollArea>

@@ -13,11 +13,11 @@ const LABEL_TYPE = new Map(DATA_TYPES.map((t) => [t.value, t.label]))
 
 // Échantillons réalistes en attendant la transcription (pipeline F3).
 const EXTRAITS_POOL = [
-  'Une dame âgée est encore dans l’appartement, elle n’arrive pas à sortir.',
-  'C’est au 12 rue des Lilas, dans le 7e.',
-  'Il y a de la fumée partout dans la cage d’escalier.',
-  'Un conducteur est coincé, il saigne à la tête.',
-  'Le feu est au troisième étage, la porte d’en face.',
+  'An elderly lady is still in the apartment, she can’t get out.',
+  'It’s at 12 rue des Lilas, in the 7th.',
+  'There’s smoke everywhere in the stairwell.',
+  'A driver is trapped, he’s bleeding from the head.',
+  'The fire is on the third floor, the door across the hall.',
 ]
 const TEMPS = ['0:08', '0:19', '0:27', '0:41']
 
@@ -84,21 +84,21 @@ export function FeuilleObjet({
                 <span className="min-w-0 flex-1 truncate">{objet.name}</span>
                 {objet.is_subobject && (
                   <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-normal text-secondary-foreground">
-                    sous-objet
+                    sub-object
                   </span>
                 )}
               </SheetTitle>
-              <SheetDescription>Objet de la couche sémantique</SheetDescription>
+              <SheetDescription>Semantic layer object</SheetDescription>
             </SheetHeader>
 
             <ScrollArea className="min-h-0 flex-1">
               <div className="space-y-6 p-6">
                 <section>
                   <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Champs
+                    Fields
                   </h3>
                   {champs.length === 0 ? (
-                    <p className="text-sm italic text-muted-foreground">Aucun champ.</p>
+                    <p className="text-sm italic text-muted-foreground">No fields.</p>
                   ) : (
                     <ul className="space-y-1.5">
                       {champs.map((a) => (
@@ -118,12 +118,12 @@ export function FeuilleObjet({
 
                 <section>
                   <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Extraits des enregistrements
+                    Recording excerpts
                   </h3>
                   {extraits.length === 0 ? (
                     <p className="text-sm italic text-muted-foreground">
-                      Aucun enregistrement. Les extraits sources apparaîtront ici une fois la
-                      transcription branchée.
+                      No recordings. Source excerpts will appear here once the transcript is wired
+                      in.
                     </p>
                   ) : (
                     <ul className="space-y-2">
@@ -141,7 +141,7 @@ export function FeuilleObjet({
                     </ul>
                   )}
                   <p className="mt-2 text-[11px] italic text-muted-foreground">
-                    Exemples — renseignés par la transcription (à venir).
+                    Samples — populated by the transcript (coming soon).
                   </p>
                 </section>
               </div>

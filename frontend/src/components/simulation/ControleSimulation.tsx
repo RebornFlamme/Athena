@@ -21,7 +21,7 @@ export function ControleSimulation() {
           size="icon"
           className="h-11 w-11 rounded-full shadow-lg"
           onClick={() => void lancer()}
-          title="Lancer la démonstration"
+          title="Start the demo"
         >
           <Play className="h-5 w-5" />
         </Button>
@@ -35,7 +35,7 @@ export function ControleSimulation() {
             variant="ghost"
             className="h-9 w-9 rounded-full"
             onClick={() => void revenirDebut()}
-            title="Revenir au début"
+            title="Reset to start"
           >
             <RotateCcw className="h-4 w-4" />
           </Button>
@@ -44,7 +44,7 @@ export function ControleSimulation() {
             variant="destructive"
             className="h-9 w-9 rounded-full"
             onClick={() => couper()}
-            title="Couper la démonstration"
+            title="Stop the demo"
           >
             <Square className="h-4 w-4" />
           </Button>

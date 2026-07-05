@@ -40,8 +40,8 @@ const COMPOSANTS: Record<string, FunctionComponent<IDockviewPanelProps>> = {
 
 type PanId = 'carte' | 'objets' | 'live' | 'semantic' | 'past'
 const OUVRABLES: { id: PanId; titre: string; icon: ComponentType<{ className?: string }> }[] = [
-  { id: 'carte', titre: 'Carte', icon: MapIcon },
-  { id: 'objets', titre: 'Objets', icon: Boxes },
+  { id: 'carte', titre: 'Map', icon: MapIcon },
+  { id: 'objets', titre: 'Objects', icon: Boxes },
   { id: 'live', titre: 'Live feed', icon: Radio },
   { id: 'semantic', titre: 'Semantic Layer Edit', icon: Layers },
   { id: 'past', titre: 'Past calls', icon: History },
@@ -98,11 +98,11 @@ export function DashboardPage() {
     (event: DockviewReadyEvent) => {
       const api = event.api
       apiRef.current = api
-      api.addPanel({ id: 'carte', component: 'carte', title: 'Carte' })
+      api.addPanel({ id: 'carte', component: 'carte', title: 'Map' })
       api.addPanel({
         id: 'objets',
         component: 'objets',
-        title: 'Objets',
+        title: 'Objects',
         position: { referencePanel: 'carte', direction: 'below' },
       })
       api.addPanel({
@@ -127,11 +127,11 @@ export function DashboardPage() {
       <header className="flex h-12 shrink-0 items-center gap-2 border-b bg-card px-4">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-1 h-5" />
-        <h1 className="text-sm font-semibold">Tableau de bord</h1>
+        <h1 className="text-sm font-semibold">Dashboard</h1>
       </header>
 
       <div className="flex h-9 shrink-0 items-center gap-1 overflow-x-auto border-b bg-muted/20 px-3">
-        <span className="mr-1 shrink-0 text-[11px] text-muted-foreground">Ouvrir :</span>
+        <span className="mr-1 shrink-0 text-[11px] text-muted-foreground">Open:</span>
         {OUVRABLES.map(({ id, titre, icon: Icon }) => (
           <Button
             key={id}
@@ -147,8 +147,8 @@ export function DashboardPage() {
 
       {!isSupabaseConfigured && (
         <div className="border-b bg-amber-500/10 px-4 py-2 text-sm text-amber-600 dark:text-amber-400">
-          Supabase n'est pas configuré : copie <code>frontend/.env.example</code> en{' '}
-          <code>.env.local</code> puis relance <code>npm run dev</code>.
+          Supabase is not configured: copy <code>frontend/.env.example</code> to{' '}
+          <code>.env.local</code> then restart <code>npm run dev</code>.
         </div>
       )}
 

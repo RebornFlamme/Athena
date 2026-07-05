@@ -55,8 +55,8 @@ export function PanneauObjets() {
     <aside className="flex h-full flex-col bg-card">
       {instances.length === 0 ? (
         <p className="p-4 text-sm italic leading-relaxed text-muted-foreground">
-          Aucun objet pour l'instant. Lancez la simulation : les agents créeront les
-          instances au fil des appels.
+          No objects yet. Start the simulation: the agents will create instances
+          as the calls come in.
         </p>
       ) : (
         <>
@@ -64,12 +64,12 @@ export function PanneauObjets() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs">
-                  <ListFilter className="h-3.5 w-3.5" /> Afficher
+                  <ListFilter className="h-3.5 w-3.5" /> Show
                   <ChevronDown className="h-3.5 w-3.5 opacity-60" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="max-h-72 w-56 overflow-y-auto">
-                <DropdownMenuLabel>Types à afficher</DropdownMenuLabel>
+                <DropdownMenuLabel>Types to show</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {types.map((t) => (
                   <DropdownMenuCheckboxItem
@@ -92,7 +92,7 @@ export function PanneauObjets() {
                   <button
                     onClick={() => basculer(t, false)}
                     className="ml-0.5 rounded-sm p-0.5 hover:bg-background/60"
-                    title="Masquer"
+                    title="Hide"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -134,7 +134,7 @@ function CarteInstance({ instance }: { instance: ObjectInstance }) {
       </CardHeader>
       <CardContent className="p-3 pt-0">
         {champs.length === 0 ? (
-          <p className="text-xs italic text-muted-foreground">Aucun champ.</p>
+          <p className="text-xs italic text-muted-foreground">No fields.</p>
         ) : (
           <ul className="space-y-1">
             {champs.map(([k, v]) => (

@@ -18,8 +18,8 @@ const router = createBrowserRouter([
       { path: '/', element: <SchemaEditorPage /> },
       { path: '/flux', element: <SimulationPage /> },
       { path: '/tableau-de-bord', element: <DashboardPage /> },
-      { path: '/ressources', element: <PlaceholderPage title="Ressources" /> },
-      { path: '/parametres', element: <PlaceholderPage title="Paramètres" /> },
+      { path: '/ressources', element: <PlaceholderPage title="Resources" /> },
+      { path: '/parametres', element: <PlaceholderPage title="Settings" /> },
     ],
   },
 ])

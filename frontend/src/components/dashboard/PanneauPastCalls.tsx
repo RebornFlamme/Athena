@@ -12,9 +12,9 @@ import { FeuillePastCall } from './FeuillePastCall'
 type StatutAppel = 'a_venir' | 'en_direct' | 'termine'
 
 const LIBELLE: Record<StatutAppel, string> = {
-  a_venir: 'à venir',
-  en_direct: 'en direct',
-  termine: 'terminé',
+  a_venir: 'upcoming',
+  en_direct: 'live',
+  termine: 'ended',
 }
 
 /**
@@ -50,7 +50,7 @@ export function PanneauPastCalls() {
     <aside className="flex h-full flex-col bg-card">
       {visibles.length === 0 ? (
         <p className="p-4 text-sm italic leading-relaxed text-muted-foreground">
-          Aucun appel en cours ou passé. Lancez la démonstration.
+          No live or past calls. Start the demo.
         </p>
       ) : (
         <ScrollArea className="min-h-0 flex-1">
@@ -61,13 +61,13 @@ export function PanneauPastCalls() {
                 key={a.id}
                 onClick={() => setSelection(a)}
                 className="flex w-full items-center gap-3 border-b px-4 py-2.5 text-left text-sm transition-colors hover:bg-accent"
-                title="Voir la transcription et les objets"
+                title="View transcript and objects"
               >
                 <Phone className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium">{a.titre}</div>
                   <div className="text-[11px] tabular-nums text-muted-foreground">
-                    déclenché à {formaterMs(a.ts_debut_ms)} · durée {formaterMs(a.duree_ms)}
+                    triggered at {formaterMs(a.ts_debut_ms)} · duration {formaterMs(a.duree_ms)}
                   </div>
                 </div>
                 {s === 'en_direct' ? (

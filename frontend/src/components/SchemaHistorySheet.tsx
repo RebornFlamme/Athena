@@ -36,7 +36,7 @@ function VersionRow({ version, onRestore }: { version: SchemaVersion; onRestore:
         <Input
           className="h-7 text-xs"
           value={label}
-          placeholder="Version sans nom"
+          placeholder="Unnamed version"
           onChange={(e) => setLabel(e.target.value)}
           onBlur={() => {
             const v = label.trim()
@@ -53,17 +53,17 @@ function VersionRow({ version, onRestore }: { version: SchemaVersion; onRestore:
         size="sm"
         variant="outline"
         className="h-7 shrink-0 gap-1 text-xs"
-        title="Recharger cette version dans le canvas"
+        title="Reload this version into the canvas"
         onClick={onRestore}
       >
-        <RotateCcw className="h-3.5 w-3.5" /> Restaurer
+        <RotateCcw className="h-3.5 w-3.5" /> Restore
       </Button>
       <Button
         type="button"
         size="icon"
         variant="ghost"
         className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
-        title="Supprimer cette version"
+        title="Delete this version"
         onClick={() => removeVersion(version.id)}
       >
         <Trash2 className="h-3.5 w-3.5" />
@@ -94,28 +94,26 @@ export function SchemaHistorySheet() {
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
         <Button size="sm" variant="outline" className="gap-1">
-          <History className="h-4 w-4" /> Historique
+          <History className="h-4 w-4" /> History
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="flex w-full flex-col gap-0 sm:max-w-md">
         <SheetHeader className="pb-2">
-          <SheetTitle>Historique des versions</SheetTitle>
+          <SheetTitle>Version history</SheetTitle>
           <SheetDescription>
-            Chaque version est un instantané du schéma. « Restaurer » recharge la version dans le
-            canvas ; rien n'est écrit dans le schéma live tant que tu ne cliques pas « Écraser
-            Supabase ».
+            Each version is a snapshot of the schema. “Restore” reloads the version into the
+            canvas; nothing is written to the live schema until you click “Overwrite Supabase”.
           </SheetDescription>
         </SheetHeader>
         <Separator />
 
         <ScrollArea className="min-h-0 flex-1">
           {versionsStatus === 'loading' && (
-            <div className="p-4 text-xs text-muted-foreground">Chargement…</div>
+            <div className="p-4 text-xs text-muted-foreground">Loading…</div>
           )}
           {versionsStatus !== 'loading' && versions.length === 0 && (
             <div className="p-4 text-xs text-muted-foreground">
-              Aucune version enregistrée. Clique « Enregistrer la version » dans la barre du haut
-              pour en créer une.
+              No saved versions. Click “Save version” in the top bar to create one.
             </div>
           )}
           {versions.length > 0 && (

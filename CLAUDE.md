@@ -9,6 +9,10 @@
 
 Le reste de ce fichier décrit les conventions de l'existant (éditeur EAV) — elles restent valables.
 
+## Langue de l'UI — ANGLAIS (juil. 2026)
+- **Tout le texte visible du front est en anglais** (labels, boutons, titres, placeholders, aria-labels, messages d'erreur affichés, libellés de nav, labels de `DATA_TYPES`/`STATUTS`). Traduction faite en gardant **code, identifiants, noms de fichiers, clés Supabase, valeurs d'enum et commentaires inchangés** (les commentaires restent en français). Toute nouvelle chaîne visible doit être écrite **en anglais**.
+- Points de repère du glossaire : appel→call, caserne→station, opérateur→operator, Lancer→Start / Revenir→Reset / Couper→Stop, flux audio→audio feed, écouter→monitor, Objet→Object / Sous-objet→Sub-object, champ→field, Tableau de bord→Dashboard, Transcription→Transcript, Raisonnement→Reasoning, « Semantic Layer » reste tel quel, statuts Présumé/Confirmé/Corrigé/Périmé→Presumed/Confirmed/Corrected/Stale.
+
 ## Dashboard Athena — Créateur de simulation (F2, juil. 2026)
 - **Contrainte UI (non négociable, cf. `plan_base_webapp.md`) : UI = composants shadcn emboîtés uniquement**, aucun visuel codé à la main. NB : une **timeline** implique du positionnement absolu inévitable (clips en px) — assemblé avec `Button`/`Card` faute des composants dédiés (CLI shadcn KO ici, voir plus bas).
 - Domaines séparés du EAV : `typesAthena.ts` (socle F0) et `typesSimulation.ts` (`Appel` : `audio_url`, `ts_debut_ms`, `duree_ms`, `piste`).

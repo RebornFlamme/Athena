@@ -23,7 +23,7 @@ function versLigne(j: JournalAgent): LigneSemantic {
     id: String(j.id),
     t: new Date(j.cree_le).toLocaleTimeString('fr-FR', { hour12: false }),
     texte: j.texte ?? '',
-    objet: j.objet ?? '(objet)',
+    objet: j.objet ?? '(object)',
     diff: (j.diff ?? []).map((d) => ({ champ: d.champ, avant: d.avant, apres: d.apres })),
   }
 }
@@ -65,8 +65,8 @@ export function PanneauSemanticLayer({
     <aside className="flex h-full flex-col bg-card">
       {source.length === 0 && (
         <p className="p-4 text-sm italic leading-relaxed text-muted-foreground">
-          Aucune édition pour l'instant. Les créations et mises à jour d'objets des
-          agents apparaîtront ici au fil de la simulation.
+          No edits yet. Object creations and updates from the agents will appear
+          here as the simulation runs.
         </p>
       )}
       <ScrollArea className="min-h-0 flex-1">

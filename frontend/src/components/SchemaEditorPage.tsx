@@ -35,18 +35,18 @@ export function SchemaEditorPage() {
 
         {!isSupabaseConfigured && (
           <div className="border-b bg-amber-950/40 px-4 py-2 text-xs text-amber-200">
-            Supabase n'est pas configuré : renseigne <code>frontend/.env.local</code> puis
-            relance <code>npm run dev</code>.
+            Supabase is not configured: fill in <code>frontend/.env.local</code> then
+            restart <code>npm run dev</code>.
           </div>
         )}
         {isSupabaseConfigured && error && (
           <div className="border-b bg-destructive/15 px-4 py-2 text-xs text-destructive-foreground">
-            Erreur Supabase : {error}
+            Supabase error: {error}
           </div>
         )}
         {isSupabaseConfigured && !error && status === 'loading' && (
           <div className="border-b bg-muted/40 px-4 py-2 text-xs text-muted-foreground">
-            Synchronisation avec Supabase…
+            Syncing with Supabase…
           </div>
         )}
 

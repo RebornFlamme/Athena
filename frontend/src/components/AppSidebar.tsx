@@ -14,11 +14,11 @@ import {
 } from '@/components/ui/sidebar'
 
 const items = [
-  { title: 'Éditeur de schéma', url: '/', icon: Network },
+  { title: 'Schema editor', url: '/', icon: Network },
   { title: 'Simulation', url: '/flux', icon: Radio },
-  { title: 'Tableau de bord', url: '/tableau-de-bord', icon: LayoutDashboard },
-  { title: 'Ressources', url: '/ressources', icon: Database },
-  { title: 'Paramètres', url: '/parametres', icon: Settings },
+  { title: 'Dashboard', url: '/tableau-de-bord', icon: LayoutDashboard },
+  { title: 'Resources', url: '/ressources', icon: Database },
+  { title: 'Settings', url: '/parametres', icon: Settings },
 ]
 
 export function AppSidebar() {
@@ -33,14 +33,14 @@ export function AppSidebar() {
           </div>
           <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
             <span className="truncate font-semibold">Athena</span>
-            <span className="truncate text-xs text-muted-foreground">Gestion de crise</span>
+            <span className="truncate text-xs text-muted-foreground">Crisis management</span>
           </div>
         </div>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Plateforme</SidebarGroupLabel>
+          <SidebarGroupLabel>Platform</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (

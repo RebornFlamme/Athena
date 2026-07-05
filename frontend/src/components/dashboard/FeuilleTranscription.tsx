@@ -55,7 +55,7 @@ export function FeuilleTranscription({
           <>
             <SheetHeader className="space-y-1 border-b p-6 pb-4 text-left">
               <SheetTitle className="min-w-0 truncate pr-6">{appel.titre}</SheetTitle>
-              <SheetDescription>Transcription — Chirp 3 (via Supabase)</SheetDescription>
+              <SheetDescription>Transcript — Chirp 3 (via Supabase)</SheetDescription>
             </SheetHeader>
 
             {/* La même carte audio que dans le live feed */}
@@ -63,7 +63,7 @@ export function FeuilleTranscription({
               <button
                 type="button"
                 onClick={onToggleEcoute}
-                title={ecoute ? 'Écoute activée — couper' : 'Écouter ce flux'}
+                title={ecoute ? 'Monitoring on — mute' : 'Monitor this feed'}
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
                   ecoute
                     ? 'bg-primary text-primary-foreground'
@@ -99,10 +99,10 @@ export function FeuilleTranscription({
               />
               <span className="min-w-0 flex-1 truncate">
                 {enLecture
-                  ? `Transcription en direct · ${segments.length} segment${segments.length > 1 ? 's' : ''}`
+                  ? `Live transcript · ${segments.length} segment${segments.length > 1 ? 's' : ''}`
                   : vide
-                    ? 'Aucune transcription — lancez la simulation'
-                    : `${segments.length} segment${segments.length > 1 ? 's' : ''} enregistré${segments.length > 1 ? 's' : ''}`}
+                    ? 'No transcript — start the simulation'
+                    : `${segments.length} segment${segments.length > 1 ? 's' : ''} saved`}
               </span>
               {langue && (
                 <Badge variant="secondary" className="h-5 px-1.5 text-[10px] uppercase">
@@ -120,8 +120,8 @@ export function FeuilleTranscription({
                   {vide ? (
                     <p className="italic text-muted-foreground">
                       {enLecture
-                        ? 'Transcription en cours… les segments apparaîtront ici.'
-                        : 'Lancez la simulation pour générer la transcription.'}
+                        ? 'Transcription in progress… segments will appear here.'
+                        : 'Start the simulation to generate the transcript.'}
                     </p>
                   ) : (
                     segments.map((seg) => (
