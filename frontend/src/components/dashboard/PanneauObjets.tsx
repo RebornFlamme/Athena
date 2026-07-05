@@ -13,8 +13,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { STATUTS } from '../../typesAthena'
-import { useInstancesDB } from '../../hooks/useInstancesDB'
+import { useInstancesScrub } from '../../hooks/useScrub'
 import type { ObjectInstance } from '../../data/instancesApi'
+import { Timeline } from './Timeline'
 
 /** Rendu lisible d'une valeur de champ d'instance. */
 function valeurLisible(v: unknown): string {
@@ -30,7 +31,7 @@ function valeurLisible(v: unknown): string {
  * cards alignées sur une ligne scrollable horizontalement.
  */
 export function PanneauObjets() {
-  const instances = useInstancesDB()
+  const instances = useInstancesScrub()
   const [masques, setMasques] = useState<Set<string>>(new Set())
 
   // Types présents (dans l'ordre d'apparition).
@@ -53,10 +54,12 @@ export function PanneauObjets() {
 
   return (
     <aside className="flex h-full flex-col bg-transparent">
+      {/* Timeline de rejeu : au-dessus des objets, pilote toute la chronologie. */}
+      <Timeline />
       {instances.length === 0 ? (
         <p className="p-4 text-sm italic leading-relaxed text-muted-foreground">
-          Aucun objet pour l'instant. Lancez la simulation : les agents créeront les
-          instances au fil des appels.
+          Aucun objet à cet instant. Lancez la simulation (ou avancez le curseur) :
+          les agents créent les instances au fil des appels.
         </p>
       ) : (
         <>

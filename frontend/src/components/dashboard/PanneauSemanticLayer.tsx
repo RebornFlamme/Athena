@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useSemanticEditsDB } from '../../hooks/useJournalAgentDB'
+import { useEditsScrub } from '../../hooks/useScrub'
 import type { JournalAgent } from '../../data/journalAgentApi'
 
 export interface DiffChamp {
@@ -58,7 +58,7 @@ export function PanneauSemanticLayer({
   onSelect?: (ligne: LigneSemantic) => void
   selectionId?: string | null
 }) {
-  const auto = useSemanticEditsDB()
+  const auto = useEditsScrub()
   const source = lignes ?? auto.map(versLigne)
 
   return (

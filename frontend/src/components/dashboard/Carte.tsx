@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { STATUTS, type StatutInfo } from '../../typesAthena'
-import { useInstancesDB } from '../../hooks/useInstancesDB'
+import { useInstancesScrub } from '../../hooks/useScrub'
 import { useTrajetsEngins } from '../../hooks/useTrajetsEngins'
 
 /** Fonds de carte officiel IGN (tuiles vectorielles Géoplateforme, gratuit). */
@@ -99,7 +99,7 @@ export function Carte({
   entites?: MarqueurEntite[]
   centre?: { lon: number | null; lat: number | null } | null
 }) {
-  const auto = useInstancesDB()
+  const auto = useInstancesScrub()
   const objets: MarqueurEntite[] = entites ?? auto
   const containerRef = useRef<HTMLDivElement>(null)
   const [map, setMap] = useState<maplibregl.Map | null>(null)
