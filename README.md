@@ -1,89 +1,122 @@
-# Athena
+# 🚨 Athena
 
-Outil visuel de création de **schémas de données EAV** (Entity-Attribute-Value) pour le
-projet Athena. L'opérateur dessine ses objets sur un canvas graphe (chaque objet / sous-objet
-est un node), leur ajoute des champs typés, et relie références et sous-objets. Le schéma est
-persisté dans Supabase.
+**Copilote IA de gestion de crise pour les sapeurs-pompiers.**
+Athena écoute les appels d'urgence et les communications radio et construit **en temps réel, sans aucune saisie manuelle**, la situation tactique — victimes, engins, adresses, dangers — sur une carte 3D.
 
-## Structure
+### 🔗 Démo en ligne
+- **Application : https://athena-khaki.vercel.app/**
+- Présentation du produit : https://athena-khaki.vercel.app/accueil
 
-- `frontend/` — application **Vite + React + React Router + React Flow** (l'éditeur)
-- `supabase/` — `config.toml` + migrations SQL (méta-schéma versionné dans git)
-- `Ressources/` — modèle de données de référence Athena (inspiration, non chargé par l'outil)
-- `backend/` — réservé (vide pour l'instant)
+---
 
-## Concepts (méta-schéma EAV)
+## Le problème
 
-L'outil ne stocke pas des données métier mais la **définition** des schémas :
+Pendant une crise (incendie, accident majeur, afflux de victimes), le centre de traitement de l'alerte est submergé : plusieurs appels 112 et canaux radio arrivent **en même temps**. Les informations vitales — *où, combien de victimes, quels dangers, quels moyens engagés* — sont **mal entendues, oubliées, ou noyées dans le bruit**. La prise de notes manuelle ne suit pas.
 
-- **`entities`** — un objet (`is_subobject = false`) ou un sous-objet (`is_subobject = true`).
-- **`attributes`** — un champ d'une entité (nom + type). Types disponibles : `string`, `text`,
-  `boolean`, `integer`, `number`, `datetime`, `enum`, `reference` (→ un autre objet), `object`
-  (sous-objet). Un champ peut être une **liste** (`is_list`) et **obligatoire** (`required`).
-- Les **arêtes** du graphe sont dérivées des champs `reference` / `object` (via `target_entity_id`).
+Les ordres sont mal compris, des messages radio passent à la trappe, des détails cruciaux disparaissent — et chaque information perdue coûte du temps, de l'argent, parfois des vies.
 
-## Démarrage rapide
+## La solution
 
-### 1. Créer le projet Supabase et appliquer le schéma
+Athena **écoute tout** et fait **émerger la clarté du chaos**. Une seule chaîne transforme la voix brute en une image tactique vivante et partagée — **sans clavier, sans saisie**. L'IA ne se trompe jamais d'écoute, ne se contredit jamais, et n'oublie rien.
 
-1. Crée un projet sur [supabase.com](https://supabase.com).
-2. Applique la migration, au choix :
-   - **SQL Editor** : copie-colle le contenu de
-     `supabase/migrations/0001_init_eav_editor.sql` et exécute-le ; **ou**
-   - **CLI** :
-     ```bash
-     supabase login
-     supabase link --project-ref <ref-de-ton-projet>
-     supabase db push
-     ```
+```
+   Appels 112 + radio  (audio, simultanés)
+              │
+   ┌──────────▼───────────────────────────────────────────┐
+   │ 1. ÉCOUTE   Transcription en streaming, mot à mot     │  Google Chirp 3
+   │             (plusieurs appels en parallèle)           │
+   ├───────────────────────────────────────────────────────┤
+   │ 2. COMPREND Un agent LLM lit VOTRE modèle de données  │  Agent Claude
+   │             et en extrait entités, liens et positions │  (tool-use)
+   │             — avec résolution d'entités entre appels  │
+   ├───────────────────────────────────────────────────────┤
+   │ 3. MÉMORISE Chaque fait est écrit dans un journal     │  Supabase
+   │             horodaté, append-only. Rien n'est écrasé. │  (event sourcing)
+   ├───────────────────────────────────────────────────────┤
+   │ 4. AFFICHE  Carte 3D, graphe mémoire, couche          │  Realtime
+   │             sémantique et timeline — en direct.       │
+   └───────────────────────────────────────────────────────┘
+```
 
-### 2. Connecter Supabase à git (versionner le schéma)
+---
 
-Dans le dashboard Supabase → **Settings → Integrations → GitHub** : connecte ce dépôt.
-À partir de là, les migrations du dossier `supabase/migrations/` sont suivies par git et
-peuvent être déployées via les branches Supabase (Preview Branches). Cette étape se fait dans
-le dashboard (OAuth GitHub) — elle ne peut pas être automatisée depuis le code.
+## 🧪 Tester la démo (pour le jury)
 
-### 3. Lancer le frontend
+> ⏱️ **Cold start** : le backend (transcription + IA) tourne sur un hébergement gratuit. Le **tout premier lancement peut mettre 30–60 s à se « réveiller »**. C'est normal, patiente un peu.
+
+### Option A — Aperçu instantané (30 secondes, le plus simple)
+
+Pour voir le résultat tout de suite, sans attendre le temps réel :
+
+1. Ouvre **https://athena-khaki.vercel.app/**
+2. Dans la **barre latérale gauche**, va sur **« Dashboard »**.
+3. En **bas à droite** de l'écran, clique sur le bouton **🧪 (fiole)** — *« Fill with mock objects »*.
+   → La carte 3D et les panneaux se remplissent instantanément d'une situation type (victimes, engins, lieux). Re-clique pour vider.
+
+### Option B — La vraie simulation temps réel (l'expérience complète) ⭐
+
+1. Barre latérale → **« Simulation »**.
+2. En haut à droite, dans le menu **« Active: »**, sélectionne le **scénario de démonstration**.
+3. Barre latérale → **« Dashboard »**.
+4. En bas à droite, clique sur **▶ (Play)** — *« Start the demo »*.
+5. **Regarde faire** 👀 : les appels d'urgence se jouent en temps réel, la transcription défile dans le panneau **« Live feed »**, et l'IA fait apparaître **toute seule** les victimes, engins et adresses sur la carte 3D — pendant que le graphe mémoire, la couche sémantique et la timeline de rejeu se remplissent.
+   - **↺** revient au début · **■** coupe.
+
+**Les panneaux du Dashboard** (déplaçables, comme un poste de commandement) :
+
+| Panneau | Contenu |
+|---|---|
+| **Map** | Carte 3D IGN, bâtiments en relief, entités géolocalisées, animation de l'engin depuis sa caserne |
+| **Objects** | Les objets extraits par l'IA, groupés par type |
+| **Live memory** | La mémoire de l'IA visualisée en graphe, qui grandit en direct |
+| **Semantic Layer Edit** | Ce que l'IA a compris, avec le diff avant/après (clic → détail) |
+| **Live feed** / **Past calls** | Les flux audio en direct et les appels passés avec leur transcription |
+
+---
+
+## ✨ Ce qui nous différencie
+
+- **Zéro saisie manuelle.** L'opérateur ne tape rien : l'IA écoute et documente à sa place.
+- **Temps réel & multi-appels.** Transcription en streaming de plusieurs appels 112 + radios **simultanés** — le vrai chaos d'une crise, pas un fichier propre.
+- **Extraction pilotée par VOTRE schéma.** Vous *dessinez* vos objets métier (Victime, Engin, Lieu…) dans l'éditeur de schéma ; l'agent LLM instancie **exactement ces types**, avec **résolution d'entités entre appels** (une même victime citée deux fois = un seul objet).
+- **Carte tactique 3D souveraine.** MapLibre + **Géoplateforme IGN** (données publiques françaises) : bâtiments 3D (BD TOPO®), géocodage, itinéraire de l'engin *caserne → intervention*.
+- **Mémoire event-sourcée + rejeu (RETEX).** Tout est horodaté et append-only ; une timeline permet de **re-scruber** l'intervention (avant / après) pour le débriefing.
+- **Explicable — « l'IA propose, l'humain valide ».** La couche sémantique montre le diff de chaque décision de l'IA et sa « stack trace » de raisonnement. Rien n'est écrasé en silence.
+
+---
+
+## 🏗️ Stack technique
+
+| Couche | Technologies |
+|---|---|
+| **Frontend** | Vite · React · TypeScript · Tailwind + shadcn/ui · MapLibre GL + IGN · dockview · React Flow · zustand — déployé sur **Vercel** |
+| **Backend** | FastAPI (Python) sur **Render** — Google Cloud Speech-to-Text V2 (Chirp 3) · agent **Anthropic Claude** (tool-use natif) · PyAV |
+| **Données** | **Supabase** — PostgreSQL · Realtime · Storage |
+
+## 📁 Structure du dépôt
+
+- `frontend/` — l'application React : éditeur de schéma, créateur de simulation, dashboard temps réel
+- `poc-stt/` — le backend Python : transcription en streaming + agent LLM d'extraction
+- `supabase/` — migrations SQL (schéma versionné)
+- `Ressources/` — modèle de données de référence Athena
+
+## 💻 Lancer en local
+
+**Frontend :**
 
 ```bash
 cd frontend
-cp .env.example .env.local     # puis renseigne les 2 variables
+cp .env.example .env.local     # renseigne VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY
 npm install
 npm run dev                    # http://localhost:5173
 ```
 
-Variables d'environnement (dashboard Supabase → **Project Settings → API**) :
+**Backend (transcription + IA), optionnel :**
 
-| Variable | Valeur |
-|---|---|
-| `VITE_SUPABASE_URL` | URL du projet (`https://xxxx.supabase.co`) |
-| `VITE_SUPABASE_ANON_KEY` | clé publique `anon` |
+```bash
+cd poc-stt
+# .env : SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, identifiants Google Cloud, ANTHROPIC_API_KEY
+uv run uvicorn main:app
+```
 
-> Sans `.env.local`, l'app démarre quand même et affiche une bannière d'aide, mais rien n'est
-> sauvegardé.
-
-## Utilisation
-
-1. **＋ Nouvel objet** (barre du haut) crée un node au centre du canvas.
-2. Sélectionne un objet → le **panneau de droite** permet de le renommer, changer sa couleur,
-   ajouter/éditer/supprimer des **champs**, ou supprimer l'objet.
-3. Un champ de type **Référence** ou **Sous-objet** cible un autre objet (existant ou créé à la
-   volée) → une **arête** apparaît automatiquement (pleine = référence, pointillée animée =
-   sous-objet).
-4. Déplace les nodes : la position est sauvegardée. Recharge la page → tout revient.
-5. Plusieurs onglets restent synchronisés en temps réel (Supabase Realtime).
-
-## Accès / sécurité
-
-Accès **ouvert** pour l'instant : clé `anon` + RLS avec policies permissives (`using (true)`).
-Pas d'authentification. À restreindre avant toute mise en production (ajouter Supabase Auth et
-des policies par utilisateur).
-
-## Scripts (`frontend/`)
-
-| Commande | Rôle |
-|---|---|
-| `npm run dev` | serveur de dev (port 5173) |
-| `npm run build` | build de production (`tsc -b && vite build`) |
-| `npm run preview` | prévisualise le build |
+> L'accès est **ouvert** (clé Supabase `anon` + RLS permissive, pas d'authentification) — à durcir avant une vraie mise en production.
