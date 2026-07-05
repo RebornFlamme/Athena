@@ -1,7 +1,7 @@
 # Architecture complète — Athena MVP
 
 > Vue d'ensemble technique du système : les briques, qui fait quoi, comment l'information circule, et comment tout ça évolue vers le pilote.
-> Documents liés : [PRD-Athena-MVP.md](PRD-Athena-MVP.md) (le quoi) · [TechDesign-Athena-MVP.md](TechDesign-Athena-MVP.md) (le comment + SQL complet) · [RECHERCHE_ATHENA.md](RECHERCHE_ATHENA.md) (les preuves).
+> Documents liés : [PRD-Athena-MVP.md](Hackathon/RAISE%20Summit/Athena/Athena-carte/vibe-coding-prompt-template-main/docs/PRD-Athena-MVP.md) (le quoi) · [TechDesign-Athena-MVP.md](Hackathon/RAISE%20Summit/Athena/Athena-carte/vibe-coding-prompt-template-main/docs/TechDesign-Athena-MVP.md) (le comment + SQL complet) · [RECHERCHE_ATHENA.md](RECHERCHE_ATHENA.md) (les preuves).
 
 ---
 
@@ -100,7 +100,7 @@ interventions (le dossier)
                · geom (point ou polygone PostGIS) · fiabilite · statut
 ```
 > Pas de table « appels » (décision produit) : l'appel est traité en direct, la transcription est éphémère ; chaque fait extrait garde sa phrase source dans `payload.extrait_source`.
-*(SQL complet prêt à copier : [TechDesign §4](TechDesign-Athena-MVP.md))*
+*(SQL complet prêt à copier : [TechDesign §4](Hackathon/RAISE%20Summit/Athena/Athena-carte/vibe-coding-prompt-template-main/docs/TechDesign-Athena-MVP.md))*
 
 ### Cycle de vie d'une information
 

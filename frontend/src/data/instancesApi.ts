@@ -30,6 +30,16 @@ export async function listInstances(): Promise<ObjectInstance[]> {
   return (data ?? []) as ObjectInstance[]
 }
 
+/** Supprime TOUTES les instances d'objets (bouton « Reset database »). Supabase
+ *  exige un filtre sur un delete → `neq` sur un uuid impossible = tout supprimer. */
+export async function deleteAllInstances(): Promise<void> {
+  const { error } = await supabase
+    .from('object_instances')
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000')
+  if (error) throw error
+}
+
 type ChangementInstance =
   | { type: 'upsert'; instance: ObjectInstance }
   | { type: 'delete'; id: string }

@@ -59,6 +59,13 @@ export function subscribeJournal(
   }
 }
 
+/** Supprime TOUT le journal de l'agent (bouton « Reset database »). `id` est un
+ *  bigint identity (≥ 1) → `gte 0` = tout supprimer (filtre requis par Supabase). */
+export async function deleteAllJournal(): Promise<void> {
+  const { error } = await supabase.from('agent_journal').delete().gte('id', 0)
+  if (error) throw error
+}
+
 /** Edits sémantiques, tous appels confondus (les plus récents d'abord). */
 export async function listSemanticEdits(limite = 200): Promise<JournalAgent[]> {
   const { data, error } = await supabase

@@ -1,6 +1,6 @@
 # Technical Design Document : Athena — MVP
 
-> Définit **COMMENT** construire ce qui est décrit dans [PRD-Athena-MVP.md](PRD-Athena-MVP.md), pour un fondateur non-technique assisté par IA.
+> Définit **COMMENT** construire ce qui est décrit dans [PRD-Athena-MVP.md](Hackathon/RAISE%20Summit/Athena/Athena-carte/vibe-coding-prompt-template-main/docs/PRD-Athena-MVP.md), pour un fondateur non-technique assisté par IA.
 > Basé sur la recherche vérifiée : [RECHERCHE_ATHENA.md](RECHERCHE_ATHENA.md).
 
 | | |

@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Database, LayoutDashboard, Network, Radio, Settings } from 'lucide-react'
+import { Database, LayoutDashboard, Network, Radio, Settings, Truck } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -20,6 +20,7 @@ const items = [
   { title: 'Schema editor', url: '/', icon: Network },
   { title: 'Database', url: '/ressources', icon: Database },
   { title: 'Simulation', url: '/flux', icon: Radio },
+  { title: 'Vehicles', url: '/coquille', icon: Truck },
   { title: 'Settings', url: '/parametres', icon: Settings },
 ]
 

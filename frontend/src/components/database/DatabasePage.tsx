@@ -10,13 +10,24 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
-import { ArrowUpDown, ChevronLeft, ChevronRight, Database, MapPin, Search } from 'lucide-react'
+import { ArrowUpDown, ChevronLeft, ChevronRight, Database, Loader2, MapPin, Search, Trash2 } from 'lucide-react'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import {
   Table,
   TableBody,
@@ -34,7 +45,8 @@ import {
 import { useInstancesDB } from '../../hooks/useInstancesDB'
 import { isSupabaseConfigured } from '../../lib/supabase'
 import { STATUTS } from '../../typesAthena'
-import type { ObjectInstance } from '../../data/instancesApi'
+import { deleteAllInstances, type ObjectInstance } from '../../data/instancesApi'
+import { deleteAllJournal } from '../../data/journalAgentApi'
 
 const chartConfig = {
   total: { label: 'Objects', color: 'hsl(217 91% 60%)' },
@@ -172,6 +184,21 @@ export function DatabasePage() {
   const instances = useInstancesDB()
   const [sorting, setSorting] = useState<SortingState>([{ id: 'cree_le', desc: true }])
   const [filtre, setFiltre] = useState('')
+  const [resetEnCours, setResetEnCours] = useState(false)
+
+  // Vide la base : toutes les instances + le journal des agents. Les surfaces se
+  // vident en direct via Realtime (useInstancesDB, etc.).
+  async function reinitialiserBase() {
+    setResetEnCours(true)
+    try {
+      await deleteAllInstances()
+      await deleteAllJournal()
+    } catch (_) {
+      // échec réseau/RLS : on laisse l'état ; l'utilisateur peut réessayer.
+    } finally {
+      setResetEnCours(false)
+    }
+  }
 
   const serie = useMemo(() => serieCumul(instances), [instances])
   const nbTypes = useMemo(() => new Set(instances.map((i) => i.type_name)).size, [instances])
@@ -209,6 +236,43 @@ export function DatabasePage() {
             {instances.length} object{instances.length === 1 ? '' : 's'}
           </span>
         </h1>
+        <div className="flex-1" />
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-destructive hover:text-destructive"
+              disabled={resetEnCours || instances.length === 0}
+            >
+              {resetEnCours ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+              Reset database
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Reset the database?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This permanently deletes all {instances.length} object
+                {instances.length === 1 ? '' : 's'} and the agents' reasoning journal.
+                The map, panels and table will clear. This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => void reinitialiserBase()}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete everything
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </header>
 
       {!isSupabaseConfigured && (

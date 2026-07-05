@@ -2,7 +2,7 @@
 
 ## Workflow agents — à lire en premier
 
-1. **Plan directeur : [AGENTS.md](AGENTS.md)** — phase courante, roadmap, règles « à ne pas faire ». S'y référer avant toute tâche de build.
+1. **Plan directeur : [AGENTS.md](Hackathon/RAISE%20Summit/Athena/Athena-carte/AGENTS.md)** — phase courante, roadmap, règles « à ne pas faire ». S'y référer avant toute tâche de build.
 2. **Détails à la demande :** `agent_docs/` (brief, stack, patterns, exigences produit, tests).
 3. **Docs stratégiques complets :** `vibe-coding-prompt-template-main/docs/` (recherche, PRD, TechDesign, ARCHITECTURE).
 4. **Méthode :** plan en 5 lignes → accord → implémenter petit → `cd frontend && npm run build` + test manuel avant d'avancer.
@@ -12,6 +12,13 @@ Le reste de ce fichier décrit les conventions de l'existant (éditeur EAV) — 
 ## Langue de l'UI — ANGLAIS (juil. 2026)
 - **Tout le texte visible du front est en anglais** (labels, boutons, titres, placeholders, aria-labels, messages d'erreur affichés, libellés de nav, labels de `DATA_TYPES`/`STATUTS`). Traduction faite en gardant **code, identifiants, noms de fichiers, clés Supabase, valeurs d'enum et commentaires inchangés** (les commentaires restent en français). Toute nouvelle chaîne visible doit être écrite **en anglais**.
 - Points de repère du glossaire : appel→call, caserne→station, opérateur→operator, Lancer→Start / Revenir→Reset / Couper→Stop, flux audio→audio feed, écouter→monitor, Objet→Object / Sous-objet→Sub-object, champ→field, Tableau de bord→Dashboard, Transcription→Transcript, Raisonnement→Reasoning, « Semantic Layer » reste tel quel, statuts Présumé/Confirmé/Corrigé/Périmé→Presumed/Confirmed/Corrected/Stale.
+
+## Sous-système carte tactique 3D — page « Vehicles » (mergé depuis `implémentation-de-la-carte`, juil. 2026)
+- Travail carte du collègue intégré dans `main` (merge commit). Dossiers : `components/carte/` (carte libre 3D façon Google Earth, `CarteLibre.tsx`, thèmes `mapTheme.ts`, zones `zonesTactiques.ts`), `components/batiment/` (maquette bâtiment/étages 3D three.js), `components/coquille/` (`CarteEngagement` = carte tactique + engagement des engins, `PanneauEngins`, mocks victimes/engins, custom layers). Support : `data/caserneProche.ts` (caserne OSM la plus proche), `data/itineraireIgn.ts` (itinéraire routier IGN), `hooks/useTrajetsEngins.ts` + `lib/trajetEngin.ts` (animation des trajets d'engins).
+- **Page `/coquille`** = `CoquillePage` (plein écran), libellé de nav **« Vehicles »** (icône Truck). La **même `CarteEngagement`** est aussi le panneau **Map** du dashboard (remplace l'ancienne `Carte.tsx` dans `DashboardPage`). Deps ajoutées : `three`, `@types/three`.
+- **UI traduite en anglais** (même règle : chaînes visibles seulement ; valeurs d'enum/statut `feu|normal|commerce`, façades `haussmann|peletier|cour`, clés `code:`, ids et commentaires **laissés en français**).
+- ⚠ **`CarteEngagement` est désormais branchée au RÉEL** (refactor juil. 2026, la démo mock a été supprimée) : elle garde la base `CarteLibre` (belle carte 3D) et y greffe **les vrais objets géolocalisés** (`useInstancesDB` → marqueurs colorés par statut, live Realtime) + **trajets d'engins réels** (`useTrajetsEngins` : caserne réelle la plus proche → interventions géolocalisées) + **caméra qui plonge** sur le 1er objet localisé. **Supprimés** : `PanneauEngins`, `donneesMock`, `victimesMock`, `EnginsCustomLayer`, `VictimesCustomLayer`, `carte/zonesTactiques` (tout le mock). `CarteLibre` (fond 3D + ses contrôles overlay : 2D/3D, thème, Floors, Interactive 3D) reste intacte. ⚠ `CarteLibre` est encore **centrée en dur sur Paris-Peletier** (`batiments_peletier.json`) → les immeubles 3D individuels ne s'affichent qu'à cet endroit ; ailleurs on a le fond + les marqueurs (la caméra suit quand même les vraies données).
+- **Bouton « Reset database »** (`DatabasePage`, en-tête, destructif + `AlertDialog`) : `deleteAllInstances()` (`instancesApi`) + `deleteAllJournal()` (`journalAgentApi`) → vide `object_instances` **et** `agent_journal`. Toutes les surfaces se vident en direct via Realtime.
 
 ## Thème clair/sombre (juil. 2026)
 - Défaut **sombre** (`class="dark"` en dur sur `<html>` d'`index.html`). Un **script inline** dans `<head>` d'`index.html` lit `localStorage.theme` et retire `dark` si `'light'` **avant le paint** (pas de flash).
