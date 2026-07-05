@@ -8,6 +8,9 @@ import { useInstancesDB } from '../../hooks/useInstancesDB'
 const STYLE_IGN =
   'https://data.geopf.fr/annexes/ressources/vectorTiles/styles/PLAN.IGN/standard.json'
 
+/** Tuiles vectorielles BD TOPO® (IGN, sans clé) — porte la hauteur des bâtiments. */
+const SOURCE_BDTOPO = 'https://data.geopf.fr/tms/1.0.0/BDTOPO/metadata.json'
+
 /** Centre France par défaut. */
 const CENTRE_FRANCE: [number, number] = [2.42, 46.6]
 
@@ -22,6 +25,49 @@ export interface MarqueurEntite {
   lon: number | null
   lat: number | null
   statut: StatutInfo
+}
+
+/**
+ * Ajoute les bâtiments en 3D (extrusion selon la hauteur réelle BD TOPO). Placés
+ * sous les libellés pour garder les textes lisibles ; n'apparaissent qu'en zoom
+ * rapproché (z ≥ 14) et « poussent » entre z14 et z15.5. Idempotent.
+ */
+function ajouterBatiments3D(m: maplibregl.Map) {
+  if (!m.getSource('bdtopo')) {
+    m.addSource('bdtopo', { type: 'vector', url: SOURCE_BDTOPO, attribution: 'IGN – BD TOPO®' })
+  }
+  if (m.getLayer('batiments-3d')) return
+
+  // Hauteur en mètres ; 0 si absente (le bâtiment reste alors à plat).
+  const hauteur: maplibregl.ExpressionSpecification = ['to-number', ['get', 'hauteur'], 0]
+  const premierSymbole = m.getStyle().layers?.find((l) => l.type === 'symbol')?.id
+
+  m.addLayer(
+    {
+      id: 'batiments-3d',
+      type: 'fill-extrusion',
+      source: 'bdtopo',
+      'source-layer': 'batiment',
+      minzoom: 14,
+      paint: {
+        // Dégradé selon la hauteur → lecture du volume sur le fond clair IGN.
+        'fill-extrusion-color': [
+          'interpolate',
+          ['linear'],
+          hauteur,
+          0, '#dcd8d0',
+          10, '#c7c2b8',
+          30, '#a8a298',
+          80, '#877f74',
+        ],
+        // Pousse les volumes entre z14 et z15.5 (transition douce à l'approche).
+        'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 15.5, hauteur],
+        'fill-extrusion-base': 0,
+        'fill-extrusion-opacity': 0.88,
+      },
+    },
+    premierSymbole,
+  )
 }
 
 function creerElementMarqueur(entite: MarqueurEntite): HTMLDivElement {
@@ -39,10 +85,11 @@ function appliquerStyleMarqueur(el: HTMLElement, entite: MarqueurEntite) {
 }
 
 /**
- * Carte MapLibre + fonds IGN. Affiche les objets géolocalisés (marqueurs). Par
- * défaut alimentée par TOUTES les instances d'objets des agents LLM
- * (`useInstancesDB`, vue globale) ; accepte aussi une liste `entites` en prop
- * (compat. câblage « run » historique).
+ * Carte MapLibre + fonds IGN, avec bâtiments en 3D (extrusion BD TOPO). Affiche
+ * les objets géolocalisés (marqueurs). Par défaut alimentée par TOUTES les
+ * instances d'objets des agents LLM (`useInstancesDB`, vue globale) ; accepte
+ * aussi une liste `entites` en prop (compat. câblage « run » historique). Plonge
+ * en vue inclinée sur le premier objet géolocalisé → les immeubles en volume.
  */
 export function Carte({
   entites,
@@ -65,9 +112,17 @@ export function Carte({
       style: STYLE_IGN,
       center: CENTRE_FRANCE,
       zoom: 5.4,
+      // Autorise l'inclinaison (vue 3D) ; bornée pour ne pas passer sous l'horizon.
+      maxPitch: 70,
       attributionControl: { compact: true },
     })
-    m.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left')
+    // Compas + jauge de pitch : affordance 3D (glisser-droit/ctrl pour incliner).
+    m.addControl(
+      new maplibregl.NavigationControl({ showCompass: true, visualizePitch: true }),
+      'top-left',
+    )
+    // Bâtiments 3D une fois le style chargé (la source `plan_ign` + la nôtre existent).
+    m.on('load', () => ajouterBatiments3D(m))
     setMap(m)
     return () => {
       marqueursRef.current.forEach((mk) => mk.remove())
@@ -81,7 +136,8 @@ export function Carte({
   useEffect(() => {
     if (!map || dejaCentreRef.current) return
     if (centre?.lon != null && centre?.lat != null) {
-      map.jumpTo({ center: [centre.lon, centre.lat], zoom: 14 })
+      // Arrivée en vol inclinée sur le sinistre → les bâtiments 3D deviennent visibles.
+      map.flyTo({ center: [centre.lon, centre.lat], zoom: 16, pitch: 55, duration: 1600 })
       dejaCentreRef.current = true
     }
   }, [map, centre])
@@ -110,11 +166,12 @@ export function Carte({
       }
     }
 
-    // Recentre automatiquement sur le premier objet géolocalisé qui apparaît.
+    // Recentre automatiquement sur le premier objet géolocalisé qui apparaît,
+    // en vol incliné → les bâtiments 3D deviennent visibles.
     if (!dejaCentreRef.current && idsVus.size > 0) {
       const premier = objets.find((i) => i.lon != null && i.lat != null)
       if (premier?.lon != null && premier?.lat != null) {
-        map.jumpTo({ center: [premier.lon, premier.lat], zoom: 13 })
+        map.flyTo({ center: [premier.lon, premier.lat], zoom: 16, pitch: 55, duration: 1600 })
         dejaCentreRef.current = true
       }
     }
