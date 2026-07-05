@@ -1,5 +1,5 @@
 import { useCallback, useRef, type ComponentType, type FunctionComponent } from 'react'
-import { Boxes, History, Layers, Map as MapIcon, Radio } from 'lucide-react'
+import { Boxes, History, Layers, Map as MapIcon, Radio, Waypoints } from 'lucide-react'
 import {
   DockviewReact,
   themeLight,
@@ -13,6 +13,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Tiles } from '@/components/ui/tiles'
 import { isSupabaseConfigured } from '../../lib/supabase'
 import { Carte } from './Carte'
+import { GrapheMemoire } from './GrapheMemoire'
 import { PanneauDiff } from './PanneauDiff'
 import { PanneauObjets } from './PanneauObjets'
 import { PanneauPastCalls } from './PanneauPastCalls'
@@ -30,6 +31,7 @@ const COMPOSANTS: Record<string, FunctionComponent<IDockviewPanelProps>> = {
     </div>
   ),
   objets: () => <PanneauObjets />,
+  graphe: () => <GrapheMemoire />,
   live: () => <PanneauFluxAudio />,
   semantic: (p) => (
     <PanneauSemanticLayer
@@ -40,10 +42,11 @@ const COMPOSANTS: Record<string, FunctionComponent<IDockviewPanelProps>> = {
   diff: (p) => <PanneauDiff ligne={(p.params as { ligne: LigneSemantic }).ligne} />,
 }
 
-type PanId = 'carte' | 'objets' | 'live' | 'semantic' | 'past'
+type PanId = 'carte' | 'objets' | 'graphe' | 'live' | 'semantic' | 'past'
 const OUVRABLES: { id: PanId; titre: string; icon: ComponentType<{ className?: string }> }[] = [
   { id: 'carte', titre: 'Carte', icon: MapIcon },
   { id: 'objets', titre: 'Objets', icon: Boxes },
+  { id: 'graphe', titre: 'Mémoire live', icon: Waypoints },
   { id: 'live', titre: 'Live feed', icon: Radio },
   { id: 'semantic', titre: 'Semantic Layer Edit', icon: Layers },
   { id: 'past', titre: 'Past calls', icon: History },
@@ -101,6 +104,13 @@ export function DashboardPage() {
       const api = event.api
       apiRef.current = api
       api.addPanel({ id: 'carte', component: 'carte', title: 'Carte' })
+      api.addPanel({
+        id: 'graphe',
+        component: 'graphe',
+        title: 'Mémoire live',
+        position: { referencePanel: 'carte' },
+        inactive: true,
+      })
       api.addPanel({
         id: 'objets',
         component: 'objets',
